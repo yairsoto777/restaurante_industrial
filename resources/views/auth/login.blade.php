@@ -31,6 +31,7 @@
                 @csrf
                 <label>Correo electrónico<input type="email" name="correo" value="{{ old('correo') }}" placeholder="nombre@empresa.com" autocomplete="email" required autofocus></label>
                 <label>Contraseña<input type="password" name="password" placeholder="Ingresa tu contraseña" autocomplete="current-password" required></label>
+                <a class="auth-forgot" href="{{ route('password.forgot') }}">¿Olvidaste tu contraseña?</a>
                 <label class="checkbox auth-check"><input type="checkbox" name="remember" value="1"> Mantener sesión iniciada</label>
                 <button class="auth-primary" type="submit">Iniciar sesión</button>
             </form>

@@ -6,14 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Site;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class SiteController extends Controller
 {
     public function index(): View
     {
-        return view('admin.sites.index', ['sites' => Site::withCount('users')->orderBy('name')->paginate(15)]);
+        return view('admin.sites.index', ['sites' => Site::withCount('users')->orderBy('nombre')->paginate(15)]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -25,18 +24,18 @@ class SiteController extends Controller
 
     public function update(Request $request, Site $site): RedirectResponse
     {
-        $site->update($this->validated($request, $site));
+        $site->update($this->validated($request));
 
         return back()->with('status', 'Sede actualizada correctamente.');
     }
 
-    private function validated(Request $request, ?Site $site = null): array
+    private function validated(Request $request): array
     {
         return $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'code' => ['required', 'string', 'max:30', Rule::unique('sites')->ignore($site)],
-            'address' => ['nullable', 'string', 'max:255'],
-            'active' => ['required', 'boolean'],
+            'nombre' => ['required', 'string', 'max:100'],
+            'direccion' => ['nullable', 'string', 'max:255'],
+            'telefono' => ['nullable', 'string', 'max:20'],
+            'capacidad' => ['nullable', 'integer', 'min:0'],
         ]);
     }
 }

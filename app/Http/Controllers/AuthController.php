@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\TemporaryPasswordMail;
 use App\Models\Role;
 use App\Models\Site;
 use App\Models\User;
@@ -11,6 +12,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -48,6 +51,59 @@ class AuthController extends Controller
             'sites' => Site::query()->orderBy('nombre')->get(),
             'hasStatusColumn' => false,
         ]);
+    }
+
+    public function showForgotPassword(): View
+    {
+        return view('auth.forgot-password');
+    }
+
+    public function sendTemporaryPassword(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'correo' => ['required', 'email'],
+        ], [
+            'correo.required' => 'El correo es obligatorio.',
+            'correo.email' => 'Ingresa un correo válido.',
+        ]);
+
+        if (config('mail.default') === 'log') {
+            return back()->withInput()->withErrors([
+                'correo' => 'No fue posible enviar el correo en este momento. Inténtalo nuevamente más tarde.',
+            ]);
+        }
+
+        $user = User::query()->where('correo', $data['correo'])->first();
+        $genericMessage = 'Si el correo está registrado, recibirás una contraseña temporal.';
+
+        if (! $user) {
+            return back()->with('status', $genericMessage);
+        }
+
+        $temporaryPassword = $this->generateTemporaryPassword();
+
+        try {
+            DB::transaction(function () use ($user, $temporaryPassword): void {
+                DB::table('usuarios')
+                    ->where('id_usuario', $user->getKey())
+                    ->update(['password' => Hash::make($temporaryPassword)]);
+
+                Mail::to($user->correo)->send(new TemporaryPasswordMail($user->name, $temporaryPassword));
+            });
+        } catch (\Throwable $exception) {
+            Log::error('No fue posible enviar el correo de recuperación.', [
+                'user_id' => $user->getKey(),
+                'exception_type' => $exception::class,
+            ]);
+
+            return back()->withInput()->withErrors([
+                'correo' => 'No fue posible enviar el correo en este momento. Inténtalo nuevamente más tarde.',
+            ]);
+        } finally {
+            unset($temporaryPassword);
+        }
+
+        return back()->with('status', $genericMessage);
     }
 
     public function register(Request $request): RedirectResponse
@@ -109,5 +165,31 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('login');
+    }
+
+    private function generateTemporaryPassword(): string
+    {
+        $groups = [
+            'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+            'abcdefghijklmnopqrstuvwxyz',
+            '0123456789',
+            '!@#$%&*+-_?',
+        ];
+        $allCharacters = implode('', $groups);
+        $characters = array_map(
+            fn (string $group) => $group[random_int(0, strlen($group) - 1)],
+            $groups,
+        );
+
+        while (count($characters) < 12) {
+            $characters[] = $allCharacters[random_int(0, strlen($allCharacters) - 1)];
+        }
+
+        for ($index = count($characters) - 1; $index > 0; $index--) {
+            $swapIndex = random_int(0, $index);
+            [$characters[$index], $characters[$swapIndex]] = [$characters[$swapIndex], $characters[$index]];
+        }
+
+        return implode('', $characters);
     }
 }
