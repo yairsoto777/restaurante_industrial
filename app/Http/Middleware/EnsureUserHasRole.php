@@ -1,0 +1,25 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class EnsureUserHasRole
+{
+    public function handle(Request $request, Closure $next, string ...$roles): Response
+    {
+        $user = $request->user();
+
+        $allowed = collect($roles)->contains(fn (string $role) => match ($role) {
+            'administrator' => $user?->hasRole('Administrador'),
+            'manager' => $user?->hasRole('Gerente'),
+            default => $user?->hasRole($role),
+        });
+
+        abort_unless($user && $allowed, 403);
+
+        return $next($request);
+    }
+}

@@ -1,0 +1,6 @@
+@extends('layouts.app')
+@section('title', 'Sedes')
+@section('content')
+<div class="split"><form class="panel form-stack" method="POST" action="{{ route('admin.sites.store') }}">@csrf<h2>Nueva sede</h2><label>Nombre<input name="name" required></label><label>Código<input name="code" required></label><label>Dirección<input name="address"></label><input type="hidden" name="active" value="1"><button class="button primary">Crear sede</button></form>
+<section class="panel"><div class="panel-head"><div><p class="eyebrow">Organización</p><h2>Sedes registradas</h2></div></div><div class="site-list">@forelse($sites as $site)<form method="POST" action="{{ route('admin.sites.update', $site) }}">@csrf @method('PUT')<div><input name="name" value="{{ $site->name }}" required><input name="code" value="{{ $site->code }}" required><input name="address" value="{{ $site->address }}" placeholder="Dirección"><small>{{ $site->users_count }} usuario(s) asignado(s)</small></div><select name="active"><option value="1" @selected($site->active)>Activa</option><option value="0" @selected(!$site->active)>Inactiva</option></select><button class="button">Guardar</button></form>@empty<p>No hay sedes.</p>@endforelse</div>{{ $sites->links() }}</section></div>
+@endsection
