@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\EmploymentApplication;
+use App\Support\EmploymentRoles;
 use App\Support\SiteContext;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -13,6 +15,10 @@ class DashboardController extends Controller
 {
     public function __invoke(Request $request, SiteContext $siteContext): View
     {
+        if ($request->user()->isCommonUser()) {
+            return $this->commonUserDashboard($request);
+        }
+
         $currentSite = $siteContext->currentFor($request, $request->user());
         $siteId = $currentSite?->id_sede;
         $today = now()->toDateString();
@@ -90,6 +96,31 @@ class DashboardController extends Controller
                 'available' => max(0, $capacity - $activeDiners),
                 'percent' => $occupationPercent,
             ],
+        ]);
+    }
+
+    private function commonUserDashboard(Request $request): View
+    {
+        $services = DB::table('servicios as servicio')
+            ->leftJoin('sedes as sede', 'sede.id_sede', '=', 'servicio.id_sede')
+            ->select('servicio.*', 'sede.nombre as sede_nombre')
+            ->orderByRaw('CASE WHEN servicio.fecha IS NULL THEN 1 ELSE 0 END')
+            ->orderBy('servicio.fecha')
+            ->orderBy('servicio.inicio_hora')
+            ->limit(6)
+            ->get();
+        $applications = EmploymentApplication::query()
+            ->with(['site', 'requestedRole'])
+            ->where('id_usuario', $request->user()->getKey())
+            ->orderByDesc('fecha_solicitud')
+            ->orderByDesc('id_solicitud')
+            ->limit(5)
+            ->get();
+
+        return view('user.dashboard', [
+            'services' => $services,
+            'roles' => EmploymentRoles::publicRoles(),
+            'applications' => $applications,
         ]);
     }
 

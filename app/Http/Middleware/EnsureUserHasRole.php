@@ -13,8 +13,10 @@ class EnsureUserHasRole
         $user = $request->user();
 
         $allowed = collect($roles)->contains(fn (string $role) => match ($role) {
-            'administrator' => $user?->hasRole('Administrador'),
-            'manager' => $user?->hasRole('Gerente'),
+            'super-administrator' => $user?->isSuperAdministrator(),
+            'administrator' => $user?->isAdministrator(),
+            'manager' => $user?->isManager(),
+            'user', 'common-user' => $user?->isCommonUser(),
             default => $user?->hasRole($role),
         });
 

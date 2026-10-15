@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Site extends Model
 {
@@ -22,5 +23,10 @@ class Site extends Model
     {
         return $this->belongsToMany(User::class, 'usuario_sede', 'id_sede', 'id_usuario')
             ->withPivot('id_rol');
+    }
+
+    public function employmentApplications(): HasMany
+    {
+        return $this->hasMany(EmploymentApplication::class, 'id_sede', 'id_sede');
     }
 }

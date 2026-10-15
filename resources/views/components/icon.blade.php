@@ -18,6 +18,7 @@
     @case('chevron')<path d="m9 18 6-6-6-6"/>@break
     @case('clock')<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>@break
     @case('plates')<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>@break
+    @case('cash')<rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M7 9H6v2M17 13h1v2"/>@break
     @case('layers')<path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 17l9 5 9-5"/>@break
     @default<circle cx="12" cy="12" r="9"/>
 @endswitch

@@ -46,15 +46,12 @@ class DashboardNavigationTest extends TestCase
         $this->actingAs($manager)->get(route('admin.users.index'))->assertForbidden();
     }
 
-    public function test_operational_placeholder_keeps_shared_navigation(): void
+    public function test_manager_cannot_access_inventory(): void
     {
         $manager = $this->createUserWithRole('Gerente');
 
         $this->actingAs($manager)->get(route('inventory.index'))
-            ->assertOk()
-            ->assertSee('Inventario de insumos')
-            ->assertSee('Módulo en desarrollo')
-            ->assertSee('Panel principal');
+            ->assertForbidden();
     }
 
     private function createUserWithRole(string $roleName): User

@@ -8,6 +8,12 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="app-body">
+@php
+    $authenticatedUser = auth()->user();
+    $isCommonUser = $authenticatedUser->isCommonUser();
+    $isManager = $authenticatedUser->isManager();
+    $canAdminister = $authenticatedUser->canAdminister();
+@endphp
 <div class="app-shell" data-app-shell>
     <aside class="app-sidebar" id="app-sidebar">
         <div class="sidebar-brand"><span>GI</span><div><strong>Gestión Industrial</strong><small>Operación alimentaria</small></div></div>
@@ -15,21 +21,47 @@
             <div class="nav-section"><span>Inicio</span>
                 <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}"><x-icon name="home"/><b>Panel principal</b></a>
             </div>
+
+            @if($isCommonUser)
+            <div class="nav-section"><span>Oportunidades</span>
+                <a class="nav-link {{ request()->routeIs('user.services.*') ? 'active' : '' }}" href="{{ route('user.services.index') }}"><x-icon name="calendar"/><b>Servicios disponibles</b></a>
+                <a class="nav-link {{ request()->routeIs('user.applications.create') ? 'active' : '' }}" href="{{ route('user.applications.create') }}"><x-icon name="group"/><b>Solicitar puesto</b></a>
+                <a class="nav-link {{ request()->routeIs('user.applications.index') ? 'active' : '' }}" href="{{ route('user.applications.index') }}"><x-icon name="layers"/><b>Mis solicitudes</b></a>
+            </div>
+            @else
             <div class="nav-section"><span>Administración</span>
                 <a class="nav-link {{ request()->routeIs('sites.select*', 'manager.sites') ? 'active' : '' }}" href="{{ route('sites.select') }}"><x-icon name="building"/><b>Selección de sede</b></a>
-                @if(auth()->user()->isAdministrator())
+                @if($canAdminister)
                     <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}"><x-icon name="users"/><b>Usuarios y permisos</b></a>
                     <a class="nav-link {{ request()->routeIs('admin.sites.*') ? 'active' : '' }}" href="{{ route('admin.sites.index') }}"><x-icon name="building"/><b>Gestión de sedes</b></a>
                 @endif
             </div>
+            @endif
+
+            @if($isManager)
+            <div class="nav-section"><span>Personal</span>
+                <a class="nav-link {{ request()->routeIs('manager.applications.*') ? 'active' : '' }}" href="{{ route('manager.applications.index') }}"><x-icon name="layers"/><b>Solicitudes de empleo</b></a>
+            </div>
+            @endif
+
+            @if(! $isCommonUser && ! $isManager && ! $canAdminister)
+            <div class="nav-section"><span>Solicitudes</span>
+                <a class="nav-link {{ request()->routeIs('user.applications.index') ? 'active' : '' }}" href="{{ route('user.applications.index') }}"><x-icon name="layers"/><b>Mis solicitudes</b></a>
+            </div>
+            @endif
+
+            @if($canAdminister || $isManager)
             <div class="nav-section"><span>Recepción / Inventario</span>
                 <a class="nav-link {{ request()->routeIs('receptions.*') ? 'active' : '' }}" href="{{ route('receptions.index') }}"><x-icon name="box"/><b>Recepción de insumos</b></a>
-                <a class="nav-link {{ request()->routeIs('inventory.*') ? 'active' : '' }}" href="{{ route('inventory.index') }}"><x-icon name="warehouse"/><b>Inventario de insumos</b></a>
+                @if($canAdminister)<a class="nav-link {{ request()->routeIs('inventory.*') ? 'active' : '' }}" href="{{ route('inventory.index') }}"><x-icon name="warehouse"/><b>Inventario de insumos</b></a>@endif
             </div>
             <div class="nav-section"><span>Servicios</span>
                 <a class="nav-link {{ request()->routeIs('services.index') ? 'active' : '' }}" href="{{ route('services.index') }}"><x-icon name="calendar"/><b>Gestión de servicios</b></a>
                 <a class="nav-link {{ request()->routeIs('services.live') ? 'active' : '' }}" href="{{ route('services.live') }}"><x-icon name="activity"/><b>Servicio en vivo</b></a>
             </div>
+            @endif
+
+            @if($canAdminister)
             <div class="nav-section"><span>Operación</span>
                 <a class="nav-link {{ request()->routeIs('tables.*') ? 'active' : '' }}" href="{{ route('tables.index') }}"><x-icon name="map"/><b>Mesas y zonas</b></a>
                 <a class="nav-link {{ request()->routeIs('groups.*') ? 'active' : '' }}" href="{{ route('groups.index') }}"><x-icon name="group"/><b>Grupos y entregas</b></a>
@@ -40,8 +72,13 @@
             </div>
             <div class="nav-section"><span>Control</span>
                 <a class="nav-link {{ request()->routeIs('incidents.*') ? 'active' : '' }}" href="{{ route('incidents.index') }}"><x-icon name="alert"/><b>Incidencias</b></a>
+            </div>
+            @endif
+            @if($canAdminister || $isManager)
+            <div class="nav-section"><span>Reportes</span>
                 <a class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}" href="{{ route('reports.index') }}"><x-icon name="chart"/><b>Reportes</b></a>
             </div>
+            @endif
         </nav>
         <div class="sidebar-footer"><span class="system-dot"></span><div><strong>Sistema operativo</strong><small>Conexión activa</small></div></div>
     </aside>
@@ -51,12 +88,16 @@
         <header class="topbar">
             <div class="topbar-left">
                 <button class="mobile-menu" type="button" data-sidebar-toggle aria-controls="app-sidebar" aria-label="Abrir menú"><span></span><span></span><span></span></button>
+                @if($isCommonUser)
+                <div class="site-context-note"><x-icon name="group"/><div><small>Estado de cuenta</small><strong>Sin puesto operativo asignado</strong></div></div>
+                @else
                 <form method="POST" action="{{ route('sites.select.update') }}" class="site-selector">@csrf
                     <x-icon name="building"/><div><small>Sede actual</small>
                     <select name="id_sede" onchange="this.form.submit()" aria-label="Seleccionar sede" {{ $availableSites->isEmpty() ? 'disabled' : '' }}>
                         @forelse($availableSites as $site)<option value="{{ $site->id_sede }}" @selected($currentSite?->id_sede === $site->id_sede)>{{ $site->nombre }}</option>@empty<option>Sin sedes disponibles</option>@endforelse
                     </select></div>
                 </form>
+                @endif
             </div>
             <div class="topbar-right">
                 <button class="notification-button" type="button" aria-label="Notificaciones"><x-icon name="bell"/></button>

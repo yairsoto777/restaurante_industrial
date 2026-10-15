@@ -11,7 +11,7 @@ class SiteContext
 {
     public function availableFor(User $user): Collection
     {
-        return $user->isAdministrator()
+        return $user->canAdminister()
             ? Site::query()->orderBy('nombre')->get()
             : $user->sites()->orderBy('sedes.nombre')->get();
     }
@@ -31,7 +31,7 @@ class SiteContext
 
     public function userCanAccess(User $user, int $siteId): bool
     {
-        return $user->isAdministrator()
+        return $user->canAdminister()
             ? Site::query()->whereKey($siteId)->exists()
             : $user->sites()->where('sedes.id_sede', $siteId)->exists();
     }
