@@ -10,6 +10,22 @@
     <div class="alert warning">No hay una sede disponible para mostrar información operativa.</div>
 @endif
 
+@if($contactSummary)
+    <section class="panel contact-dashboard-card">
+        <div>
+            <span class="section-kicker">Desarrollo comercial</span>
+            <h2>Solicitudes de servicio</h2>
+            <p>Revisa los contactos recibidos desde la landing y da seguimiento a cada solicitud.</p>
+        </div>
+        <div class="contact-dashboard-metrics">
+            <span><strong>{{ $contactSummary['new'] }}</strong> nuevos</span>
+            <span><strong>{{ $contactSummary['follow_up'] }}</strong> contactados</span>
+            <span><strong>{{ $contactSummary['total'] }}</strong> totales</span>
+        </div>
+        <a class="button primary" href="{{ route('admin.contacts.index') }}">Abrir contactos</a>
+    </section>
+@endif
+
 <section class="kpi-grid" aria-label="Indicadores principales">
     @foreach($kpis as $kpi)
         <article class="kpi-card"><div class="kpi-icon {{ $kpi['tone'] }}"><x-icon :name="$kpi['icon']"/></div><div class="kpi-copy"><span>{{ $kpi['label'] }}</span><strong>{{ number_format($kpi['value']) }}</strong><small>{{ $kpi['detail'] }}</small></div></article>
@@ -39,7 +55,7 @@
     </section>
 
     <section class="dashboard-card services-card">
-        <div class="card-heading"><div><span class="section-kicker">Programación</span><h2>Estado de servicios</h2></div><a href="{{ route('services.index') }}">Ver módulo <x-icon name="chevron"/></a></div>
+        <div class="card-heading"><div><span class="section-kicker">Programación</span><h2>Estado de servicios</h2></div>@if(auth()->user()->canAdminister() || auth()->user()->isManager())<a href="{{ route('services.index') }}">Ver módulo <x-icon name="chevron"/></a>@endif</div>
         <div class="services-list">
         @forelse($services as $service)
             @php($statusClass = match(mb_strtolower($service->estado ?? '')) {'en curso', 'activo' => 'live', 'finalizado', 'terminado' => 'done', default => 'scheduled'})

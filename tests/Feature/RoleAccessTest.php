@@ -53,26 +53,18 @@ class RoleAccessTest extends TestCase
             ->assertDontSee('Sede Sur');
     }
 
-    public function test_public_registration_creates_a_common_user_without_site_assignment(): void
+    public function test_public_registration_routes_are_not_available(): void
     {
-        Schema::getConnection()->table('roles')->insert([
-            ['id_rol' => 1, 'nombre' => 'Usuario'],
-            ['id_rol' => 9, 'nombre' => 'Gerente de sede'],
-            ['id_rol' => 10, 'nombre' => 'Superadministrador'],
-        ]);
-
-        $this->post(route('register.store'), [
+        $this->get('/register')->assertNotFound();
+        $this->post('/register', [
             'nombre' => 'Nueva',
             'apellido_p' => 'Cuenta',
             'apellido_m' => '',
             'correo' => 'nueva@example.com',
             'password' => 'Password1!',
-            'password_confirmation' => 'Password1!',
-        ])->assertRedirect(route('login'));
+        ])->assertNotFound();
 
-        $userId = Schema::getConnection()->table('usuarios')->where('correo', 'nueva@example.com')->value('id_usuario');
-        $this->assertDatabaseMissing('usuario_sede', ['id_usuario' => $userId]);
-        $this->assertTrue(User::query()->findOrFail($userId)->isCommonUser());
+        $this->assertDatabaseMissing('usuarios', ['correo' => 'nueva@example.com']);
     }
 
     public function test_administrator_can_promote_and_demote_manager(): void

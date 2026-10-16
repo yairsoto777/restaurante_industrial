@@ -1,23 +1,27 @@
 <?php
 
+use App\Http\Controllers\Admin\CommercialContactController;
 use App\Http\Controllers\Admin\SiteController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Manager\EmployeeController;
 use App\Http\Controllers\Manager\EmploymentApplicationController as ManagerEmploymentApplicationController;
 use App\Http\Controllers\Manager\ModuleController;
 use App\Http\Controllers\OperationalModuleController;
+use App\Http\Controllers\PublicContactController;
 use App\Http\Controllers\SiteSelectionController;
 use App\Http\Controllers\User\EmploymentApplicationController as UserEmploymentApplicationController;
 use App\Http\Controllers\User\ServiceController as UserServiceController;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/dashboard');
+Route::get('/', [PublicContactController::class, 'index'])->name('home');
+Route::post('/solicita-informacion', [PublicContactController::class, 'store'])
+    ->middleware('throttle:5,1')
+    ->name('contact.store');
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'create'])->name('login');
     Route::post('/login', [AuthController::class, 'store'])->name('login.store');
-    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [AuthController::class, 'register'])->name('register.store');
     Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.forgot');
     Route::post('/forgot-password', [AuthController::class, 'sendTemporaryPassword'])
         ->middleware('throttle:5,1')
@@ -66,8 +70,20 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::view('configuracion', 'admin.settings')->name('settings');
     });
 
+    Route::prefix('administracion')->name('admin.')->middleware('role:super-administrator')->group(function () {
+        Route::get('contactos', [CommercialContactController::class, 'index'])->name('contacts.index');
+        Route::get('contactos/{contact}', [CommercialContactController::class, 'show'])->name('contacts.show');
+        Route::patch('contactos/{contact}', [CommercialContactController::class, 'update'])->name('contacts.update');
+        Route::get('contactos/{contact}/convertir', [CommercialContactController::class, 'createConversion'])->name('contacts.convert.create');
+        Route::post('contactos/{contact}/convertir', [CommercialContactController::class, 'convert'])->name('contacts.convert.store');
+    });
+
     Route::prefix('operacion')->name('manager.')->middleware('role:manager')->group(function () {
         Route::get('sedes', [ModuleController::class, 'sites'])->name('sites');
+        Route::resource('empleados', EmployeeController::class)
+            ->parameters(['empleados' => 'employee'])
+            ->except(['show', 'destroy'])
+            ->names('employees');
         Route::get('solicitudes-empleo', [ManagerEmploymentApplicationController::class, 'index'])->name('applications.index');
         Route::get('solicitudes-empleo/{application}', [ManagerEmploymentApplicationController::class, 'show'])->name('applications.show');
         Route::patch('solicitudes-empleo/{application}/aprobar', [ManagerEmploymentApplicationController::class, 'approve'])->name('applications.approve');

@@ -23,40 +23,16 @@ class EmploymentApplicationFlowTest extends TestCase
         $this->seedCatalogs();
     }
 
-    public function test_registration_creates_a_common_user_without_a_site_assignment(): void
+    public function test_existing_common_user_without_site_can_log_in_to_the_legacy_portal(): void
     {
-        $this->get(route('register'))
-            ->assertOk()
-            ->assertSee('name="apellido_m"', false)
-            ->assertDontSee('name="id_sede"', false)
-            ->assertDontSee('name="id_rol"', false);
-
-        $this->post(route('register.store'), [
-            'nombre' => 'Juan',
-            'apellido_p' => 'Pérez',
-            'apellido_m' => 'López',
-            'correo' => 'juan@email.com',
-            'password' => 'Password1!',
-            'password_confirmation' => 'Password1!',
-        ])->assertRedirect(route('login'));
-
-        $this->assertGuest();
-        $this->assertDatabaseHas('usuarios', [
-            'nombre' => 'Juan',
-            'apellido_p' => 'Pérez',
-            'apellido_m' => 'López',
-            'correo' => 'juan@email.com',
-        ]);
-
-        $user = User::query()->where('correo', 'juan@email.com')->firstOrFail();
-
+        $user = $this->createUser('Juan', 'juan@email.com');
         $this->assertTrue(Hash::check('Password1!', $user->password));
         $this->assertTrue($user->isCommonUser());
         $this->assertSame('Usuario', $user->roleLabel());
         $this->assertDatabaseMissing('usuario_sede', ['id_usuario' => $user->id_usuario]);
 
         $this->post(route('login.store'), [
-            'correo' => 'juan@email.com',
+            'correo' => $user->correo,
             'password' => 'Password1!',
         ])->assertRedirect(route('dashboard'));
         $this->assertAuthenticatedAs($user);

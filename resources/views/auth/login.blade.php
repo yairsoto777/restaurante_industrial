@@ -36,7 +36,7 @@
                 <button class="auth-primary" type="submit">Iniciar sesión</button>
             </form>
 
-            <div class="auth-switch"><span>¿No tienes una cuenta?</span><a href="{{ route('register') }}">Registrarse</a></div>
+            <div class="auth-switch"><a href="{{ route('home') }}">Volver al inicio</a></div>
         </div>
     </section>
 </main>

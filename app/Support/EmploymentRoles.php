@@ -83,9 +83,21 @@ final class EmploymentRoles
             ->values();
     }
 
+    public static function employeeRoles(): Collection
+    {
+        return self::publicRoles();
+    }
+
     public static function publicRoleIds(): array
     {
         return self::publicRoles()
+            ->map(fn (Role $role): int => (int) $role->getKey())
+            ->all();
+    }
+
+    public static function employeeRoleIds(): array
+    {
+        return self::employeeRoles()
             ->map(fn (Role $role): int => (int) $role->getKey())
             ->all();
     }
@@ -119,6 +131,11 @@ final class EmploymentRoles
     public static function isPublic(string $role): bool
     {
         return array_key_exists(self::canonicalKey($role), self::PUBLIC_ROLE_DETAILS);
+    }
+
+    public static function isEmployeeRole(string $role): bool
+    {
+        return self::isPublic($role);
     }
 
     public static function isUser(string $role): bool

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CommercialContact;
 use App\Models\EmploymentApplication;
 use App\Support\EmploymentRoles;
 use App\Support\SiteContext;
@@ -9,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -19,6 +21,7 @@ class DashboardController extends Controller
             return $this->commonUserDashboard($request);
         }
 
+        $contactSummary = $this->commercialContactSummary($request);
         $currentSite = $siteContext->currentFor($request, $request->user());
         $siteId = $currentSite?->id_sede;
         $today = now()->toDateString();
@@ -96,6 +99,7 @@ class DashboardController extends Controller
                 'available' => max(0, $capacity - $activeDiners),
                 'percent' => $occupationPercent,
             ],
+            'contactSummary' => $contactSummary,
         ]);
     }
 
@@ -147,5 +151,18 @@ class DashboardController extends Controller
             ->map(fn ($item) => ['timestamp' => Carbon::parse($item->fecha.' '.($item->inicio_hora ?: '00:00:00'))->toDateTimeString(), 'title' => 'Servicio '.$item->nombre, 'detail' => $item->estado ?: 'Programado', 'tone' => 'green']);
 
         return $receptions->concat($incidents)->concat($serviceEvents)->sortByDesc('timestamp')->take(5)->values();
+    }
+
+    private function commercialContactSummary(Request $request): ?array
+    {
+        if (! $request->user()->isSuperAdministrator() || ! Schema::hasTable('contactos')) {
+            return null;
+        }
+
+        return [
+            'new' => CommercialContact::query()->where('estado', CommercialContact::STATUS_NEW)->count(),
+            'follow_up' => CommercialContact::query()->where('estado', CommercialContact::STATUS_CONTACTED)->count(),
+            'total' => CommercialContact::query()->count(),
+        ];
     }
 }

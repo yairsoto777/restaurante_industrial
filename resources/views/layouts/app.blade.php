@@ -34,19 +34,16 @@
                 @if($canAdminister)
                     <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}"><x-icon name="users"/><b>Usuarios y permisos</b></a>
                     <a class="nav-link {{ request()->routeIs('admin.sites.*') ? 'active' : '' }}" href="{{ route('admin.sites.index') }}"><x-icon name="building"/><b>Gestión de sedes</b></a>
+                    @if($authenticatedUser->isSuperAdministrator())
+                        <a class="nav-link {{ request()->routeIs('admin.contacts.*') ? 'active' : '' }}" href="{{ route('admin.contacts.index') }}"><x-icon name="layers"/><b>Contactos</b></a>
+                    @endif
                 @endif
             </div>
             @endif
 
             @if($isManager)
             <div class="nav-section"><span>Personal</span>
-                <a class="nav-link {{ request()->routeIs('manager.applications.*') ? 'active' : '' }}" href="{{ route('manager.applications.index') }}"><x-icon name="layers"/><b>Solicitudes de empleo</b></a>
-            </div>
-            @endif
-
-            @if(! $isCommonUser && ! $isManager && ! $canAdminister)
-            <div class="nav-section"><span>Solicitudes</span>
-                <a class="nav-link {{ request()->routeIs('user.applications.index') ? 'active' : '' }}" href="{{ route('user.applications.index') }}"><x-icon name="layers"/><b>Mis solicitudes</b></a>
+                <a class="nav-link {{ request()->routeIs('manager.employees.*') ? 'active' : '' }}" href="{{ route('manager.employees.index') }}"><x-icon name="users"/><b>Empleados</b></a>
             </div>
             @endif
 
