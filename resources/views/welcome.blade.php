@@ -1,253 +1,226 @@
 @extends('layouts.public')
 
-@section('title', 'Gestión integral para comedores industriales')
-@section('meta_description', 'Centraliza sedes, personal, inventarios, servicios y seguimiento operativo en una plataforma diseñada para comedores industriales.')
+@section('title', 'NUTRILIADO | Gestión inteligente de comedores industriales')
+@section('meta_description', 'Controla sedes, inventarios, personal y servicios alimentarios desde una sola plataforma.')
 
 @section('content')
-    <section class="public-hero" id="inicio" aria-labelledby="hero-title">
-        <div class="public-hero-glow public-hero-glow-one" aria-hidden="true"></div>
-        <div class="public-hero-glow public-hero-glow-two" aria-hidden="true"></div>
-        <div class="public-container public-hero-grid">
-            <div class="public-hero-copy">
-                <span class="public-eyebrow"><i></i> Plataforma para operación alimentaria</span>
-                <h1 id="hero-title">Gestión integral para <span>comedores industriales</span></h1>
-                <p>Conecta la operación de tus sedes, coordina equipos y concentra la información clave del servicio en un solo entorno de trabajo.</p>
-                <div class="public-hero-actions">
-                    <a class="public-button public-button-primary" href="#contacto">
-                        Solicita información
-                        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m7 4 6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </a>
-                    <a class="public-button public-button-secondary" href="#soluciones">Conocer la plataforma</a>
-                </div>
-                <ul class="public-hero-points" aria-label="Características principales">
-                    <li><span aria-hidden="true">✓</span> Control por sede</li>
-                    <li><span aria-hidden="true">✓</span> Roles y permisos</li>
-                    <li><span aria-hidden="true">✓</span> Trazabilidad operativa</li>
-                </ul>
+<section class="nu-hero" id="inicio">
+    <div class="nu-hero-visual" aria-hidden="true">
+        <video class="nu-hero-video" autoplay muted loop playsinline preload="metadata" poster="https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=2000&q=85">
+            <source src="{{ asset('videos/comedor-industrial.mp4') }}" type="video/mp4">
+        </video>
+    </div>
+    <div class="nu-hero-layer" aria-hidden="true"></div>
+    <div class="public-container nu-hero-inner">
+        <div class="nu-hero-copy">
+            <span class="nu-eyebrow">SOLUCIONES PARA COMEDORES INDUSTRIALES</span>
+            <h1>Una operación impecable comienza con <em>mejor gestión.</em></h1>
+            <p>Una sola plataforma para conectar sedes, equipos, inventarios y servicios con claridad, seguridad y eficiencia.</p>
+            <div class="nu-actions">
+                <a class="nu-button nu-button-blue" href="#contacto">Solicitar información <span aria-hidden="true">↗</span></a>
+                <a class="nu-button nu-button-ghost" href="#soluciones">Explorar soluciones <span aria-hidden="true">↓</span></a>
             </div>
-
-            <div class="public-product-preview" aria-label="Vista conceptual de la plataforma">
-                <div class="public-preview-window">
-                    <div class="public-preview-topbar">
-                        <div class="public-preview-brand"><i></i><span>Panel operativo</span></div>
-                        <div class="public-preview-user"><span></span><i></i></div>
-                    </div>
-                    <div class="public-preview-body">
-                        <aside class="public-preview-sidebar" aria-hidden="true">
-                            <i class="active"></i><i></i><i></i><i></i><i></i>
-                        </aside>
-                        <div class="public-preview-content">
-                            <div class="public-preview-heading"><span>Resumen de operación</span><i>Hoy</i></div>
-                            <div class="public-preview-metrics">
-                                <article><span>Servicios</span><strong>12</strong><small>Programados</small></article>
-                                <article><span>Personal</span><strong>84</strong><small>Asignado</small></article>
-                                <article><span>Sedes</span><strong>06</strong><small>Activas</small></article>
-                            </div>
-                            <div class="public-preview-panels">
-                                <article>
-                                    <div class="public-preview-panel-title"><strong>Flujo del servicio</strong><span></span></div>
-                                    <div class="public-preview-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-                                </article>
-                                <article class="public-preview-list">
-                                    <strong>Actividad</strong>
-                                    <p><i></i><span>Recepción de insumos<small>En proceso</small></span></p>
-                                    <p><i></i><span>Producción de cocina<small>Programado</small></span></p>
-                                    <p><i></i><span>Servicio en comedor<small>Confirmado</small></span></p>
-                                </article>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="public-preview-badge public-preview-badge-top"><span>✓</span><div><small>Operación</small><strong>Centralizada</strong></div></div>
-                <div class="public-preview-badge public-preview-badge-bottom"><span>↗</span><div><small>Visibilidad</small><strong>En tiempo real</strong></div></div>
-            </div>
+            <div class="nu-hero-points"><span>CONTROL POR SEDE</span><span>PERSONAL CONECTADO</span><span>OPERACIÓN INTELIGENTE</span></div>
         </div>
-    </section>
+        <div class="nu-hero-decoration" aria-hidden="true">OPERACIONES ALIMENTARIAS — NUTRILIADO</div>
+    </div>
+    <a class="nu-scroll-down" href="#vision">DESCUBRE MÁS ↓</a>
+</section>
 
-    <section class="public-intro" id="soluciones" aria-labelledby="intro-title">
-        <div class="public-container public-intro-grid">
+<section class="nu-section nu-vision" id="vision">
+    <div class="public-container nu-vision-grid">
+        <figure class="nu-vision-image">
+            <img src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=1200&q=85" alt="Equipo de cocina profesional preparando alimentos" loading="lazy">
+            <figcaption>VISIÓN OPERATIVA / NUTRILIADO</figcaption>
+        </figure>
+        <div class="nu-vision-content">
+            <span class="nu-eyebrow">01 / NUESTRA VISIÓN</span>
+            <h2>Tu comedor empieza con <em>información conectada.</em></h2>
+            <p>NUTRILIADO reúne las tareas que sostienen una operación alimentaria en un entorno claro y práctico, sin perder la coordinación de cada sede.</p>
+            <p>Menos información dispersa y más tiempo para lo que realmente importa: brindar un servicio de calidad.</p>
+            <ul class="nu-vision-list">
+                <li>Organización por sede</li>
+                <li>Roles y accesos claros</li>
+                <li>Información útil para decidir</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="nu-section nu-solutions" id="soluciones">
+    <div class="public-container">
+        <div class="nu-section-heading">
             <div>
-                <span class="public-section-kicker">Una operación conectada</span>
-                <h2 id="intro-title">La información que tu equipo necesita, organizada desde el primer servicio.</h2>
+                <span class="nu-eyebrow">02 / SOLUCIONES</span>
+                <h2>Todo conectado.<br><em>Todo bajo control.</em></h2>
             </div>
-            <div class="public-intro-copy">
-                <p>La plataforma está preparada para acompañar la administración de múltiples sedes y los procesos cotidianos de una operación alimentaria.</p>
-                <p>Su estructura modular permite habilitar capacidades conforme crece cada organización, sin perder el control de usuarios, responsabilidades y contexto operativo.</p>
-            </div>
+            <p>Seis áreas de trabajo para enlazar la administración con los procesos que ocurren todos los días.</p>
         </div>
-        <div class="public-container public-stat-strip" aria-label="Enfoques de la plataforma">
-            <div><strong>01</strong><span>Gestión por sedes</span></div>
-            <div><strong>02</strong><span>Procesos trazables</span></div>
-            <div><strong>03</strong><span>Equipos coordinados</span></div>
-            <div><strong>04</strong><span>Información centralizada</span></div>
-        </div>
-    </section>
-
-    <section class="public-section public-section-soft" id="beneficios" aria-labelledby="benefits-title">
-        <div class="public-container">
-            <div class="public-section-heading public-section-heading-centered">
-                <span class="public-section-kicker">Beneficios</span>
-                <h2 id="benefits-title">Más control para tomar mejores decisiones</h2>
-                <p>Una base común para supervisar la operación, reducir tareas dispersas y mantener a cada equipo enfocado.</p>
-            </div>
-            <div class="public-benefit-grid">
-                <article class="public-feature-card">
-                    <span class="public-feature-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h3v6H8m5-3h3v3h-3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                    <h3>Control operativo</h3><p>Concentra el seguimiento de actividades y servicios por sede.</p>
-                </article>
-                <article class="public-feature-card">
-                    <span class="public-feature-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 7 5-3 5 3v5c0 4-2 6.5-5 8-3-1.5-5-4-5-8V7Z" stroke="currentColor" stroke-width="1.7"/><path d="m9.5 12 1.6 1.6 3.6-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                    <h3>Trazabilidad</h3><p>Mantén registros claros para dar continuidad a los procesos.</p>
-                </article>
-                <article class="public-feature-card">
-                    <span class="public-feature-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8.5 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm7-1a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM3.5 19v-2a4 4 0 0 1 4-4h2a4 4 0 0 1 4 4v2m1-6h1a4 4 0 0 1 4 4v2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
-                    <h3>Administración de personal</h3><p>Organiza responsables, accesos y funciones en cada ubicación.</p>
-                </article>
-                <article class="public-feature-card">
-                    <span class="public-feature-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m4 8 8-4 8 4-8 4-8-4Zm0 0v8l8 4 8-4V8m-8 4v8" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></span>
-                    <h3>Inventarios</h3><p>Prepara el control de insumos y existencias dentro del mismo ecosistema.</p>
-                </article>
-                <article class="public-feature-card">
-                    <span class="public-feature-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 7h14M7 4v6m10-6v6M5 11h14v9H5z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                    <h3>Servicios coordinados</h3><p>Visualiza la planeación y el estado de los servicios programados.</p>
-                </article>
-                <article class="public-feature-card">
-                    <span class="public-feature-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 19V9m7 10V5m7 14v-7M3 19h18" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
-                    <h3>Reportes y visibilidad</h3><p>Transforma los registros operativos en información útil para supervisión.</p>
-                </article>
-            </div>
-        </div>
-    </section>
-
-    <section class="public-section public-process" id="como-funciona" aria-labelledby="process-title">
-        <div class="public-container">
-            <div class="public-section-heading">
-                <span class="public-section-kicker">Cómo funciona</span>
-                <h2 id="process-title">Un acompañamiento claro desde el primer contacto</h2>
-                <p>Conocemos tu operación y configuramos una estructura alineada a la forma de trabajar de tu organización.</p>
-            </div>
-            <ol class="public-process-grid">
-                <li><span>01</span><div><h3>Cuéntanos tu necesidad</h3><p>Envíanos tu nombre, correo y un mensaje mediante el formulario.</p></div></li>
-                <li><span>02</span><div><h3>Revisamos tu contexto</h3><p>El equipo responsable revisa tu solicitud y se pone en contacto contigo.</p></div></li>
-                <li><span>03</span><div><h3>Preparamos tu acceso</h3><p>Al confirmar el servicio se configura la sede y su responsable operativo.</p></div></li>
-                <li><span>04</span><div><h3>Comienza la operación</h3><p>El gerente de sede incorpora a su equipo y administra los roles internos.</p></div></li>
-            </ol>
-        </div>
-    </section>
-
-    <section class="public-section public-section-navy" aria-labelledby="modules-title">
-        <div class="public-container">
-            <div class="public-section-heading public-section-heading-light">
-                <span class="public-section-kicker">Módulos</span>
-                <h2 id="modules-title">Una plataforma que crece con la operación</h2>
-                <p>La arquitectura reúne las áreas esenciales del comedor y deja preparada la incorporación gradual de nuevos procesos.</p>
-            </div>
-            <div class="public-module-grid">
-                <article><span>01</span><h3>Sedes</h3><p>Contexto operativo, responsables y equipos organizados por ubicación.</p></article>
-                <article><span>02</span><h3>Personal</h3><p>Usuarios, accesos y responsabilidades claras para cada equipo.</p></article>
-                <article><span>03</span><h3>Inventarios</h3><p>Base para existencias, movimientos y disponibilidad de insumos.</p></article>
-                <article><span>04</span><h3>Cocina</h3><p>Coordinación del personal y seguimiento de la operación diaria.</p></article>
-                <article><span>05</span><h3>Almacén</h3><p>Recepción, organización y control de los insumos por sede.</p></article>
-                <article><span>06</span><h3>Servicio</h3><p>Planeación y seguimiento de la atención a comensales.</p></article>
-                <article><span>07</span><h3>Caja</h3><p>Accesos y responsabilidades para el control de cobros.</p></article>
-                <article><span>08</span><h3>Reportes</h3><p>Indicadores y consultas para supervisar cada sede.</p></article>
-            </div>
-        </div>
-    </section>
-
-    <section class="public-section public-audience" aria-labelledby="audience-title">
-        <div class="public-container public-audience-grid">
-            <div class="public-audience-copy">
-                <span class="public-section-kicker">Para quién es</span>
-                <h2 id="audience-title">Diseñada para operaciones que necesitan orden, continuidad y escala.</h2>
-                <p>La estructura se adapta a distintos modelos de servicio alimentario y puede configurarse alrededor de sus sedes y responsables.</p>
-                <a class="public-text-link" href="#contacto">Conversemos sobre tu operación <span aria-hidden="true">→</span></a>
-            </div>
-            <div class="public-audience-list">
-                <article><span>CI</span><div><h3>Comedores industriales</h3><p>Operaciones por planta, turno o centro de trabajo.</p></div></article>
-                <article><span>SC</span><div><h3>Servicios corporativos</h3><p>Atención alimentaria para oficinas y organizaciones.</p></div></article>
-                <article><span>RE</span><div><h3>Restaurantes</h3><p>Equipos que buscan centralizar sus procesos internos.</p></div></article>
-                <article><span>IE</span><div><h3>Instituciones educativas</h3><p>Servicios de comedor con control por campus o sede.</p></div></article>
-            </div>
-        </div>
-    </section>
-
-    <section class="public-cta" aria-labelledby="cta-title">
-        <div class="public-container public-cta-inner">
-            <div><span>¿Quieres implementar la plataforma?</span><h2 id="cta-title">Conoce cómo puede adaptarse a la operación de tu comedor industrial.</h2></div>
-            <a class="public-button public-button-white" href="#contacto">Solicita información</a>
-        </div>
-    </section>
-
-    <section class="public-section public-contact" id="contacto" aria-labelledby="contact-title">
-        <div class="public-container public-contact-grid">
-            <div class="public-contact-copy">
-                <span class="public-section-kicker">Contacto comercial</span>
-                <h2 id="contact-title">Quiero implementar la plataforma</h2>
-                <p>Déjanos tu nombre, correo y un mensaje. El equipo responsable revisará tu solicitud y se pondrá en contacto contigo.</p>
-                <div class="public-contact-note">
-                    <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16v12H4z" stroke="currentColor" stroke-width="1.7"/><path d="m5 7 7 6 7-6" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></span>
-                    <div><strong>Solicitud directa</strong><p>Tu mensaje llegará al equipo responsable de nuevas implementaciones.</p></div>
-                </div>
-                <div class="public-contact-note">
-                    <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" stroke="currentColor" stroke-width="1.7"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                    <div><strong>Seguimiento organizado</strong><p>Registramos la fecha de contacto y el avance de cada conversación.</p></div>
-                </div>
-            </div>
-
-            <div class="public-contact-card">
-                <div class="public-contact-card-heading">
-                    <div><span>Solicita información</span><h3>Envíanos un mensaje</h3></div>
-                    <small>Los campos con * son obligatorios.</small>
-                </div>
-
-                @if (session('contact_status'))
-                    <div class="public-form-alert public-form-alert-success" role="status" tabindex="-1" data-contact-feedback>
-                        <span aria-hidden="true">✓</span><p>{{ session('contact_status') }}</p>
+        @php
+            $solutions = [
+                ['01', 'Panel y sedes', 'Indicadores operativos, actividad reciente y contexto de cada sede.', 'photo-1517248135467-4c7edcad34c4'],
+                ['02', 'Inventario y recepción', 'Control y trazabilidad para entradas, insumos y almacenes.', 'photo-1542838132-92c53300491e'],
+                ['03', 'Menús y platillos', 'Planeación y organización de las opciones de cada servicio.', 'photo-1512621776951-a57141f2eefd'],
+                ['04', 'Servicios y reservas', 'Horarios, turnos y coordinación de atención para cada jornada.', 'photo-1552566626-52f8b828add9'],
+                ['05', 'Personal y equipos', 'Roles, responsabilidades y comunicación operativa.', 'photo-1556910103-1c02745aae4d'],
+                ['06', 'Reportes e incidencias', 'Seguimiento de actividades y datos para tomar decisiones.', 'photo-1460925895917-afdab827c52f'],
+            ];
+        @endphp
+        <div class="nu-solutions-grid">
+            @foreach($solutions as $solution)
+                <article class="nu-solution-card">
+                    <div class="nu-solution-photo">
+                        <img src="https://images.unsplash.com/{{ $solution[3] }}?auto=format&fit=crop&w=850&q=82" alt="{{ $solution[1] }}" loading="lazy">
                     </div>
-                @endif
-
-                @if ($errors->contact->any())
-                    <div class="public-form-alert public-form-alert-error" role="alert" tabindex="-1" data-contact-feedback>
-                        <span aria-hidden="true">!</span><p>No pudimos enviar la solicitud. Revisa los campos señalados.</p>
+                    <div class="nu-solution-body">
+                        <span class="nu-solution-number">{{ $solution[0] }}</span>
+                        <h3>{{ $solution[1] }}</h3>
+                        <p>{{ $solution[2] }}</p>
                     </div>
-                @endif
+                </article>
+            @endforeach
+        </div>
+    </div>
+</section>
 
-                <form class="public-contact-form" method="POST" action="{{ route('contact.store') }}" data-contact-form>
-                    @csrf
+<section class="nu-section nu-experience" id="experiencia">
+    <div class="public-container nu-experience-grid">
+        <div>
+            <span class="nu-eyebrow">03 / EXPERIENCIA</span>
+            <h2>Diseñado para el <em>ritmo real del servicio.</em></h2>
+            <p>Una plataforma para unir al personal administrativo con la operación diaria del restaurante o comedor industrial.</p>
+            <div class="nu-timeline">
+                <div><span>01</span><strong>Accede y selecciona</strong><p>Inicio de sesión seguro y elección de sede.</p></div>
+                <div><span>02</span><strong>Organiza la operación</strong><p>Coordina equipos, inventarios y servicios.</p></div>
+                <div><span>03</span><strong>Revisa y mejora</strong><p>Información centralizada para tomar mejores decisiones.</p></div>
+            </div>
+        </div>
+        <figure class="nu-experience-image">
+            <img src="https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=1200&q=85" alt="Restaurante con área de servicio organizada" loading="lazy">
+            <figcaption>UNA EXPERIENCIA CONECTADA</figcaption>
+        </figure>
+    </div>
+</section>
 
-                    <div class="public-honeypot" aria-hidden="true">
-                        <label for="website">Sitio web</label>
-                        <input id="website" type="text" name="website" value="" tabindex="-1" autocomplete="off">
+{{-- BENEFICIOS: diseño renovado, sin cambios en las demás secciones. --}}
+<section class="nu-section nu-benefits-clean" id="beneficios" aria-labelledby="nu-benefits-title">
+    <div class="public-container">
+        <div class="nu-benefits-head">
+            <div class="nu-benefits-copy">
+                <span class="nu-eyebrow">04 / BENEFICIOS</span>
+                <h2 id="nu-benefits-title">Más control. <em>Mejores decisiones.</em></h2>
+                <p>Organiza tu operación alimentaria con información más clara, procesos mejor coordinados y visibilidad por sede.</p>
+            </div>
+            <div class="nu-benefits-badge" aria-label="Seis beneficios clave">
+                <span>LA VENTAJA NUTRILIADO</span>
+                <strong>6 beneficios clave</strong>
+                <small>Una forma más sencilla de coordinar tu operación.</small>
+            </div>
+        </div>
+
+        @php
+            $benefits = [
+                ['01', 'Control centralizado', 'Consulta sedes, servicios, personal e indicadores desde un solo lugar.'],
+                ['02', 'Mayor visibilidad', 'Identifica lo que sucede en cada establecimiento y da seguimiento a la operación.'],
+                ['03', 'Mejor coordinación', 'Organiza accesos, funciones y responsabilidades de cada integrante del equipo.'],
+                ['04', 'Menos confusiones', 'Concentra registros y procesos para evitar información dispersa y tareas duplicadas.'],
+                ['05', 'Decisiones con datos', 'Utiliza reportes e indicadores para detectar oportunidades de mejora.'],
+                ['06', 'Preparada para crecer', 'Administra una sede o coordina varias operaciones con una misma plataforma.'],
+            ];
+        @endphp
+
+        <div class="nu-benefits-grid">
+            @foreach($benefits as $benefit)
+                <article class="nu-benefit-card">
+                    <div class="nu-benefit-top">
+                        <span class="nu-benefit-number">{{ $benefit[0] }}</span>
+                        <span class="nu-benefit-icon" aria-hidden="true">✦</span>
                     </div>
+                    <h3>{{ $benefit[1] }}</h3>
+                    <p>{{ $benefit[2] }}</p>
+                    <span class="nu-benefit-line" aria-hidden="true"></span>
+                </article>
+            @endforeach
+        </div>
 
-                    <label class="public-field">
-                        <span>Nombre *</span>
-                        <input type="text" name="nombre" value="{{ old('nombre') }}" maxlength="150" autocomplete="name" required @error('nombre', 'contact') class="is-invalid" aria-invalid="true" @enderror>
-                        @error('nombre', 'contact')<small class="public-field-error">{{ $message }}</small>@enderror
+        <div class="nu-benefits-footer">
+            <div class="nu-benefits-stat"><strong>Una sola plataforma</strong><span>Para sedes, personal, servicios e inventarios</span></div>
+            <div class="nu-benefits-stat"><strong>Claridad operativa</strong><span>Información mejor organizada para tu equipo</span></div>
+            <div class="nu-benefits-stat"><strong>Mejora continua</strong><span>Seguimiento y datos para tomar decisiones</span></div>
+        </div>
+    </div>
+</section>
+
+<section class="nu-section nu-contact" id="contacto">
+    <div class="public-container nu-contact-grid">
+        <div class="nu-contact-aside">
+            <span class="nu-eyebrow">05 / CONTACTO</span>
+            <h2>Hablemos de lo que <em>tu empresa necesita.</em></h2>
+            <p>Déjanos tus datos y cuéntanos cómo podemos ayudarte con tu comedor industrial o restaurante.</p>
+            <div class="nu-contact-features">
+                <span>✉ Puedes solicitar respuesta por correo.</span>
+                <span>☎ También podemos coordinar una llamada.</span>
+                <span>✓ Tu solicitud llegará al panel de contactos comerciales.</span>
+            </div>
+        </div>
+        <div class="nu-contact-card">
+            <span class="nu-eyebrow">SOLICITUD DE INFORMACIÓN</span>
+            <h3>Cuéntanos tu proyecto</h3>
+            @if(session('contact_status'))
+                <div class="nu-form-message" data-contact-feedback tabindex="-1">{{ session('contact_status') }}</div>
+            @endif
+            @if($errors->contact->any())
+                <div class="nu-form-message nu-form-error" data-contact-feedback tabindex="-1">Revisa los datos: {{ $errors->contact->first() }}</div>
+            @endif
+            <form method="POST" action="{{ route('contact.store') }}" data-contact-form id="nu-contact-form">
+                @csrf
+                <div class="nu-hidden-trap" aria-hidden="true"><label>No completar <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+                <div class="nu-form-grid">
+                    <label>Nombre *<input name="nombre" value="{{ old('nombre') }}" maxlength="100" required autocomplete="given-name" placeholder="Tu nombre"></label>
+                    <label>Apellidos *<input name="apellidos" value="{{ old('apellidos') }}" maxlength="150" required autocomplete="family-name" placeholder="Tus apellidos"></label>
+                    <label>Correo electrónico *<input type="email" name="correo" value="{{ old('correo') }}" maxlength="150" required autocomplete="email" placeholder="nombre@empresa.com"></label>
+                    <label>Nombre de la empresa *<input name="empresa" value="{{ old('empresa') }}" maxlength="150" required placeholder="Nombre de tu empresa"></label>
+                    <label>Preferencia de contacto *
+                        <select name="preferencia" required>
+                            <option value="correo" @selected(old('preferencia', 'correo') === 'correo')>Respuesta por correo</option>
+                            <option value="llamada" @selected(old('preferencia') === 'llamada')>Solicitar llamada</option>
+                        </select>
                     </label>
-
-                    <label class="public-field">
-                        <span>Correo *</span>
-                        <input type="email" name="correo" value="{{ old('correo') }}" maxlength="150" autocomplete="email" placeholder="nombre@empresa.com" required @error('correo', 'contact') class="is-invalid" aria-invalid="true" @enderror>
-                        @error('correo', 'contact')<small class="public-field-error">{{ $message }}</small>@enderror
+                    <label>Teléfono (para llamada)<input type="tel" name="telefono" value="{{ old('telefono') }}" maxlength="30" placeholder="Tu teléfono"></label>
+                    <label class="nu-form-wide">Mensaje *
+                        <textarea name="mensaje" rows="5" maxlength="2200" required placeholder="Cuéntanos qué necesitas para tu operación alimentaria.">{{ old('mensaje') }}</textarea>
                     </label>
-
-                    <label class="public-field public-field-full">
-                        <span>Mensaje *</span>
-                        <textarea name="mensaje" rows="5" maxlength="2000" placeholder="Estoy interesado en implementar el sistema en mi comedor industrial." required @error('mensaje', 'contact') class="is-invalid" aria-invalid="true" @enderror>{{ old('mensaje') }}</textarea>
-                        @error('mensaje', 'contact')<small class="public-field-error">{{ $message }}</small>@enderror
-                    </label>
-
-                    <div class="public-form-footer public-field-full">
-                        <p>Al enviar, la fecha de contacto se registra automáticamente.</p>
-                        <button class="public-button public-button-primary" type="submit" data-contact-submit>
-                            <span>Enviar solicitud</span>
-                            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m7 4 6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        </button>
-                    </div>
-                </form>
-            </div>
+                </div>
+                <button class="nu-button nu-button-blue nu-submit" type="submit" data-contact-submit>Enviar solicitud ↗</button>
+                <small class="nu-form-note">* Campos obligatorios. Los datos se usan para responder tu solicitud.</small>
+            </form>
         </div>
-    </section>
+    </div>
+</section>
+<script>
+// Agrega la información comercial al mensaje existente, sin modificar el controlador.
+// Se ejecuta en captura antes del manejador general de envío de app.js.
+(() => {
+    const form = document.getElementById('nu-contact-form');
+    if (!form) return;
+    const preferencia = form.elements.namedItem('preferencia');
+    const telefono = form.elements.namedItem('telefono');
+    const sincronizar = () => {
+        telefono.required = preferencia.value === 'llamada';
+    };
+    preferencia.addEventListener('change', sincronizar);
+    sincronizar();
+    form.addEventListener('submit', () => {
+        const mensaje = form.elements.namedItem('mensaje');
+        const base = mensaje.value;
+        const partes = [
+            'Apellidos: ' + form.elements.namedItem('apellidos').value.trim(),
+            'Empresa: ' + form.elements.namedItem('empresa').value.trim(),
+            'Medio de contacto: ' + preferencia.options[preferencia.selectedIndex].text,
+            'Teléfono: ' + (telefono.value.trim() || 'No proporcionado')
+        ];
+        mensaje.value = base + '\n\n--- Datos de contacto ---\n' + partes.join('\n');
+    }, {capture: true});
+})();
+</script>
 @endsection
