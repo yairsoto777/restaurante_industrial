@@ -553,3 +553,111 @@ body.nu-login-page button:focus-visible {
         font-size: 38px;
     }
 }
+
+/* =========================================================
+   NUTRILIADO - MOSTRAR / OCULTAR CONTRASEÑA
+   ========================================================= */
+
+body.nu-login-page .nu-password-field {
+    position: relative;
+    display: block;
+    width: 100%;
+}
+
+/* Mantener el diseño original del input */
+body.nu-login-page .nu-password-field input,
+body.nu-login-page .nu-password-field input[type="text"] {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    min-height: 56px;
+
+    padding: 0 55px 0 16px !important;
+
+    border: 1px solid #345170;
+    border-radius: 8px;
+
+    background: #071525;
+    color: #ffffff;
+
+    font-family: 'DM Sans', Arial, sans-serif;
+    font-size: 15px;
+
+    outline: none;
+
+    transition:
+        border-color 0.25s ease,
+        box-shadow 0.25s ease,
+        background 0.25s ease;
+}
+
+/* Efecto al seleccionar el campo */
+body.nu-login-page .nu-password-field input:focus {
+    border-color: #59a9ff;
+    background: #09192b;
+
+    box-shadow:
+        0 0 0 4px rgba(37, 138, 255, 0.16);
+}
+
+/* Botón del ojito */
+body.nu-login-page .nu-password-toggle {
+    position: absolute;
+
+    top: 50%;
+    right: 12px;
+
+    transform: translateY(-50%);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 36px;
+    height: 36px;
+
+    margin: 0;
+    padding: 0;
+
+    border: none;
+    border-radius: 8px;
+
+    background: transparent;
+
+    color: #93aecb;
+
+    cursor: pointer;
+
+    transition:
+        color 0.2s ease,
+        background 0.2s ease;
+}
+
+/* Interacción azul eléctrico */
+body.nu-login-page .nu-password-toggle:hover {
+    color: #64b5ff;
+    background: rgba(37, 138, 255, 0.10);
+}
+
+/* Cuando la contraseña es visible */
+body.nu-login-page .nu-password-toggle[aria-pressed="true"] {
+    color: #84c1ff;
+}
+
+/* Accesibilidad */
+body.nu-login-page .nu-password-toggle:focus-visible {
+    outline: 2px solid #59a9ff;
+    outline-offset: 2px;
+}
+
+body.nu-login-page .nu-password-toggle svg {
+    display: block;
+    width: 21px;
+    height: 21px;
+    flex-shrink: 0;
+}
+
+/* Respetar el atributo hidden del SVG */
+body.nu-login-page .nu-password-toggle svg[hidden] {
+    display: none !important;
+}
