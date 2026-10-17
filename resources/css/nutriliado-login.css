@@ -1,0 +1,555 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap');
+
+/* =========================================================
+   LOGIN NUTRILIADO
+========================================================= */
+
+body.nu-login-page {
+    --nl-blue: #258aff;
+    --nl-blue-soft: #7bc1ff;
+    --nl-blue-strong: #3a96ff;
+    --nl-white: #f8fbff;
+    --nl-muted: #b8c8dc;
+    --nl-dark: #07111d;
+    --nl-panel: rgba(13, 22, 36, 0.34);
+    --nl-panel-2: rgba(10, 18, 30, 0.24);
+
+    margin: 0;
+    min-height: 100vh;
+    background: #07111d;
+    color: var(--nl-white);
+    font-family: 'DM Sans', Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+body.nu-login-page *,
+body.nu-login-page *::before,
+body.nu-login-page *::after {
+    box-sizing: border-box;
+}
+
+/* =========================================================
+   LAYOUT GENERAL
+========================================================= */
+
+body.nu-login-page .auth-shell-login {
+    position: relative;
+    isolation: isolate;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100svh;
+    margin: 0;
+    padding: 32px 24px;
+    overflow: hidden;
+    background: #09111c;
+}
+
+/* =========================================================
+   VIDEO DE FONDO
+========================================================= */
+
+body.nu-login-page .nu-login-video-scene {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    overflow: hidden;
+    pointer-events: none;
+    background: #09111c;
+}
+
+body.nu-login-page .nu-login-cover-video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    filter: saturate(0.88) contrast(1.04) brightness(0.72);
+    pointer-events: none;
+}
+
+body.nu-login-page .nu-login-cover-video::-webkit-media-controls,
+body.nu-login-page .nu-login-cover-video::-webkit-media-controls-enclosure {
+    display: none !important;
+}
+
+body.nu-login-page .nu-login-video-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        linear-gradient(
+            115deg,
+            rgba(3, 10, 18, 0.82) 0%,
+            rgba(4, 12, 22, 0.58) 42%,
+            rgba(4, 11, 21, 0.80) 100%
+        ),
+        radial-gradient(
+            circle at 58% 48%,
+            rgba(38, 138, 255, 0.10),
+            transparent 42%
+        );
+}
+
+/* =========================================================
+   CONTENEDOR CENTRAL
+========================================================= */
+
+body.nu-login-page .nu-login-center {
+    position: relative;
+    z-index: 2;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    align-items: stretch !important;
+    gap: 0 !important;
+    width: min(980px, 100%) !important;
+    max-width: 980px !important;
+    min-height: 720px;
+    margin: 0 auto !important;
+}
+
+/* =========================================================
+   TARJETA IZQUIERDA - CHEF
+========================================================= */
+
+body.nu-login-page .nu-login-chef-card {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    min-height: 720px;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    border-radius: 0;
+    background: transparent;
+}
+
+/* borde iluminado fijo completo */
+body.nu-login-page .nu-login-chef-media {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    overflow: hidden;
+    border-radius: 0;
+    background: #091522;
+    border: 1px solid rgba(88, 170, 255, 0.92);
+    box-shadow:
+        0 0 0 1px rgba(88, 170, 255, 0.25),
+        0 0 14px rgba(50, 145, 255, 0.48),
+        0 0 28px rgba(36, 122, 236, 0.34),
+        inset 0 0 18px rgba(91, 172, 255, 0.10);
+}
+
+/* refuerzo de luz en el borde completo */
+body.nu-login-page .nu-login-chef-media::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: 0;
+    border: 1px solid rgba(158, 213, 255, 0.35);
+    box-shadow:
+        inset 0 0 26px rgba(90, 176, 255, 0.12),
+        0 0 22px rgba(67, 159, 255, 0.16);
+}
+
+/* degradado oscuro sobre la foto */
+body.nu-login-page .nu-login-chef-media::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(
+        to top,
+        rgba(5, 10, 18, 0.96) 0%,
+        rgba(5, 10, 18, 0.58) 34%,
+        rgba(5, 10, 18, 0.10) 68%,
+        rgba(5, 10, 18, 0.08) 100%
+    );
+}
+
+body.nu-login-page .nu-login-chef-media img {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    opacity: 1 !important;
+    transition: transform 0.7s ease;
+}
+
+body.nu-login-page .nu-login-chef-card:hover .nu-login-chef-media img {
+    transform: scale(1.03);
+}
+
+/* texto sobre la imagen */
+body.nu-login-page .nu-login-chef-media figcaption {
+    position: absolute;
+    left: 34px;
+    right: 34px;
+    bottom: 30px;
+    z-index: 2;
+    display: grid;
+    gap: 12px;
+    color: #ffffff;
+    text-shadow: 0 4px 16px rgba(0, 0, 0, 0.50);
+}
+
+body.nu-login-page .nu-login-chef-kicker {
+    color: #9fd0ff;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+body.nu-login-page .nu-login-chef-media figcaption strong {
+    display: block;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: clamp(38px, 4vw, 62px);
+    font-weight: 700;
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+}
+
+body.nu-login-page .nu-login-chef-media figcaption > span:last-child {
+    color: #d7e8fb;
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+/* =========================================================
+   TARJETA DERECHA - FORMULARIO
+========================================================= */
+
+body.nu-login-page .auth-form-panel {
+    display: flex !important;
+    align-items: stretch !important;
+    justify-content: center !important;
+    width: 100%;
+    min-width: 0;
+    min-height: 720px;
+    margin: 0;
+    padding: 0;
+    background: transparent !important;
+}
+
+body.nu-login-page .auth-form-wrap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+    min-width: 0;
+    min-height: 720px;
+    margin: 0 !important;
+    padding: 42px;
+    border-radius: 0 !important;
+    border: 1px solid rgba(120, 170, 235, 0.24);
+    border-left: 0;
+    background: linear-gradient(
+        145deg,
+        rgba(17, 27, 42, 0.22),
+        rgba(9, 17, 28, 0.18)
+    ) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow:
+        18px 24px 60px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    color: #ffffff;
+}
+
+/* línea más intensa entre imagen y formulario */
+body.nu-login-page .auth-form-wrap::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    bottom: -1px;
+    left: 0;
+    width: 2px;
+    background: linear-gradient(
+        to bottom,
+        rgba(130, 202, 255, 0.94),
+        rgba(53, 149, 255, 1),
+        rgba(130, 202, 255, 0.94)
+    );
+    box-shadow:
+        0 0 10px rgba(73, 165, 255, 0.85),
+        0 0 20px rgba(44, 133, 255, 0.60),
+        0 0 34px rgba(31, 119, 233, 0.45);
+    pointer-events: none;
+}
+
+body.nu-login-page .auth-kicker {
+    display: inline-block;
+    margin-bottom: 10px;
+    color: #84c1ff;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+}
+
+body.nu-login-page .auth-form-wrap h2 {
+    margin: 8px 0 10px;
+    color: #ffffff;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: clamp(42px, 4vw, 60px);
+    font-weight: 700;
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+}
+
+body.nu-login-page .auth-subtitle {
+    margin: 0 0 28px;
+    color: #d0dceb;
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+/* =========================================================
+   FORMULARIO
+========================================================= */
+
+body.nu-login-page .auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+body.nu-login-page .auth-form > label:not(.auth-check) {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    color: #edf5ff;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+body.nu-login-page .auth-form input[type="email"],
+body.nu-login-page .auth-form input[type="password"] {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    min-height: 56px;
+    padding: 0 16px;
+    border: 1px solid #345170;
+    border-radius: 8px;
+    background: #071525;
+    color: #ffffff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    outline: none;
+    transition:
+        border-color 0.25s ease,
+        box-shadow 0.25s ease,
+        background 0.25s ease;
+}
+
+body.nu-login-page .auth-form input::placeholder {
+    color: #859ab6;
+}
+
+body.nu-login-page .auth-form input[type="email"]:focus,
+body.nu-login-page .auth-form input[type="password"]:focus {
+    border-color: #59a9ff;
+    background: #09192b;
+    box-shadow: 0 0 0 4px rgba(37, 138, 255, 0.16);
+}
+
+body.nu-login-page .auth-forgot {
+    align-self: flex-end;
+    margin-top: -4px;
+    color: #87c2ff;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+body.nu-login-page .auth-forgot:hover,
+body.nu-login-page .auth-switch a:hover {
+    color: #ffffff;
+    text-decoration: underline;
+}
+
+body.nu-login-page .auth-check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 2px 0 0;
+    color: #c3d0df;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+body.nu-login-page .auth-check input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: #258aff;
+    flex-shrink: 0;
+}
+
+body.nu-login-page .auth-primary {
+    width: 100%;
+    min-height: 56px;
+    padding: 14px 20px;
+    border: 1px solid rgba(165, 211, 255, 0.34);
+    border-radius: 8px;
+    background: linear-gradient(110deg, #165fd1, #3292ff);
+    color: #ffffff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 14px 30px rgba(20, 99, 225, 0.28);
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        filter 0.2s ease;
+}
+
+body.nu-login-page .auth-primary:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.06);
+    box-shadow: 0 18px 38px rgba(20, 99, 225, 0.34);
+}
+
+body.nu-login-page .auth-primary:active {
+    transform: translateY(0);
+}
+
+body.nu-login-page .auth-switch {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(160, 186, 221, 0.18);
+    text-align: center;
+}
+
+body.nu-login-page .auth-switch a {
+    color: #84c0ff;
+    font-size: 14px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+/* =========================================================
+   ALERTAS
+========================================================= */
+
+body.nu-login-page .alert {
+    margin-bottom: 18px;
+    padding: 13px 15px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+body.nu-login-page .alert.success {
+    background: #10352d;
+    border: 1px solid #3d9d80;
+    color: #cdffed;
+}
+
+body.nu-login-page .alert.error {
+    background: #421d2b;
+    border: 1px solid #bd526d;
+    color: #ffe3ec;
+}
+
+/* =========================================================
+   FOCUS
+========================================================= */
+
+body.nu-login-page a:focus-visible,
+body.nu-login-page button:focus-visible {
+    outline: 3px solid #7ab9ff;
+    outline-offset: 4px;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 980px) {
+    body.nu-login-page .auth-shell-login {
+        padding: 24px 18px;
+    }
+
+    body.nu-login-page .nu-login-center {
+        width: min(560px, 100%) !important;
+        grid-template-columns: 1fr !important;
+        min-height: auto;
+    }
+
+    body.nu-login-page .nu-login-chef-card {
+        min-height: 390px;
+    }
+
+    body.nu-login-page .auth-form-panel,
+    body.nu-login-page .auth-form-wrap {
+        min-height: auto;
+    }
+
+    body.nu-login-page .auth-form-wrap {
+        padding: 36px;
+        border-left: 1px solid rgba(120, 170, 235, 0.24);
+        border-top: 0;
+    }
+
+    body.nu-login-page .auth-form-wrap::before {
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: auto;
+        width: auto;
+        height: 2px;
+        background: linear-gradient(
+            to right,
+            rgba(130, 202, 255, 0.94),
+            rgba(53, 149, 255, 1),
+            rgba(130, 202, 255, 0.94)
+        );
+    }
+}
+
+@media (max-width: 560px) {
+    body.nu-login-page .auth-shell-login {
+        padding: 18px 12px;
+    }
+
+    body.nu-login-page .nu-login-center {
+        width: 100% !important;
+    }
+
+    body.nu-login-page .nu-login-chef-card {
+        min-height: 320px;
+    }
+
+    body.nu-login-page .nu-login-chef-media figcaption {
+        left: 22px;
+        right: 22px;
+        bottom: 22px;
+    }
+
+    body.nu-login-page .nu-login-chef-media figcaption strong {
+        font-size: 36px;
+    }
+
+    body.nu-login-page .auth-form-wrap {
+        padding: 28px 22px;
+    }
+
+    body.nu-login-page .auth-form-wrap h2 {
+        font-size: 38px;
+    }
+}
