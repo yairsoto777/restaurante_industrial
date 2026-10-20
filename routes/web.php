@@ -9,7 +9,9 @@ use App\Http\Controllers\Manager\EmployeeController;
 use App\Http\Controllers\Manager\EmploymentApplicationController as ManagerEmploymentApplicationController;
 use App\Http\Controllers\Manager\ModuleController;
 use App\Http\Controllers\OperationalModuleController;
+use App\Http\Controllers\MenuController;
 use App\Http\Controllers\PublicContactController;
+use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SiteSelectionController;
 use App\Http\Controllers\User\EmploymentApplicationController as UserEmploymentApplicationController;
 use App\Http\Controllers\User\ServiceController as UserServiceController;
@@ -60,21 +62,33 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/recepciones', [OperationalModuleController::class, 'show'])->name('receptions.index');
     });
     Route::middleware('role:administrator,manager,Personal de cocina,Jefe de cocina,Mesero,Capitan de meseros')->group(function () {
-        Route::get('/servicios', [OperationalModuleController::class, 'show'])->name('services.index');
-        Route::get('/servicios/en-vivo', [OperationalModuleController::class, 'show'])->name('services.live');
+        Route::get('/servicios', [ServiceController::class, 'kitchenIndex'])->name('services.index');
+        Route::get('/servicios/en-vivo', [ServiceController::class, 'live'])->name('services.live');
+    });
+    Route::middleware('role:Jefe de cocina')->group(function () {
+        Route::get('/servicios/nuevo', [ServiceController::class, 'create'])->name('kitchen.services.create');
+        Route::post('/servicios', [ServiceController::class, 'store'])->name('kitchen.services.store');
+        Route::get('/servicios/{service}/editar', [ServiceController::class, 'edit'])->name('kitchen.services.edit');
+        Route::put('/servicios/{service}', [ServiceController::class, 'update'])->name('kitchen.services.update');
     });
     Route::middleware('role:administrator,manager,Jefe de cocina,Jefe de almacen,Capitan de meseros')->get('/reportes', [OperationalModuleController::class, 'show'])->name('reports.index');
 
     Route::middleware('role:administrator,manager,Personal de cocina,Jefe de cocina,Recepcion de insumos,Jefe de almacen')->group(function () {
         Route::get('/inventario', [OperationalModuleController::class, 'show'])->name('inventory.index');
     });
-    Route::middleware('role:administrator,manager,Personal de cocina,Mesero,Capitan de meseros')->group(function () {
+    Route::middleware('role:administrator,manager,Personal de cocina,Jefe de cocina,Mesero,Capitan de meseros')->group(function () {
         Route::get('/mesas-y-zonas', [OperationalModuleController::class, 'show'])->name('tables.index');
         Route::get('/grupos-y-entregas', [OperationalModuleController::class, 'show'])->name('groups.index');
     });
     Route::middleware('role:administrator,manager,Personal de cocina,Jefe de cocina')->group(function () {
-        Route::get('/menus', [OperationalModuleController::class, 'show'])->name('menus.index');
-        Route::get('/platillos', [OperationalModuleController::class, 'show'])->name('dishes.index');
+        Route::get('/menus', [MenuController::class, 'index'])->name('menus.index');
+        Route::post('/menus/{service}', [MenuController::class, 'store'])->middleware('role:Jefe de cocina')->name('menus.store');
+        Route::get('/platillos', [App\Http\Controllers\DishController::class, 'index'])->name('dishes.index');
+        Route::get('/platillos/nuevo', [App\Http\Controllers\DishController::class, 'create'])->middleware('role:Jefe de cocina')->name('dishes.create');
+        Route::post('/platillos', [App\Http\Controllers\DishController::class, 'store'])->middleware('role:Jefe de cocina')->name('dishes.store');
+        Route::get('/platillos/{dish}', [App\Http\Controllers\DishController::class, 'show'])->name('dishes.show');
+        Route::get('/platillos/{dish}/editar', [App\Http\Controllers\DishController::class, 'edit'])->middleware('role:Jefe de cocina')->name('dishes.edit');
+        Route::put('/platillos/{dish}', [App\Http\Controllers\DishController::class, 'update'])->middleware('role:Jefe de cocina')->name('dishes.update');
     });
     Route::middleware('role:administrator,manager,Personal de cocina,Jefe de cocina,Recepcion de insumos,Jefe de almacen,Mesero,Capitan de meseros,Cajero')->group(function () {
         Route::get('/incidencias', [OperationalModuleController::class, 'show'])->name('incidents.index');
@@ -118,6 +132,13 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('solicitudes-empleo/{application}', [ManagerEmploymentApplicationController::class, 'show'])->name('applications.show');
         Route::patch('solicitudes-empleo/{application}/aprobar', [ManagerEmploymentApplicationController::class, 'approve'])->name('applications.approve');
         Route::patch('solicitudes-empleo/{application}/rechazar', [ManagerEmploymentApplicationController::class, 'reject'])->name('applications.reject');
+        Route::get('servicios', [ServiceController::class, 'managerIndex'])->name('services.index');
+        Route::get('servicios/nuevo', [ServiceController::class, 'create'])->name('services.create');
+        Route::post('servicios', [ServiceController::class, 'store'])->name('services.store');
+        Route::get('servicios/{service}/editar', [ServiceController::class, 'edit'])->name('services.edit');
+        Route::put('servicios/{service}', [ServiceController::class, 'update'])->name('services.update');
+        Route::patch('servicios/{service}/aprobar', [ServiceController::class, 'approve'])->name('services.approve');
+        Route::patch('servicios/{service}/rechazar', [ServiceController::class, 'reject'])->name('services.reject');
         Route::get('{module}', [ModuleController::class, 'show'])->whereIn('module', ['recepcion', 'servicios', 'reportes'])->name('module');
     });
 });

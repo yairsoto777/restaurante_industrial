@@ -63,6 +63,7 @@
             @if($isManager)
             <div class="nav-section"><span>Personal</span>
                 <a class="nav-link {{ request()->routeIs('manager.employees.*') ? 'active' : '' }}" href="{{ route('manager.employees.index') }}"><x-icon name="users"/><b>Empleados</b></a>
+                <a class="nav-link {{ request()->routeIs('manager.services.*') ? 'active' : '' }}" href="{{ route('manager.services.index') }}"><x-icon name="calendar"/><b>Gestión de servicios</b></a>
             </div>
             @endif
 
@@ -71,10 +72,12 @@
                 <a class="nav-link {{ request()->routeIs('receptions.*') ? 'active' : '' }}" href="{{ route('receptions.index') }}"><x-icon name="box"/><b>Recepción de insumos</b></a>
                 <a class="nav-link {{ request()->routeIs('inventory.*') ? 'active' : '' }}" href="{{ route('inventory.index') }}"><x-icon name="warehouse"/><b>Inventario de insumos</b></a>
             </div>
+            @if(!$isManager)
             <div class="nav-section"><span>Servicios</span>
                 <a class="nav-link {{ request()->routeIs('services.index') ? 'active' : '' }}" href="{{ route('services.index') }}"><x-icon name="calendar"/><b>Gestión de servicios</b></a>
                 <a class="nav-link {{ request()->routeIs('services.live') ? 'active' : '' }}" href="{{ route('services.live') }}"><x-icon name="activity"/><b>Servicio en vivo</b></a>
             </div>
+            @endif
             @endif
             @if(!$isSuperAdministrator && !$isManager && !$canAdminister && !$isCommonUser)
             <div class="nav-section"><span>Mi operación</span>
@@ -82,7 +85,7 @@
                 @if($isWarehouse || $isKitchen)<a class="nav-link {{ request()->routeIs('inventory.*') ? 'active' : '' }}" href="{{ route('inventory.index') }}"><x-icon name="warehouse"/><b>Inventario</b></a>@endif
                 @if($isKitchen || $isService)<a class="nav-link {{ request()->routeIs('services.*') ? 'active' : '' }}" href="{{ route('services.index') }}"><x-icon name="calendar"/><b>Servicios</b></a>@endif
                 @if($isKitchen)<a class="nav-link {{ request()->routeIs('groups.*') ? 'active' : '' }}" href="{{ route('groups.index') }}"><x-icon name="group"/><b>Grupos y entregas</b></a>@endif
-                @if($isKitchen)<a class="nav-link {{ request()->routeIs('menus.*') ? 'active' : '' }}" href="{{ route('menus.index') }}"><x-icon name="utensils"/><b>Menú / platillos</b></a>@endif
+                @if($isKitchen)<a class="nav-link {{ request()->routeIs('menus.*') ? 'active' : '' }}" href="{{ route('menus.index') }}"><x-icon name="utensils"/><b>Menú por servicio</b></a><a class="nav-link {{ request()->routeIs('dishes.*') ? 'active' : '' }}" href="{{ route('dishes.index') }}"><x-icon name="dish"/><b>Platillos</b></a>@endif
                 @if($isService)<a class="nav-link {{ request()->routeIs('tables.*') ? 'active' : '' }}" href="{{ route('tables.index') }}"><x-icon name="map"/><b>Mesas y zonas</b></a>@endif
                 @if($isWarehouse)<a class="nav-link {{ request()->routeIs('orders.*') ? 'active' : '' }}" href="{{ route('orders.index') }}"><x-icon name="box"/><b>Pedidos</b></a>@endif
                 @if($isCashier)<a class="nav-link {{ request()->routeIs('cash.*') ? 'active' : '' }}" href="{{ route('cash.index') }}"><x-icon name="cash"/><b>Caja</b></a>@endif

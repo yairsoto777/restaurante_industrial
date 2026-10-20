@@ -1,0 +1,6 @@
+@extends('layouts.app')
+@section('title', 'Grupos y entregas')
+@section('content')
+<div class="page-heading"><div><span class="section-kicker">Operación · {{ $site->nombre }}</span><h1>Grupos y entregas</h1><p>Consulta los grupos y la operación de los servicios aprobados de tu sede.</p></div></div>
+<section class="panel"><div class="panel-head"><h2>Grupos registrados</h2><span class="catalog-count">{{ $groups->count() }} registro(s)</span></div><div class="table-wrap"><table class="catalog-table"><thead><tr><th>Grupo</th><th>Servicio</th><th>Fecha</th><th>Horario</th><th>Comensales previstos</th></tr></thead><tbody>@forelse($groups as $group)<tr><td><strong>{{ $group->nombre ?: 'Sin nombre' }}</strong></td><td>{{ $group->servicio_nombre }}</td><td>{{ $group->servicio_fecha ? \Carbon\Carbon::parse($group->servicio_fecha)->format('d/m/Y') : 'Sin fecha' }}</td><td>{{ $group->inicio_hora ? substr($group->inicio_hora, 0, 5) : '--:--' }} - {{ $group->fin_hora ? substr($group->fin_hora, 0, 5) : '--:--' }}</td><td>{{ $group->comensales_pre ?? '—' }}</td></tr>@empty<tr><td colspan="5"><div class="empty-state"><strong>No hay grupos registrados para los servicios de esta sede.</strong></div></td></tr>@endforelse</tbody></table></div></section>
+@endsection

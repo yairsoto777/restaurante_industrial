@@ -1,0 +1,8 @@
+@extends('layouts.app')
+@section('title', $service->exists ? 'Editar servicio' : 'Registrar servicio')
+@section('content')
+<div class="page-heading"><div><span class="section-kicker">Servicios · {{ $site->nombre }}</span><h1>{{ $service->exists ? 'Editar servicio' : 'Registrar servicio' }}</h1><p>La sede se asigna automáticamente desde tu contexto autorizado.</p></div><a class="button" href="{{ route('services.index') }}">Volver al listado</a></div>
+<section class="panel form-panel"><form method="POST" action="{{ $service->exists ? route('kitchen.services.update', $service) : route('kitchen.services.store') }}">@csrf @if($service->exists) @method('PUT') @endif
+<div class="form-grid"><label>Nombre del servicio<input name="nombre" value="{{ old('nombre', $service->nombre) }}" required maxlength="100"></label><label>Fecha<input type="date" name="fecha" value="{{ old('fecha', $service->fecha?->format('Y-m-d')) }}" required></label><label>Hora de inicio<input type="time" name="inicio_hora" value="{{ old('inicio_hora', $service->inicio_hora ? substr($service->inicio_hora, 0, 5) : '') }}" required></label><label>Hora de finalización<input type="time" name="fin_hora" value="{{ old('fin_hora', $service->fin_hora ? substr($service->fin_hora, 0, 5) : '') }}" required></label><label>Capacidad<input type="number" name="capacidad" value="{{ old('capacidad', $service->capacidad) }}" min="1" step="1" required></label></div>
+<div class="form-actions"><a class="button" href="{{ route('services.index') }}">Cancelar</a><button class="button primary" type="submit">{{ $service->exists ? 'Guardar cambios' : 'Enviar a revisión' }}</button></div></form></section>
+@endsection
