@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Mail\ManagerApprovalMail;
 use App\Models\CommercialContact;
 use App\Models\User;
 use Carbon\Carbon;
@@ -9,6 +10,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
@@ -20,8 +22,16 @@ class CommercialContactFlowTest extends TestCase
     {
         parent::setUp();
         $this->withoutVite();
+        Mail::fake();
         $this->createCommercialSchema();
         $this->seedCatalogs();
+        if (! Schema::hasTable('password_reset_tokens')) {
+            Schema::create('password_reset_tokens', function (Blueprint $table): void {
+                $table->string('email')->primary();
+                $table->string('token');
+                $table->timestamp('created_at')->nullable();
+            });
+        }
     }
 
     public function test_landing_is_public_and_public_registration_is_not_available(): void
@@ -29,13 +39,16 @@ class CommercialContactFlowTest extends TestCase
         $this->get(route('home'))
             ->assertOk()
             ->assertViewIs('welcome')
-            ->assertSee('Gestión integral para')
+            ->assertSee('Una operación impecable comienza con')
             ->assertSee(route('login'), false)
             ->assertSee('name="nombre"', false)
+            ->assertSee('name="apellido_p"', false)
+            ->assertSee('name="apellido_m"', false)
             ->assertSee('name="correo"', false)
-            ->assertSee('name="mensaje"', false)
             ->assertDontSee('name="empresa"', false)
-            ->assertDontSee('name="telefono"', false)
+            ->assertSee('name="preferencia"', false)
+            ->assertSee('name="telefono"', false)
+            ->assertSee('name="mensaje"', false)
             ->assertDontSee('name="ciudad"', false)
             ->assertDontSee('name="tipo_operacion"', false)
             ->assertDontSee('name="volumen_aproximado"', false)
@@ -59,8 +72,13 @@ class CommercialContactFlowTest extends TestCase
         $this->travelTo($contactedAt);
 
         $this->post(route('contact.store'), [
-            'nombre' => '  <strong>Gustavo   Cruz</strong>  ',
+            'nombre' => '  <strong>Gustavo   Adolfo</strong>  ',
+            'apellido_p' => ' Cruz ',
+            'apellido_m' => ' López ',
             'correo' => ' GUS@GMAIL.COM ',
+            'empresa' => ' Comedor   Industrial ABC ',
+            'preferencia' => 'llamada',
+            'telefono' => ' 722 000 0000 ',
             'mensaje' => " <b>Quiero implementar</b> la aplicación.\n\n\n\nEn mi comedor industrial. ",
             'website' => '',
         ])->assertRedirect(route('home').'#contacto')
@@ -70,8 +88,13 @@ class CommercialContactFlowTest extends TestCase
         $contact = CommercialContact::query()->firstOrFail();
 
         $this->assertSame('contactos', $contact->getTable());
-        $this->assertSame('Gustavo Cruz', $contact->nombre);
+        $this->assertSame('Gustavo Adolfo', $contact->nombre);
+        $this->assertSame('Cruz', $contact->apellido_p);
+        $this->assertSame('López', $contact->apellido_m);
         $this->assertSame('gus@gmail.com', $contact->correo);
+        $this->assertSame('Comedor Industrial ABC', $contact->empresa);
+        $this->assertSame('llamada', $contact->preferencia);
+        $this->assertSame('722 000 0000', $contact->telefono);
         $this->assertSame(
             'Quiero implementar la aplicación.'.PHP_EOL.PHP_EOL.'En mi comedor industrial.',
             $contact->mensaje,
@@ -88,11 +111,15 @@ class CommercialContactFlowTest extends TestCase
     {
         $this->post(route('contact.store'), [
             'nombre' => '',
+            'apellido_p' => '',
             'correo' => 'correo-invalido',
+            'empresa' => '',
+            'preferencia' => 'llamada',
+            'telefono' => '',
             'mensaje' => '',
             'website' => '',
         ])->assertRedirect(route('home').'#contacto')
-            ->assertSessionHasErrors(['nombre', 'correo', 'mensaje'], null, 'contact');
+            ->assertSessionHasErrors(['nombre', 'apellido_p', 'correo', 'telefono', 'mensaje'], null, 'contact');
 
         $this->assertDatabaseCount('contactos', 0);
 
@@ -197,7 +224,7 @@ class CommercialContactFlowTest extends TestCase
         $this->assertNull($contact->fecha_respuesta);
     }
 
-    public function test_new_site_conversion_atomically_creates_site_manager_assignment_and_approval(): void
+    public function test_conversion_creates_pending_manager_without_creating_site(): void
     {
         $superAdministrator = $this->createRoleUser(10, 'superadmin@example.com');
         $contact = $this->createContact();
@@ -206,6 +233,8 @@ class CommercialContactFlowTest extends TestCase
             ->get(route('admin.contacts.convert.create', $contact))
             ->assertOk()
             ->assertSee('Gerente de sede')
+            ->assertDontSee('Seleccionar una sede existente')
+            ->assertDontSee('Crear una sede nueva')
             ->assertDontSee('name="id_rol"', false);
 
         $this->actingAs($superAdministrator)
@@ -213,24 +242,20 @@ class CommercialContactFlowTest extends TestCase
             ->assertRedirect(route('admin.contacts.show', $contact))
             ->assertSessionHas('status');
 
-        $siteId = DB::table('sedes')->where('nombre', 'Planta ABC Toluca')->value('id_sede');
-        $this->assertNotNull($siteId);
-        $this->assertDatabaseHas('sedes', [
-            'id_sede' => $siteId,
-            'direccion' => 'Parque Industrial Toluca 100',
-            'telefono' => '722 000 0000',
-            'capacidad' => 650,
-        ]);
+        Mail::assertSent(ManagerApprovalMail::class, fn (ManagerApprovalMail $mail): bool =>
+            $mail->hasTo('gerente@empresa.com')
+            && $mail->temporaryPassword === 'Gerente1234!');
 
         $manager = User::query()->where('correo', 'gerente@empresa.com')->firstOrFail();
         $this->assertSame('Laura', $manager->nombre);
         $this->assertSame('Ramírez', $manager->apellido_p);
-        $this->assertTrue(Hash::check('Gerente1!', $manager->password));
+        $this->assertTrue(Hash::check('Gerente1234!', $manager->password));
         $this->assertDatabaseHas('usuario_sede', [
             'id_usuario' => $manager->id_usuario,
-            'id_sede' => $siteId,
+            'id_sede' => null,
             'id_rol' => 9,
         ]);
+        $this->assertDatabaseMissing('sedes', ['nombre' => 'Planta ABC Toluca']);
         $this->assertTrue($manager->isManager());
 
         $contact->refresh();
@@ -242,28 +267,57 @@ class CommercialContactFlowTest extends TestCase
         $this->post(route('logout'))->assertRedirect(route('login'));
         $this->post(route('login.store'), [
             'correo' => 'gerente@empresa.com',
-            'password' => 'Gerente1!',
-        ])->assertRedirect(route('dashboard'));
+            'password' => 'Gerente1234!',
+        ])->assertRedirect(route('password.change'));
         $this->assertAuthenticatedAs($manager);
+        $this->post(route('password.change.store'), [
+            'password' => 'GerenteDefinitiva123!',
+            'password_confirmation' => 'GerenteDefinitiva123!',
+        ])->assertRedirect(route('dashboard'));
+
+        $this->get(route('dashboard'))->assertRedirect(route('manager.sites'));
+        $this->get(route('manager.sites'))
+            ->assertOk()
+            ->assertSee('Configura tu comedor');
     }
 
-    public function test_existing_site_conversion_assigns_manager_without_creating_another_site(): void
+    public function test_pending_manager_configures_own_site_and_enters_dashboard(): void
     {
         $superAdministrator = $this->createRoleUser(10, 'superadmin@example.com');
         $contact = $this->createContact();
-        $siteCount = DB::table('sedes')->count();
-
         $this->actingAs($superAdministrator)
-            ->post(route('admin.contacts.convert.store', $contact), $this->existingSiteConversionPayload())
+            ->post(route('admin.contacts.convert.store', $contact), $this->newSiteConversionPayload())
             ->assertRedirect(route('admin.contacts.show', $contact));
 
-        $manager = User::query()->where('correo', 'gerente.existente@empresa.com')->firstOrFail();
+        $manager = User::query()->where('correo', 'gerente@empresa.com')->firstOrFail();
+        $this->actingAs($manager)->post(route('password.change.store'), [
+            'password' => 'GerenteDefinitiva123!',
+            'password_confirmation' => 'GerenteDefinitiva123!',
+        ])->assertRedirect(route('dashboard'));
+
+        $this->actingAs($manager)->post(route('manager.sites.save'), [
+            'nombre' => 'Comedor Industrial ABC',
+            'direccion' => 'Av. Principal 100',
+            'telefono' => '7220000000',
+            'capacidad' => 250,
+            'lema' => 'Alimentación eficiente para nuestra planta',
+            'color' => '#1458a6',
+            'id_tipo' => 1,
+        ])->assertRedirect(route('dashboard'));
+
+        $siteId = DB::table('sedes')->where('nombre', 'Comedor Industrial ABC')->value('id_sede');
+        $this->assertNotNull($siteId);
         $this->assertDatabaseHas('usuario_sede', [
             'id_usuario' => $manager->id_usuario,
-            'id_sede' => 1,
+            'id_sede' => $siteId,
             'id_rol' => 9,
         ]);
-        $this->assertSame($siteCount, DB::table('sedes')->count());
+        $this->assertDatabaseHas('sedes', [
+            'id_sede' => $siteId,
+            'direccion' => 'Av. Principal 100',
+            'capacidad' => 250,
+            'color' => '#1458a6',
+        ]);
         $this->assertSame(CommercialContact::STATUS_APPROVED, $contact->fresh()->estado);
     }
 
@@ -300,8 +354,13 @@ class CommercialContactFlowTest extends TestCase
     private function validContactPayload(array $overrides = []): array
     {
         return array_replace([
-            'nombre' => 'Gustavo Cruz',
+            'nombre' => 'Gustavo',
+            'apellido_p' => 'Cruz',
+            'apellido_m' => null,
             'correo' => 'gus@gmail.com',
+            'empresa' => 'Comedor Industrial ABC',
+            'preferencia' => 'correo',
+            'telefono' => null,
             'mensaje' => 'Quiero implementar la aplicación en mi comedor.',
             'website' => '',
         ], $overrides);
@@ -349,7 +408,7 @@ class CommercialContactFlowTest extends TestCase
             'gerente_apellido_p' => ' Ramírez ',
             'gerente_apellido_m' => ' Soto ',
             'gerente_correo' => ' GERENTE@EMPRESA.COM ',
-            'gerente_password' => 'Gerente1!',
+            'gerente_password' => 'Gerente1234!',
         ], $overrides);
     }
 
@@ -362,7 +421,7 @@ class CommercialContactFlowTest extends TestCase
             'gerente_apellido_p' => 'Mendoza',
             'gerente_apellido_m' => null,
             'gerente_correo' => 'gerente.existente@empresa.com',
-            'gerente_password' => 'Gerente1!',
+            'gerente_password' => 'Gerente1234!',
         ], $overrides);
     }
 
@@ -415,6 +474,8 @@ class CommercialContactFlowTest extends TestCase
             $table->string('apellido_m', 100)->nullable();
             $table->string('correo', 150)->unique();
             $table->string('password', 250);
+            $table->timestamp('temporary_password_expires_at')->nullable();
+            $table->timestamp('temporary_password_used_at')->nullable();
             $table->rememberToken();
         });
         Schema::create('roles', function (Blueprint $table): void {
@@ -439,13 +500,18 @@ class CommercialContactFlowTest extends TestCase
         Schema::create('usuario_sede', function (Blueprint $table): void {
             $table->increments('id_usuario_sede');
             $table->integer('id_usuario');
-            $table->integer('id_sede');
+            $table->integer('id_sede')->nullable();
             $table->integer('id_rol');
         });
         Schema::create('contactos', function (Blueprint $table): void {
             $table->increments('id_contacto');
             $table->string('nombre', 150);
+            $table->string('apellido_p', 100)->nullable();
+            $table->string('apellido_m', 100)->nullable();
             $table->string('correo', 150);
+            $table->string('empresa', 150)->nullable();
+            $table->string('preferencia', 20)->nullable();
+            $table->string('telefono', 30)->nullable();
             $table->text('mensaje');
             $table->string('estado', 20)->default('nuevo');
             $table->timestamp('fecha_contacto')->nullable();

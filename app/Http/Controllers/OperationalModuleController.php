@@ -19,6 +19,10 @@ class OperationalModuleController extends Controller
             'menus.index' => ['Menú por servicio', 'Define el menú disponible para cada servicio.'],
             'dishes.index' => ['Platillos', 'Administra el catálogo general de platillos.'],
             'incidents.index' => ['Incidencias', 'Consulta y da seguimiento a incidencias operativas.'],
+            'orders.index' => ['Pedidos', 'Consulta y administra pedidos de la sede.'],
+            'requisitions.index' => ['Requisiciones', 'Registra y da seguimiento a requisiciones internas.'],
+            'cash.index' => ['Caja', 'Gestiona cobros, aperturas y cierres de caja.'],
+            'kitchen.index' => ['Operación de cocina', 'Coordina la preparación y entrega de alimentos.'],
             'reports.index' => ['Reportes', 'Analiza indicadores y resultados por sede.'],
         ];
         $routeName = (string) $request->route()->getName();

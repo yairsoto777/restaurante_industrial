@@ -9,13 +9,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Contracts\Auth\CanResetPassword;
+use Illuminate\Auth\Passwords\CanResetPassword as CanResetPasswordTrait;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
 
-class User extends Authenticatable
+class User extends Authenticatable implements CanResetPassword
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, CanResetPasswordTrait;
 
     protected $table = 'usuarios';
 
@@ -34,6 +36,8 @@ class User extends Authenticatable
         'apellido_m',
         'correo',
         'password',
+        'temporary_password_expires_at',
+        'temporary_password_used_at',
     ];
 
     /**
@@ -55,12 +59,25 @@ class User extends Authenticatable
     {
         return [
             'password' => 'hashed',
+            'temporary_password_expires_at' => 'datetime',
+            'temporary_password_used_at' => 'datetime',
         ];
+    }
+
+    public function mustChangePassword(): bool
+    {
+        return $this->temporary_password_expires_at !== null
+            && $this->temporary_password_used_at === null;
     }
 
     public function getNameAttribute(): string
     {
         return trim(implode(' ', array_filter([$this->nombre, $this->apellido_p, $this->apellido_m])));
+    }
+
+    public function getEmailForPasswordReset(): string
+    {
+        return $this->correo;
     }
 
     public function sites(): BelongsToMany

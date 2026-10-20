@@ -43,39 +43,5 @@
         </div>
     </footer>
 
-    {{-- JS exclusivo para el formulario. El menú móvil ya funciona con resources/js/app.js. --}}
-    <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const form = document.querySelector('[data-nu-contact-form]');
-        if (!form) return;
-        const apellidos = form.querySelector('[name="apellidos"]');
-        const empresa = form.querySelector('[name="empresa"]');
-        const telefono = form.querySelector('[name="telefono"]');
-        const preferencia = form.querySelector('[name="preferencia"]');
-        const nombre = form.querySelector('[name="nombre_visible"]');
-        const mensaje = form.querySelector('[name="mensaje_visible"]');
-        const nombreCompleto = form.querySelector('[name="nombre"]');
-        const mensajeCompleto = form.querySelector('[name="mensaje"]');
-        const actualizarTelefono = function () {
-            const llamada = preferencia.value === 'llamada';
-            telefono.required = llamada;
-            telefono.closest('label').querySelector('small').textContent = llamada ? 'Obligatorio para solicitar una llamada.' : 'Opcional si prefieres correo.';
-        };
-        preferencia.addEventListener('change', actualizarTelefono);
-        actualizarTelefono();
-        form.addEventListener('submit', function () {
-            nombreCompleto.value = (nombre.value.trim() + ' ' + apellidos.value.trim()).trim().slice(0, 100);
-            mensajeCompleto.value = [
-                'Empresa: ' + empresa.value.trim(),
-                'Apellidos: ' + apellidos.value.trim(),
-                'Medio preferido: ' + (preferencia.value === 'llamada' ? 'Llamada telefónica' : 'Correo electrónico'),
-                'Teléfono: ' + (telefono.value.trim() || 'No proporcionado'),
-                '',
-                'Mensaje:',
-                mensaje.value.trim()
-            ].join('\n').slice(0, 3000);
-        });
-    });
-    </script>
 </body>
 </html>

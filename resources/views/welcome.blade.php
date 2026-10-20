@@ -176,10 +176,10 @@
                 @csrf
                 <div class="nu-hidden-trap" aria-hidden="true"><label>No completar <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
                 <div class="nu-form-grid">
-                    <label>Nombre *<input name="nombre" value="{{ old('nombre') }}" maxlength="100" required autocomplete="given-name" placeholder="Tu nombre"></label>
-                    <label>Apellidos *<input name="apellidos" value="{{ old('apellidos') }}" maxlength="150" required autocomplete="family-name" placeholder="Tus apellidos"></label>
+                    <label>Nombre(s) *<input name="nombre" value="{{ old('nombre') }}" maxlength="100" required autocomplete="given-name" placeholder="Tu nombre"></label>
+                    <label>Apellido paterno *<input name="apellido_p" value="{{ old('apellido_p') }}" maxlength="100" required autocomplete="family-name" placeholder="Tu apellido paterno"></label>
+                    <label>Apellido materno<input name="apellido_m" value="{{ old('apellido_m') }}" maxlength="100" autocomplete="additional-name" placeholder="Tu apellido materno"></label>
                     <label>Correo electrónico *<input type="email" name="correo" value="{{ old('correo') }}" maxlength="150" required autocomplete="email" placeholder="nombre@empresa.com"></label>
-                    <label>Nombre de la empresa *<input name="empresa" value="{{ old('empresa') }}" maxlength="150" required placeholder="Nombre de tu empresa"></label>
                     <label>Preferencia de contacto *
                         <select name="preferencia" required>
                             <option value="correo" @selected(old('preferencia', 'correo') === 'correo')>Respuesta por correo</option>
@@ -188,7 +188,7 @@
                     </label>
                     <label>Teléfono (para llamada)<input type="tel" name="telefono" value="{{ old('telefono') }}" maxlength="30" placeholder="Tu teléfono"></label>
                     <label class="nu-form-wide">Mensaje *
-                        <textarea name="mensaje" rows="5" maxlength="2200" required placeholder="Cuéntanos qué necesitas para tu operación alimentaria.">{{ old('mensaje') }}</textarea>
+                        <textarea name="mensaje" rows="5" maxlength="2000" required placeholder="Cuéntanos qué necesitas para tu operación alimentaria.">{{ old('mensaje') }}</textarea>
                     </label>
                 </div>
                 <button class="nu-button nu-button-blue nu-submit" type="submit" data-contact-submit>Enviar solicitud ↗</button>
@@ -198,8 +198,6 @@
     </div>
 </section>
 <script>
-// Agrega la información comercial al mensaje existente, sin modificar el controlador.
-// Se ejecuta en captura antes del manejador general de envío de app.js.
 (() => {
     const form = document.getElementById('nu-contact-form');
     if (!form) return;
@@ -210,17 +208,6 @@
     };
     preferencia.addEventListener('change', sincronizar);
     sincronizar();
-    form.addEventListener('submit', () => {
-        const mensaje = form.elements.namedItem('mensaje');
-        const base = mensaje.value;
-        const partes = [
-            'Apellidos: ' + form.elements.namedItem('apellidos').value.trim(),
-            'Empresa: ' + form.elements.namedItem('empresa').value.trim(),
-            'Medio de contacto: ' + preferencia.options[preferencia.selectedIndex].text,
-            'Teléfono: ' + (telefono.value.trim() || 'No proporcionado')
-        ];
-        mensaje.value = base + '\n\n--- Datos de contacto ---\n' + partes.join('\n');
-    }, {capture: true});
 })();
 </script>
 @endsection

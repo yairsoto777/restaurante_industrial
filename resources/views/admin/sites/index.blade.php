@@ -1,7 +1,18 @@
 @extends('layouts.app')
 @section('title', 'Gestión de sedes')
 @section('content')
-<div class="page-heading"><div><span class="section-kicker">Administración</span><h1>Gestión de sedes</h1><p>Administra establecimientos y su capacidad operativa.</p></div></div>
-<div class="split"><form class="panel form-stack" method="POST" action="{{ route('admin.sites.store') }}">@csrf<h2>Nueva sede</h2><label>Nombre<input name="nombre" required></label><label>Dirección<input name="direccion"></label><label>Teléfono<input name="telefono"></label><label>Capacidad<input type="number" min="0" name="capacidad"></label><button class="button primary">Crear sede</button></form>
-<section class="panel"><div class="panel-head"><h2>Sedes registradas</h2></div><div class="site-list">@forelse($sites as $site)<form method="POST" action="{{ route('admin.sites.update', $site) }}">@csrf @method('PUT')<div><input name="nombre" value="{{ $site->nombre }}" required><input name="telefono" value="{{ $site->telefono }}" placeholder="Teléfono"><input name="direccion" value="{{ $site->direccion }}" placeholder="Dirección"><small>{{ $site->users_count }} usuario(s) · Capacidad <input type="number" min="0" name="capacidad" value="{{ $site->capacidad }}" style="display:inline;width:90px"></small></div><button class="button">Guardar</button></form>@empty<p>No hay sedes.</p>@endforelse</div>{{ $sites->links() }}</section></div>
+<div class="page-heading"><div><span class="section-kicker">Administración</span><h1>Gestión de sedes</h1><p>{{ auth()->user()->isSuperAdministrator() ? 'Consulta las empresas registradas en la plataforma.' : 'Administra establecimientos y su capacidad operativa.' }}</p></div></div>
+<div class="split">
+@unless(auth()->user()->isSuperAdministrator())
+<form class="panel form-stack" method="POST" action="{{ route('admin.sites.store') }}">@csrf<h2>Nueva sede</h2><label>Nombre<input name="nombre" required></label><label>Dirección<input name="direccion"></label><label>Teléfono<input name="telefono"></label><label>Capacidad<input type="number" min="0" name="capacidad"></label><button class="button primary">Crear sede</button></form>
+@endunless
+<section class="panel"><div class="panel-head"><h2>Sedes registradas</h2></div><div class="site-list">
+@forelse($sites as $site)
+    @if(auth()->user()->isSuperAdministrator())
+        <article><div><strong>{{ $site->nombre }}</strong><p>{{ $site->direccion ?: 'Sin dirección' }} · {{ $site->telefono ?: 'Sin teléfono' }}</p><small>{{ $site->users_count }} usuario(s) · Capacidad {{ $site->capacidad ?? 'sin definir' }}</small></div><a class="button" href="{{ route('admin.companies.show', $site) }}">Ver empresa</a></article>
+    @else
+        <form method="POST" action="{{ route('admin.sites.update', $site) }}">@csrf @method('PUT')<div><input name="nombre" value="{{ $site->nombre }}" required><input name="telefono" value="{{ $site->telefono }}" placeholder="Teléfono"><input name="direccion" value="{{ $site->direccion }}" placeholder="Dirección"><small>{{ $site->users_count }} usuario(s) · Capacidad <input type="number" min="0" name="capacidad" value="{{ $site->capacidad }}" style="display:inline;width:90px"></small></div><button class="button">Guardar</button></form>
+    @endif
+@empty<p>No hay sedes.</p>@endforelse
+</div>{{ $sites->links() }}</section></div>
 @endsection

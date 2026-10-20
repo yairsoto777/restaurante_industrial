@@ -26,9 +26,10 @@ class EmployeeController extends Controller
         $roleIds = EmploymentRoles::employeeRoleIds();
         $siteId = (int) $currentSite->getKey();
 
-        $employees = Employee::query()
+        $roleFilter = $request->integer('rol') ?: null;
+        $search = trim((string) $request->input('buscar', ''));
+        $employeesQuery = Employee::query()
             ->with([
-                'position',
                 'user.roles' => fn ($query) => $query
                     ->where('usuario_sede.id_sede', $siteId)
                     ->whereIn('roles.id_rol', $roleIds),
@@ -38,10 +39,34 @@ class EmployeeController extends Controller
             ->whereHas('user.roles', fn ($query) => $query
                 ->where('usuario_sede.id_sede', $siteId)
                 ->whereIn('roles.id_rol', $roleIds))
-            ->orderBy('nombre')
-            ->paginate(15);
+            ->when($roleFilter, fn ($query) => $query->whereHas('user.roles', fn ($roleQuery) => $roleQuery
+                ->where('usuario_sede.id_sede', $siteId)->where('roles.id_rol', $roleFilter)))
+            ->when($search !== '', fn ($query) => $query->whereHas('user', fn ($userQuery) => $userQuery
+                ->where(function ($searchQuery) use ($search): void {
+                    $term = "%{$search}%";
+                    $searchQuery->where('nombre', 'like', $term)->orWhere('apellido_p', 'like', $term)
+                        ->orWhere('apellido_m', 'like', $term)->orWhere('correo', 'like', $term)
+                        ->orWhereRaw("CONCAT_WS(' ', nombre, apellido_p, apellido_m) LIKE ?", [$term]);
+                })))
+            ->orderBy('nombre');
+        $employees = $employeesQuery->paginate(15)->withQueryString();
 
-        return view('manager.employees.index', compact('employees', 'currentSite'));
+        $roleIds = EmploymentRoles::employeeRoleIds();
+        $roleCounts = DB::table('usuario_sede as us')
+            ->join('roles as r', 'r.id_rol', '=', 'us.id_rol')
+            ->join('empleados as e', 'e.id_usuario', '=', 'us.id_usuario')
+            ->where('us.id_sede', $siteId)->whereIn('us.id_rol', $roleIds)
+            ->select('r.id_rol', 'r.nombre')->selectRaw('COUNT(DISTINCT e.id_empleado) as total')
+            ->groupBy('r.id_rol', 'r.nombre')->get()->keyBy('id_rol');
+        $totalEmployees = (int) DB::table('empleados as e')->join('usuario_sede as us', function ($join) use ($siteId): void {
+            $join->on('us.id_usuario', '=', 'e.id_usuario')->where('us.id_sede', $siteId);
+        })->whereIn('us.id_rol', $roleIds)->distinct('e.id_empleado')->count('e.id_empleado');
+        $roles = EmploymentRoles::employeeRoles()->map(fn (Role $role): array => [
+            'id' => (int) $role->getKey(), 'name' => EmploymentRoles::displayName($role->nombre),
+            'count' => (int) ($roleCounts[$role->getKey()]->total ?? 0),
+        ]);
+
+        return view('manager.employees.index', compact('employees', 'currentSite', 'roles', 'totalEmployees', 'roleFilter', 'search'));
     }
 
     public function create(Request $request, SiteContext $siteContext): View
@@ -54,7 +79,6 @@ class EmployeeController extends Controller
             'roles' => EmploymentRoles::employeeRoles(),
             'currentSite' => $currentSite,
             'selectedRoleId' => null,
-            'positionName' => null,
         ]);
     }
 
@@ -66,8 +90,6 @@ class EmployeeController extends Controller
         DB::transaction(function () use ($data, $currentSite, $request): void {
             $this->ensureManagerStillManages($request->user(), (int) $currentSite->getKey());
             $role = $this->lockedEmployeeRole((int) $data['id_rol']);
-            $position = Position::query()->firstOrCreate(['nombre' => $data['puesto']]);
-
             $user = User::create([
                 'nombre' => $data['nombre'],
                 'apellido_p' => $data['apellido_p'],
@@ -85,7 +107,7 @@ class EmployeeController extends Controller
             Employee::create([
                 'nombre' => $this->employeeName($data),
                 'id_sede' => (int) $currentSite->getKey(),
-                'id_puesto' => (int) $position->getKey(),
+                'id_puesto' => $data['id_puesto'] ?? null,
                 'id_usuario' => (int) $user->getKey(),
             ]);
         }, 3);
@@ -101,7 +123,6 @@ class EmployeeController extends Controller
     ): View {
         $currentSite = $this->currentManagedSite($request, $siteContext);
         [$user, $assignment] = $this->authorizedEmployee($request->user(), $employee, $currentSite);
-        $employee->load('position');
 
         return view('manager.employees.form', [
             'employee' => $employee,
@@ -109,7 +130,6 @@ class EmployeeController extends Controller
             'roles' => EmploymentRoles::employeeRoles(),
             'currentSite' => $currentSite,
             'selectedRoleId' => (int) $assignment->id_rol,
-            'positionName' => $employee->position?->nombre,
         ]);
     }
 
@@ -136,8 +156,6 @@ class EmployeeController extends Controller
                 true,
             );
             $role = $this->lockedEmployeeRole((int) $data['id_rol']);
-            $position = Position::query()->firstOrCreate(['nombre' => $data['puesto']]);
-
             $userAttributes = [
                 'nombre' => $data['nombre'],
                 'apellido_p' => $data['apellido_p'],
@@ -151,7 +169,7 @@ class EmployeeController extends Controller
             $lockedUser->update($userAttributes);
             $lockedEmployee->update([
                 'nombre' => $this->employeeName($data),
-                'id_puesto' => (int) $position->getKey(),
+                'id_puesto' => filled($data['id_puesto'] ?? null) ? $data['id_puesto'] : $lockedEmployee->id_puesto,
             ]);
             DB::table('usuario_sede')
                 ->where('id_usuario_sede', $assignment->id_usuario_sede)
@@ -164,6 +182,13 @@ class EmployeeController extends Controller
 
     private function validated(Request $request, ?User $user = null): array
     {
+        if (! $request->filled('id_puesto') && $request->filled('puesto')) {
+            $legacyPosition = Position::query()->firstOrCreate([
+                'nombre' => $this->singleLine($request->input('puesto')),
+            ]);
+            $request->merge(['id_puesto' => $legacyPosition->getKey()]);
+        }
+
         $request->merge([
             'nombre' => $this->singleLine($request->input('nombre')),
             'apellido_p' => $this->singleLine($request->input('apellido_p')),
@@ -171,7 +196,6 @@ class EmployeeController extends Controller
             'correo' => is_string($request->input('correo'))
                 ? Str::lower(trim($request->input('correo')))
                 : $request->input('correo'),
-            'puesto' => $this->singleLine($request->input('puesto')),
         ]);
 
         $employeeRoleIds = EmploymentRoles::employeeRoleIds();
@@ -193,7 +217,7 @@ class EmployeeController extends Controller
                 Rule::in($employeeRoleIds),
                 Rule::exists('roles', 'id_rol'),
             ],
-            'puesto' => ['required', 'string', 'max:100'],
+            'id_puesto' => ['nullable', 'integer', Rule::exists('puestos', 'id_puesto')],
         ], [
             'correo.unique' => 'El correo ya pertenece a otro usuario.',
             'password.required' => 'Ingresa una contraseña temporal.',

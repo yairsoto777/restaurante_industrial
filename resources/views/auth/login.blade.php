@@ -137,7 +137,6 @@
                     <label class="nu-password-label">
 
                         Contraseña
-
                         <span class="nu-password-field">
 
                             <input
@@ -249,7 +248,6 @@
     </div>
 
 </main>
-
 <!-- SCRIPT EXCLUSIVO DEL OJITO -->
 <script>
 document.addEventListener('DOMContentLoaded', function () {

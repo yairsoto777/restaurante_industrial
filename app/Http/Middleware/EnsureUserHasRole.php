@@ -22,6 +22,12 @@ class EnsureUserHasRole
 
         abort_unless($user && $allowed, 403);
 
+        if ($user->isManager()
+            && $user->sites()->doesntExist()
+            && ! $request->routeIs('manager.sites', 'manager.sites.save')) {
+            return redirect()->route('manager.sites');
+        }
+
         return $next($request);
     }
 }

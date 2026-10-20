@@ -1,7 +1,7 @@
 @extends('layouts.app')
-@section('title', 'Usuarios y permisos')
+@section('title', 'Clientes / Gerentes')
 @section('content')
-<div class="page-heading"><div><span class="section-kicker">Administración</span><h1>Usuarios y permisos</h1><p>Gestiona las cuentas, roles y sedes asignadas.</p></div><a class="button primary" href="{{ route('admin.users.create') }}">Crear usuario</a></div>
+<div class="page-heading"><div><span class="section-kicker">Administración global</span><h1>Clientes / Gerentes</h1><p>Administra gerentes y cuentas globales. Los empleados corresponden a cada gerente.</p></div><a class="button primary" href="{{ route('admin.users.create') }}">Crear gerente</a></div>
 <section class="panel"><div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Sede</th><th>Acciones</th></tr></thead><tbody>
 @forelse($users as $user)
 @php($roleNames = $user->roles->pluck('nombre')->unique())

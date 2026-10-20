@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', $user->exists ? 'Editar usuario' : 'Crear usuario')
 @section('content')
-<div class="page-heading"><div><span class="section-kicker">Administración</span><h1>{{ $user->exists ? 'Editar usuario' : 'Crear usuario' }}</h1><p>Configura los datos de acceso, rol y sedes.</p></div></div>
+<div class="page-heading"><div><span class="section-kicker">Administración global</span><h1>{{ $user->exists ? 'Editar gerente' : 'Crear gerente' }}</h1><p>Configura la cuenta administrativa y la sede que tendrá a su cargo.</p></div></div>
 <form class="panel form-grid" method="POST" action="{{ $user->exists ? route('admin.users.update', $user) : route('admin.users.store') }}">@csrf @if($user->exists)@method('PUT')@endif
 <label>Nombre<input name="nombre" value="{{ old('nombre', $user->nombre) }}" required></label><label>Apellido paterno<input name="apellido_p" value="{{ old('apellido_p', $user->apellido_p) }}" required></label>
 <label>Apellido materno<input name="apellido_m" value="{{ old('apellido_m', $user->apellido_m) }}"></label><label>Correo<input type="email" name="correo" value="{{ old('correo', $user->correo) }}" required></label>

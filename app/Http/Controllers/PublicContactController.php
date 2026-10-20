@@ -26,21 +26,34 @@ class PublicContactController extends Controller
 
         $request->merge([
             'nombre' => $this->singleLine($request->input('nombre')),
+            'apellido_p' => $this->singleLine($request->input('apellido_p')),
+            'apellido_m' => $this->singleLine($request->input('apellido_m')),
+            'empresa' => $this->singleLine($request->input('empresa')),
             'correo' => is_string($request->input('correo'))
                 ? Str::lower(trim($request->input('correo')))
                 : $request->input('correo'),
+            'telefono' => $this->singleLine($request->input('telefono')),
             'mensaje' => $this->multiline($request->input('mensaje')),
         ]);
 
         $validator = Validator::make($request->all(), [
-            'nombre' => ['required', 'string', 'max:150'],
+            'nombre' => ['required', 'string', 'max:100'],
+            'apellido_p' => ['required', 'string', 'max:100'],
+            'apellido_m' => ['nullable', 'string', 'max:100'],
             'correo' => ['required', 'email:rfc', 'max:150'],
+            'empresa' => ['nullable', 'string', 'max:150'],
+            'preferencia' => ['required', 'in:correo,llamada'],
+            'telefono' => ['nullable', 'required_if:preferencia,llamada', 'string', 'max:30'],
             'mensaje' => ['required', 'string', 'max:2000'],
             'website' => ['nullable', 'max:0'],
         ], [
             'nombre.required' => 'Indica tu nombre.',
+            'apellido_p.required' => 'Indica tu apellido paterno.',
             'correo.required' => 'Indica un correo de contacto.',
             'correo.email' => 'Ingresa un correo válido.',
+            'empresa.required' => 'Indica el nombre de tu empresa.',
+            'preferencia.required' => 'Selecciona una preferencia de contacto.',
+            'telefono.required_if' => 'Indica un teléfono para solicitar una llamada.',
             'mensaje.required' => 'Cuéntanos brevemente qué necesitas.',
         ]);
 
@@ -49,7 +62,11 @@ class PublicContactController extends Controller
                 ->withErrors($validator, 'contact')
                 ->withInput($request->only([
                     'nombre',
+                    'apellido_p',
+                    'apellido_m',
                     'correo',
+                    'preferencia',
+                    'telefono',
                     'mensaje',
                 ]));
         }

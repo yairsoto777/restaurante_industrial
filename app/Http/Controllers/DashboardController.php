@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\CommercialContact;
 use App\Models\EmploymentApplication;
+use App\Models\Site;
+use App\Models\User;
 use App\Support\EmploymentRoles;
 use App\Support\SiteContext;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -15,10 +18,22 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function __invoke(Request $request, SiteContext $siteContext): View
+    public function __invoke(Request $request, SiteContext $siteContext): View|RedirectResponse
     {
+        if ($request->user()->hasRole('Personal de cocina')) {
+            return $this->kitchenDashboard($request, $siteContext);
+        }
+
         if ($request->user()->isCommonUser()) {
             return $this->commonUserDashboard($request);
+        }
+
+        if ($request->user()->isSuperAdministrator()) {
+            return $this->globalDashboard();
+        }
+
+        if ($request->user()->isManager() && $request->user()->sites()->doesntExist()) {
+            return redirect()->route('manager.sites');
         }
 
         $contactSummary = $this->commercialContactSummary($request);
@@ -38,6 +53,11 @@ class DashboardController extends Controller
         $incidentsToday = $siteId
             ? DB::table('incidencias')->where('id_sede', $siteId)->whereDate('fecha', $today)->count()
             : 0;
+        $openIncidents = $siteId ? $this->openIncidentCount((int) $siteId) : 0;
+        $pendingOrders = $siteId ? $this->statusCount('pedidos', (int) $siteId, ['pendiente', 'pendientes', 'nuevo', 'enviado']) : 0;
+        $pendingRequisitions = $siteId ? $this->statusCount('requisiciones', (int) $siteId, ['pendiente', 'pendientes', 'nuevo']) : 0;
+        $employeeCount = $siteId ? $this->employeeCount((int) $siteId) : 0;
+        $lowStock = $siteId ? $this->lowStockCount((int) $siteId) : 0;
 
         $activeDiners = $siteId
             ? (int) DB::table('atenciones as a')
@@ -88,7 +108,11 @@ class DashboardController extends Controller
                 ['label' => 'Servicios de hoy', 'value' => $servicesToday, 'detail' => $services->whereIn('estado', ['En curso', 'en curso', 'Activo', 'activo'])->count().' en curso', 'icon' => 'calendar', 'tone' => 'blue'],
                 ['label' => 'Comensales', 'value' => $dinersToday, 'detail' => 'Registrados hoy', 'icon' => 'users', 'tone' => 'cyan'],
                 ['label' => 'Platos servidos', 'value' => $platesServed, 'detail' => 'Entregados hoy', 'icon' => 'plates', 'tone' => 'green'],
-                ['label' => 'Incidencias', 'value' => $incidentsToday, 'detail' => 'Registradas hoy', 'icon' => 'alert', 'tone' => 'orange'],
+                ['label' => 'Incidencias abiertas', 'value' => $openIncidents, 'detail' => $incidentsToday.' registradas hoy', 'icon' => 'alert', 'tone' => 'orange'],
+                ['label' => 'Pedidos pendientes', 'value' => $pendingOrders, 'detail' => 'Por atender', 'icon' => 'box', 'tone' => 'orange'],
+                ['label' => 'Requisiciones pendientes', 'value' => $pendingRequisitions, 'detail' => 'Por revisar', 'icon' => 'layers', 'tone' => 'blue'],
+                ['label' => 'Empleados registrados', 'value' => $employeeCount, 'detail' => 'En esta sede', 'icon' => 'users', 'tone' => 'cyan'],
+                ['label' => 'Insumos con existencias bajas', 'value' => $lowStock, 'detail' => 'Requieren atención', 'icon' => 'warehouse', 'tone' => 'orange'],
             ],
             'activity' => $this->recentActivity($siteId),
             'services' => $services,
@@ -99,8 +123,153 @@ class DashboardController extends Controller
                 'available' => max(0, $capacity - $activeDiners),
                 'percent' => $occupationPercent,
             ],
+            'siteLogoUrl' => $currentSite?->logo_url ? \Illuminate\Support\Facades\Storage::url($currentSite->logo_url) : null,
+            'recentOrders' => $siteId ? $this->recentRows('pedidos', (int) $siteId, 'id_pedido') : collect(),
+            'recentIncidents' => $siteId ? $this->recentRows('incidencias', (int) $siteId, 'id_incidencia') : collect(),
             'contactSummary' => $contactSummary,
         ]);
+    }
+
+    private function kitchenDashboard(Request $request, SiteContext $siteContext): View
+    {
+        $site = $siteContext->currentFor($request, $request->user());
+        abort_unless($site && $request->user()->sites()->whereKey($site->getKey())->exists(), 403);
+        $services = DB::table('servicios')->where('id_sede', $site->getKey())
+            ->whereDate('fecha', now()->toDateString())->orderBy('inicio_hora')->limit(5)
+            ->get(['nombre', 'inicio_hora', 'fin_hora', 'estado']);
+
+        return view('kitchen.dashboard', compact('site', 'services'));
+    }
+
+    public function company(Site $site): View
+    {
+        $site->load(['users.roles']);
+        $manager = $site->users->first(fn (User $user): bool => $user->isManager());
+        $employees = $site->users->reject(fn (User $user): bool => $user->isManager() || $user->isSuperAdministrator());
+
+        return view('admin.company', [
+            'site' => $site,
+            'manager' => $manager,
+            'metrics' => [
+                ['label' => 'Empleados', 'value' => $employees->count(), 'icon' => 'users', 'tone' => 'blue'],
+                ['label' => 'Roles asignados', 'value' => $site->users->flatMap->roles->unique('id_rol')->count(), 'icon' => 'layers', 'tone' => 'cyan'],
+                ['label' => 'Servicios', 'value' => $this->tableCount('servicios', $site->id_sede), 'icon' => 'calendar', 'tone' => 'green'],
+                ['label' => 'Mesas', 'value' => $this->tableCount('mesas', $site->id_sede), 'icon' => 'map', 'tone' => 'blue'],
+                ['label' => 'Inventario general', 'value' => $this->inventoryCount($site->id_sede), 'icon' => 'warehouse', 'tone' => 'cyan'],
+                ['label' => 'Incidencias abiertas', 'value' => $this->openIncidentCount($site->id_sede), 'icon' => 'alert', 'tone' => 'orange'],
+            ],
+            'activity' => $this->recentActivity($site->id_sede),
+        ]);
+    }
+
+    private function globalDashboard(): View
+    {
+        $sites = Site::query()->with('users')->orderBy('nombre')->get();
+        $managers = User::query()->with(['sites.users.roles', 'roles'])->get()
+            ->filter(fn (User $user): bool => $user->isManager())
+            ->values();
+        $contactsPending = Schema::hasTable('contactos')
+            ? CommercialContact::query()->whereIn('estado', [CommercialContact::STATUS_NEW, CommercialContact::STATUS_CONTACTED])->count()
+            : 0;
+
+        return view('dashboard', [
+            'globalDashboard' => true,
+            'managers' => $managers,
+            'globalKpis' => [
+                ['label' => 'Clientes / gerentes', 'value' => $managers->count(), 'detail' => 'Cuentas gerenciales', 'icon' => 'users', 'tone' => 'blue'],
+                ['label' => 'Total de sedes', 'value' => $sites->count(), 'detail' => 'Empresas registradas', 'icon' => 'building', 'tone' => 'cyan'],
+                ['label' => 'Total de usuarios', 'value' => User::query()->count(), 'detail' => 'Cuentas del sistema', 'icon' => 'group', 'tone' => 'green'],
+                ['label' => 'Contactos pendientes', 'value' => $contactsPending, 'detail' => 'Requieren seguimiento', 'icon' => 'bell', 'tone' => 'orange'],
+                ['label' => 'Empresas activas', 'value' => $sites->filter(fn (Site $site): bool => $site->users->isNotEmpty())->count(), 'detail' => 'Con usuarios asignados', 'icon' => 'building', 'tone' => 'blue'],
+                ['label' => 'Usuarios activos', 'value' => Schema::hasColumn('usuarios', 'activo') ? User::query()->where('activo', true)->count() : User::query()->count(), 'detail' => 'Con acceso habilitado', 'icon' => 'activity', 'tone' => 'green'],
+            ],
+        ]);
+    }
+
+    private function tableCount(string $table, int $siteId): int
+    {
+        return Schema::hasTable($table) && Schema::hasColumn($table, 'id_sede')
+            ? DB::table($table)->where('id_sede', $siteId)->count()
+            : 0;
+    }
+
+    private function inventoryCount(int $siteId): int
+    {
+        foreach (['inventarios', 'inventario', 'existencias'] as $table) {
+            if (Schema::hasTable($table) && Schema::hasColumn($table, 'id_sede')) {
+                return DB::table($table)->where('id_sede', $siteId)->count();
+            }
+        }
+
+        return 0;
+    }
+
+    private function openIncidentCount(int $siteId): int
+    {
+        if (! Schema::hasTable('incidencias')) {
+            return 0;
+        }
+
+        return DB::table('incidencias')->where('id_sede', $siteId)
+            ->where(fn ($query) => $query->whereNull('estado')->orWhereRaw("LOWER(estado) NOT IN ('cerrada', 'cerrado', 'resuelta', 'resuelto')"))
+            ->count();
+    }
+
+    private function statusCount(string $table, int $siteId, array $statuses): int
+    {
+        if (! Schema::hasTable($table) || ! Schema::hasColumn($table, 'id_sede') || ! Schema::hasColumn($table, 'estado')) {
+            return 0;
+        }
+
+        return DB::table($table)->where('id_sede', $siteId)
+            ->whereIn(DB::raw('LOWER(estado)'), $statuses)->count();
+    }
+
+    private function employeeCount(int $siteId): int
+    {
+        if (! Schema::hasTable('empleados') || ! Schema::hasColumn('empleados', 'id_sede')) {
+            return 0;
+        }
+
+        return DB::table('empleados')->where('id_sede', $siteId)->distinct('id_usuario')->count('id_usuario');
+    }
+
+    private function lowStockCount(int $siteId): int
+    {
+        foreach (['insumo_sedes', 'inventarios_finales'] as $table) {
+            if (! Schema::hasTable($table) || ! Schema::hasColumn($table, 'id_sede')) {
+                continue;
+            }
+
+            $columns = Schema::getColumnListing($table);
+            $stock = collect(['existencia', 'existencias', 'stock', 'cantidad'])->first(fn (string $column): bool => in_array($column, $columns, true));
+            $reorder = collect(['punto_reorden', 'stock_minimo', 'minimo'])->first(fn (string $column): bool => in_array($column, $columns, true));
+            if ($stock && $reorder) {
+                return (int) DB::table($table)->where('id_sede', $siteId)->whereColumn($stock, '<=', $reorder)->count();
+            }
+        }
+
+        return 0;
+    }
+
+    private function recentRows(string $table, int $siteId, string $key): Collection
+    {
+        if (! Schema::hasTable($table) || ! Schema::hasColumn($table, 'id_sede')) {
+            return collect();
+        }
+
+        $columns = Schema::getColumnListing($table);
+        $date = collect(['fecha', 'fecha_pedido', 'created_at'])->first(fn (string $column): bool => in_array($column, $columns, true));
+        $select = [$key];
+        foreach (['proveedor', 'descripcion', 'estado', 'fecha', 'fecha_pedido', 'created_at'] as $column) {
+            if (in_array($column, $columns, true)) {
+                $select[] = $column;
+            }
+        }
+
+        return DB::table($table)->where('id_sede', $siteId)
+            ->when($date, fn ($query) => $query->orderByDesc($date))
+            ->limit(5)->get($select);
     }
 
     private function commonUserDashboard(Request $request): View

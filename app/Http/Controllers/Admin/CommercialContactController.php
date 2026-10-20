@@ -3,14 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\ManagerApprovalMail;
 use App\Models\CommercialContact;
 use App\Models\Role;
-use App\Models\Site;
 use App\Models\User;
 use App\Support\EmploymentRoles;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -30,7 +33,10 @@ class CommercialContactController extends Controller
             ->when($search, function ($query, string $search): void {
                 $query->where(function ($searchQuery) use ($search): void {
                     $searchQuery->where('nombre', 'like', "%{$search}%")
+                        ->orWhere('apellido_p', 'like', "%{$search}%")
+                        ->orWhere('apellido_m', 'like', "%{$search}%")
                         ->orWhere('correo', 'like', "%{$search}%")
+                        ->orWhere('empresa', 'like', "%{$search}%")
                         ->orWhere('mensaje', 'like', "%{$search}%");
                 });
             })
@@ -50,7 +56,7 @@ class CommercialContactController extends Controller
     public function show(CommercialContact $contact): View
     {
         return view('admin.contacts.show', [
-            'contact' => $contact->load('responder'),
+            'contact' => $contact->load(['responder', 'manager.sites']),
             'statuses' => CommercialContact::statuses(),
         ]);
     }
@@ -103,8 +109,8 @@ class CommercialContactController extends Controller
 
         return view('admin.contacts.convert', [
             'contact' => $contact,
-            'sites' => Site::query()->orderBy('nombre')->get(),
-            'managerDefaults' => $this->managerDefaults($contact->nombre),
+            'managerDefaults' => $this->managerDefaults($contact),
+            'temporaryPassword' => $this->generateTemporaryPassword(),
         ]);
     }
 
@@ -119,9 +125,6 @@ class CommercialContactController extends Controller
         }
 
         $request->merge([
-            'sede_nombre' => $this->singleLine($request->input('sede_nombre')),
-            'sede_direccion' => $this->singleLine($request->input('sede_direccion')),
-            'sede_telefono' => $this->singleLine($request->input('sede_telefono')),
             'gerente_nombre' => $this->singleLine($request->input('gerente_nombre')),
             'gerente_apellido_p' => $this->singleLine($request->input('gerente_apellido_p')),
             'gerente_apellido_m' => $this->singleLine($request->input('gerente_apellido_m')),
@@ -131,17 +134,11 @@ class CommercialContactController extends Controller
         ]);
 
         $data = $request->validate([
-            'site_mode' => ['required', Rule::in(['existing', 'new'])],
-            'id_sede' => [Rule::requiredIf(fn (): bool => $request->input('site_mode') === 'existing'), 'nullable', 'integer', 'exists:sedes,id_sede'],
-            'sede_nombre' => [Rule::requiredIf(fn (): bool => $request->input('site_mode') === 'new'), 'nullable', 'string', 'max:100'],
-            'sede_direccion' => ['nullable', 'string', 'max:255'],
-            'sede_telefono' => ['nullable', 'string', 'max:20', 'regex:/^[0-9+\s().-]{7,20}$/'],
-            'sede_capacidad' => ['nullable', 'integer', 'min:0', 'max:10000000'],
             'gerente_nombre' => ['required', 'string', 'max:100'],
             'gerente_apellido_p' => ['required', 'string', 'max:100'],
             'gerente_apellido_m' => ['nullable', 'string', 'max:100'],
             'gerente_correo' => ['required', 'email:rfc', 'max:150', Rule::unique('usuarios', 'correo')],
-            'gerente_password' => ['required', 'string', 'min:8', 'max:255'],
+            'gerente_password' => ['required', 'string', 'min:12', 'max:255'],
         ], [
             'id_sede.required' => 'Selecciona la sede existente.',
             'sede_nombre.required' => 'Indica el nombre de la nueva sede.',
@@ -149,7 +146,7 @@ class CommercialContactController extends Controller
             'gerente_correo.unique' => 'Ya existe un usuario con ese correo.',
         ]);
 
-        [$site, $manager] = DB::transaction(function () use ($data, $contact, $request): array {
+        $manager = DB::transaction(function () use ($data, $contact, $request): User {
             $lockedContact = CommercialContact::query()
                 ->whereKey($contact->getKey())
                 ->lockForUpdate()
@@ -174,21 +171,19 @@ class CommercialContactController extends Controller
                 ]);
             }
 
-            $site = $data['site_mode'] === 'existing'
-                ? Site::query()->whereKey($data['id_sede'])->lockForUpdate()->firstOrFail()
-                : $this->createSite($data);
-
             $manager = User::create([
                 'nombre' => $data['gerente_nombre'],
                 'apellido_p' => $data['gerente_apellido_p'],
                 'apellido_m' => $data['gerente_apellido_m'] ?? null,
                 'correo' => $data['gerente_correo'],
-                'password' => $data['gerente_password'],
+                'password' => Hash::make($data['gerente_password']),
+                'temporary_password_expires_at' => now()->addMinutes(30),
+                'temporary_password_used_at' => null,
             ]);
 
             DB::table('usuario_sede')->insert([
                 'id_usuario' => (int) $manager->getKey(),
-                'id_sede' => (int) $site->getKey(),
+                'id_sede' => null,
                 'id_rol' => (int) $managerRole->getKey(),
             ]);
 
@@ -197,25 +192,59 @@ class CommercialContactController extends Controller
             $lockedContact->id_superadmin_responde = (int) $request->user()->getKey();
             $lockedContact->save();
 
-            return [$site, $manager];
+            return $manager;
         }, 3);
 
+        try {
+            $this->sendApprovalEmail($contact, $manager, $data['gerente_password']);
+        } catch (\Throwable $exception) {
+            $this->logActivationEmailFailure($contact, $manager, $exception);
+            return redirect()->route('admin.contacts.show', $contact)
+                ->withErrors(['conversion' => 'La cuenta fue creada, pero no fue posible enviar el correo de activación.']);
+        }
+
         return redirect()->route('admin.contacts.show', $contact)
-            ->with('status', "Contacto aprobado. Se asignó {$manager->correo} como Gerente de {$site->nombre}.");
+            ->with('status', "Contacto aprobado. Se creó la cuenta {$manager->correo} y se envió el correo de activación.");
     }
 
-    private function createSite(array $data): Site
+    public function resendActivation(CommercialContact $contact): RedirectResponse
     {
-        return Site::create([
-            'nombre' => $data['sede_nombre'],
-            'direccion' => $data['sede_direccion'] ?? null,
-            'telefono' => $data['sede_telefono'] ?? null,
-            'capacidad' => isset($data['sede_capacidad']) ? (int) $data['sede_capacidad'] : null,
-        ]);
+        if ($contact->estado !== CommercialContact::STATUS_APPROVED) {
+            return back()->withErrors(['conversion' => 'Solo puedes reenviar activación después de aprobar el contacto.']);
+        }
+
+        $manager = User::query()->where('correo', $contact->correo)->first();
+        if (! $manager || ! $manager->isManager()) {
+            return back()->withErrors(['conversion' => 'No existe una cuenta de gerente asociada a este contacto.']);
+        }
+
+        try {
+            $temporaryPassword = $this->generateTemporaryPassword();
+            $manager->password = Hash::make($temporaryPassword);
+            $manager->temporary_password_expires_at = now()->addMinutes(30);
+            $manager->temporary_password_used_at = null;
+            $manager->save();
+            $this->sendApprovalEmail($contact, $manager, $temporaryPassword);
+        } catch (\Throwable $exception) {
+            $this->logActivationEmailFailure($contact, $manager, $exception);
+
+            return back()->withErrors(['conversion' => 'No fue posible reenviar el correo de activación.']);
+        }
+
+        return back()->with('status', 'El correo de activación fue reenviado correctamente.');
     }
 
-    private function managerDefaults(string $fullName): array
+    private function managerDefaults(CommercialContact $contact): array
     {
+        if (filled($contact->apellido_p)) {
+            return [
+                'nombre' => $contact->nombre,
+                'apellido_p' => $contact->apellido_p,
+                'apellido_m' => $contact->apellido_m ?? '',
+            ];
+        }
+
+        $fullName = $contact->nombre;
         $parts = preg_split('/\s+/u', trim($fullName), -1, PREG_SPLIT_NO_EMPTY) ?: [];
 
         if (count($parts) <= 1) {
@@ -251,5 +280,37 @@ class CommercialContactController extends Controller
         $value = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $value) ?? $value;
 
         return trim(preg_replace("/\R{3,}/u", PHP_EOL.PHP_EOL, $value) ?? $value);
+    }
+
+    private function generateTemporaryPassword(): string
+    {
+        $groups = ['ABCDEFGHJKLMNPQRSTUVWXYZ', 'abcdefghijkmnopqrstuvwxyz', '23456789', '!@#$%&*+-_?'];
+        $allCharacters = implode('', $groups);
+        $characters = array_map(fn (string $group): string => $group[random_int(0, strlen($group) - 1)], $groups);
+
+        while (count($characters) < 12) {
+            $characters[] = $allCharacters[random_int(0, strlen($allCharacters) - 1)];
+        }
+
+        for ($index = count($characters) - 1; $index > 0; $index--) {
+            $swapIndex = random_int(0, $index);
+            [$characters[$index], $characters[$swapIndex]] = [$characters[$swapIndex], $characters[$index]];
+        }
+
+        return implode('', $characters);
+    }
+
+    private function sendApprovalEmail(CommercialContact $contact, User $manager, string $temporaryPassword): void
+    {
+        Mail::to($manager->correo)->send(new ManagerApprovalMail($contact->fresh(), $temporaryPassword));
+    }
+
+    private function logActivationEmailFailure(CommercialContact $contact, User $manager, \Throwable $exception): void
+    {
+        Log::error('No fue posible enviar el correo de aprobación del gerente.', [
+            'contact_id' => $contact->getKey(),
+            'user_id' => $manager->getKey(),
+            'exception_type' => $exception::class,
+        ]);
     }
 }

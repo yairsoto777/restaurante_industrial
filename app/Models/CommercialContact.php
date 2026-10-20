@@ -23,7 +23,12 @@ class CommercialContact extends Model
 
     protected $fillable = [
         'nombre',
+        'apellido_p',
+        'apellido_m',
         'correo',
+        'empresa',
+        'preferencia',
+        'telefono',
         'mensaje',
         'estado',
         'fecha_contacto',
@@ -55,8 +60,22 @@ class CommercialContact extends Model
         return self::statuses()[$this->estado] ?? ucfirst(str_replace('_', ' ', (string) $this->estado));
     }
 
+    public function fullName(): string
+    {
+        return implode(' ', array_filter([
+            $this->nombre,
+            $this->apellido_p,
+            $this->apellido_m,
+        ], fn (mixed $value): bool => filled($value)));
+    }
+
     public function responder(): BelongsTo
     {
         return $this->belongsTo(User::class, 'id_superadmin_responde', 'id_usuario');
+    }
+
+    public function manager(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'correo', 'correo');
     }
 }

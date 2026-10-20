@@ -1,9 +1,37 @@
 @extends('layouts.app')
 @section('title', 'Panel principal')
 @section('content')
+@if($globalDashboard ?? false)
+<div class="dashboard-heading">
+    <div><span class="section-kicker">Administración global</span><h1>Dashboard global</h1><p>Consulta clientes, gerentes y el estado general de la plataforma sin intervenir en la operación diaria.</p></div>
+    <a class="button primary" href="{{ route('admin.users.create') }}">Crear gerente</a>
+</div>
+<section class="kpi-grid" aria-label="Indicadores globales">
+    @foreach($globalKpis as $kpi)
+        <article class="kpi-card"><div class="kpi-icon {{ $kpi['tone'] }}"><x-icon :name="$kpi['icon']"/></div><div class="kpi-copy"><span>{{ $kpi['label'] }}</span><strong>{{ number_format($kpi['value']) }}</strong><small>{{ $kpi['detail'] }}</small></div></article>
+    @endforeach
+</section>
+<section class="panel">
+    <div class="panel-head"><div><span class="section-kicker">Directorio</span><h2>Clientes / Gerentes</h2><p>Responsables y empresas bajo administración global.</p></div><a href="{{ route('admin.users.index') }}">Administrar gerentes</a></div>
+    <div class="table-wrap"><table><thead><tr><th>Gerente</th><th>Correo</th><th>Empresa / sede</th><th>Estado</th><th>Empleados</th><th>Rol</th><th>Acción</th></tr></thead><tbody>
+    @forelse($managers as $manager)
+        @php($site = $manager->sites->first())
+        @php($employeeCount = $site ? $site->users->reject(fn($user) => $user->isManager() || $user->isSuperAdministrator())->count() : 0)
+        <tr><td><strong>{{ $manager->name }}</strong></td><td>{{ $manager->correo }}</td><td>{{ $site?->nombre ?? 'Pendiente de configuración' }}</td><td><span class="badge">{{ $site ? 'Activo' : 'Configuración pendiente' }}</span></td><td>{{ $employeeCount }}</td><td>{{ $manager->roleLabel() }}</td><td>@if($site)<a class="button" href="{{ route('admin.companies.show', $site) }}">Ver empresa</a>@else<span>Sin empresa</span>@endif</td></tr>
+    @empty<tr><td colspan="7">No hay gerentes registrados.</td></tr>@endforelse
+    </tbody></table></div>
+</section>
+@else
 <div class="dashboard-heading">
     <div><span class="section-kicker">Resumen operativo</span><h1>Buen día, {{ auth()->user()->nombre ?: auth()->user()->name }}</h1><p>Aquí tienes un resumen de la operación de {{ $currentSite?->nombre ?? 'las sedes disponibles' }}.</p></div>
-    <div class="current-date"><x-icon name="calendar"/><div><small>Fecha actual</small><strong>{{ now()->format('d/m/Y') }}</strong></div></div>
+    <div style="display:flex;align-items:center;gap:16px">
+        @if($siteLogoUrl)
+            <img src="{{ $siteLogoUrl }}" alt="Logo de {{ $currentSite?->nombre }}" style="width:64px;height:64px;object-fit:contain;border-radius:12px">
+        @else
+            <div class="kpi-icon blue" aria-hidden="true"><x-icon name="building"/></div>
+        @endif
+        <div class="current-date"><x-icon name="calendar"/><div><small>Fecha actual</small><strong>{{ now()->format('d/m/Y') }}</strong></div></div>
+    </div>
 </div>
 
 @if(!$currentSite)
@@ -78,4 +106,23 @@
         @endif
     </section>
 </div>
+<div class="dashboard-grid">
+    <section class="dashboard-card">
+        <div class="card-heading"><div><span class="section-kicker">Seguimiento</span><h2>Pedidos recientes</h2></div></div>
+        @forelse($recentOrders as $order)
+            <div class="service-row"><div class="service-name"><strong>{{ $order->proveedor ?? 'Pedido #'.$order->id_pedido }}</strong><span>{{ $order->fecha_pedido ?? $order->fecha ?? $order->created_at ?? 'Sin fecha' }}</span></div><span class="service-status scheduled">{{ $order->estado ?? 'Registrado' }}</span></div>
+        @empty
+            <div class="inline-empty"><x-icon name="box"/><p>Sin pedidos recientes.</p></div>
+        @endforelse
+    </section>
+    <section class="dashboard-card">
+        <div class="card-heading"><div><span class="section-kicker">Atención</span><h2>Incidencias recientes</h2></div></div>
+        @forelse($recentIncidents as $incident)
+            <div class="service-row"><div class="service-name"><strong>{{ \Illuminate\Support\Str::limit($incident->descripcion ?? 'Incidencia #'.$incident->id_incidencia, 65) }}</strong><span>{{ $incident->fecha ?? 'Sin fecha' }}</span></div><span class="service-status scheduled">{{ $incident->estado ?? 'Abierta' }}</span></div>
+        @empty
+            <div class="inline-empty"><x-icon name="alert"/><p>Sin incidencias recientes.</p></div>
+        @endforelse
+    </section>
+</div>
+@endif
 @endsection

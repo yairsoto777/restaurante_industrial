@@ -115,6 +115,16 @@ class RoleAccessTest extends TestCase
         $this->assertDatabaseMissing('usuarios', ['correo' => 'otro-super@example.com']);
     }
 
+    public function test_super_administrator_cannot_enter_operational_routes(): void
+    {
+        $superAdmin = $this->createUser('Super Administrador', 3, 1);
+
+        $this->actingAs($superAdmin)->get(route('inventory.index'))->assertForbidden();
+        $this->actingAs($superAdmin)->get(route('services.index'))->assertForbidden();
+        $this->actingAs($superAdmin)->get(route('cash.index'))->assertForbidden();
+        $this->actingAs($superAdmin)->get(route('kitchen.index'))->assertForbidden();
+    }
+
     private function createUser(string $role, int $roleId, int $siteId): User
     {
         static $sequence = 0;

@@ -42,7 +42,10 @@
     </label>
     <label>
         Contraseña temporal
-        <input type="password" name="password" minlength="8" maxlength="255" autocomplete="new-password" {{ $isEditing ? '' : 'required' }}>
+        <span style="display:block;position:relative">
+            <input type="password" name="password" minlength="8" maxlength="255" autocomplete="new-password" style="padding-right:42px" {{ $isEditing ? '' : 'required' }}>
+            <button type="button" data-toggle-password="password" aria-label="Mostrar contraseña" aria-pressed="false" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:transparent;padding:6px;line-height:1;cursor:pointer;color:inherit">◉</button>
+        </span>
         <small>{{ $isEditing ? 'Déjala vacía para conservar la contraseña actual.' : 'Mínimo 8 caracteres; compártela por un medio seguro.' }}</small>
     </label>
     <label>
@@ -57,10 +60,6 @@
         </select>
     </label>
     <label class="full">
-        Puesto
-        <input name="puesto" value="{{ old('puesto', $positionName) }}" maxlength="100" placeholder="Ej. Mesero de turno matutino" required>
-    </label>
-    <label class="full">
         Sede
         <input value="{{ $currentSite->nombre }}" disabled>
         <small>La sede se determina con tu contexto actual y no puede cambiarse desde este formulario.</small>
@@ -71,4 +70,15 @@
         <button class="button primary" type="submit">{{ $isEditing ? 'Guardar cambios' : 'Registrar empleado' }}</button>
     </div>
 </form>
+<script>
+document.querySelectorAll('[data-toggle-password]').forEach((button) => button.addEventListener('click', (event) => {
+    const toggle = event.currentTarget;
+    const input = toggle.previousElementSibling;
+    const visible = input.type === 'password';
+    input.type = visible ? 'text' : 'password';
+    toggle.textContent = visible ? '○' : '◉';
+    toggle.setAttribute('aria-label', visible ? 'Ocultar contraseña' : 'Mostrar contraseña');
+    toggle.setAttribute('aria-pressed', String(visible));
+}));
+</script>
 @endsection

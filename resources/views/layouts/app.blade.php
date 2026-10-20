@@ -12,7 +12,12 @@
     $authenticatedUser = auth()->user();
     $isCommonUser = $authenticatedUser->isCommonUser();
     $isManager = $authenticatedUser->isManager();
+    $isSuperAdministrator = $authenticatedUser->isSuperAdministrator();
     $canAdminister = $authenticatedUser->canAdminister();
+    $isKitchen = $authenticatedUser->hasRole('Personal de cocina') || $authenticatedUser->hasRole('Jefe de cocina');
+    $isWarehouse = $authenticatedUser->hasRole('Recepcion de insumos') || $authenticatedUser->hasRole('Jefe de almacen');
+    $isService = $authenticatedUser->hasRole('Mesero') || $authenticatedUser->hasRole('Capitan de meseros');
+    $isCashier = $authenticatedUser->hasRole('Cajero');
 @endphp
 <div class="app-shell" data-app-shell>
     <aside class="app-sidebar" id="app-sidebar">
@@ -22,7 +27,17 @@
                 <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}"><x-icon name="home"/><b>Panel principal</b></a>
             </div>
 
-            @if($isCommonUser)
+            @if($isSuperAdministrator)
+            <div class="nav-section"><span>Administración</span>
+                <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}"><x-icon name="users"/><b>Clientes / Gerentes</b></a>
+                <a class="nav-link {{ request()->routeIs('admin.sites.*', 'admin.companies.*') ? 'active' : '' }}" href="{{ route('admin.sites.index') }}"><x-icon name="building"/><b>Gestión de sedes</b></a>
+                <a class="nav-link {{ request()->routeIs('admin.contacts.*') ? 'active' : '' }}" href="{{ route('admin.contacts.index') }}"><x-icon name="layers"/><b>Contactos</b></a>
+            </div>
+            <div class="nav-section"><span>Supervisión</span>
+                <a class="nav-link {{ request()->routeIs('admin.settings') ? 'active' : '' }}" href="{{ route('admin.settings') }}"><x-icon name="activity"/><b>Bitácora</b></a>
+                <a class="nav-link" href="{{ route('dashboard') }}#reportes-globales"><x-icon name="chart"/><b>Reportes globales</b></a>
+            </div>
+            @elseif($isCommonUser)
             <div class="nav-section"><span>Oportunidades</span>
                 <a class="nav-link {{ request()->routeIs('user.services.*') ? 'active' : '' }}" href="{{ route('user.services.index') }}"><x-icon name="calendar"/><b>Servicios disponibles</b></a>
                 <a class="nav-link {{ request()->routeIs('user.applications.create') ? 'active' : '' }}" href="{{ route('user.applications.create') }}"><x-icon name="group"/><b>Solicitar puesto</b></a>
@@ -30,7 +45,11 @@
             </div>
             @else
             <div class="nav-section"><span>Administración</span>
-                <a class="nav-link {{ request()->routeIs('sites.select*', 'manager.sites') ? 'active' : '' }}" href="{{ route('sites.select') }}"><x-icon name="building"/><b>Selección de sede</b></a>
+                @if($isManager)
+                    <a class="nav-link {{ request()->routeIs('manager.sites*') ? 'active' : '' }}" href="{{ route('manager.sites') }}"><x-icon name="building"/><b>Gestión de sede</b></a>
+                @else
+                    <a class="nav-link {{ request()->routeIs('sites.select*') ? 'active' : '' }}" href="{{ route('sites.select') }}"><x-icon name="building"/><b>Selección de sede</b></a>
+                @endif
                 @if($canAdminister)
                     <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}"><x-icon name="users"/><b>Usuarios y permisos</b></a>
                     <a class="nav-link {{ request()->routeIs('admin.sites.*') ? 'active' : '' }}" href="{{ route('admin.sites.index') }}"><x-icon name="building"/><b>Gestión de sedes</b></a>
@@ -47,18 +66,32 @@
             </div>
             @endif
 
-            @if($canAdminister || $isManager)
+            @if(($canAdminister || $isManager) && !$isSuperAdministrator)
             <div class="nav-section"><span>Recepción / Inventario</span>
                 <a class="nav-link {{ request()->routeIs('receptions.*') ? 'active' : '' }}" href="{{ route('receptions.index') }}"><x-icon name="box"/><b>Recepción de insumos</b></a>
-                @if($canAdminister)<a class="nav-link {{ request()->routeIs('inventory.*') ? 'active' : '' }}" href="{{ route('inventory.index') }}"><x-icon name="warehouse"/><b>Inventario de insumos</b></a>@endif
+                <a class="nav-link {{ request()->routeIs('inventory.*') ? 'active' : '' }}" href="{{ route('inventory.index') }}"><x-icon name="warehouse"/><b>Inventario de insumos</b></a>
             </div>
             <div class="nav-section"><span>Servicios</span>
                 <a class="nav-link {{ request()->routeIs('services.index') ? 'active' : '' }}" href="{{ route('services.index') }}"><x-icon name="calendar"/><b>Gestión de servicios</b></a>
                 <a class="nav-link {{ request()->routeIs('services.live') ? 'active' : '' }}" href="{{ route('services.live') }}"><x-icon name="activity"/><b>Servicio en vivo</b></a>
             </div>
             @endif
+            @if(!$isSuperAdministrator && !$isManager && !$canAdminister && !$isCommonUser)
+            <div class="nav-section"><span>Mi operación</span>
+                @if($isWarehouse)<a class="nav-link {{ request()->routeIs('receptions.*') ? 'active' : '' }}" href="{{ route('receptions.index') }}"><x-icon name="box"/><b>Recepción</b></a>@endif
+                @if($isWarehouse || $isKitchen)<a class="nav-link {{ request()->routeIs('inventory.*') ? 'active' : '' }}" href="{{ route('inventory.index') }}"><x-icon name="warehouse"/><b>Inventario</b></a>@endif
+                @if($isKitchen || $isService)<a class="nav-link {{ request()->routeIs('services.*') ? 'active' : '' }}" href="{{ route('services.index') }}"><x-icon name="calendar"/><b>Servicios</b></a>@endif
+                @if($isKitchen)<a class="nav-link {{ request()->routeIs('groups.*') ? 'active' : '' }}" href="{{ route('groups.index') }}"><x-icon name="group"/><b>Grupos y entregas</b></a>@endif
+                @if($isKitchen)<a class="nav-link {{ request()->routeIs('menus.*') ? 'active' : '' }}" href="{{ route('menus.index') }}"><x-icon name="utensils"/><b>Menú / platillos</b></a>@endif
+                @if($isService)<a class="nav-link {{ request()->routeIs('tables.*') ? 'active' : '' }}" href="{{ route('tables.index') }}"><x-icon name="map"/><b>Mesas y zonas</b></a>@endif
+                @if($isWarehouse)<a class="nav-link {{ request()->routeIs('orders.*') ? 'active' : '' }}" href="{{ route('orders.index') }}"><x-icon name="box"/><b>Pedidos</b></a>@endif
+                @if($isCashier)<a class="nav-link {{ request()->routeIs('cash.*') ? 'active' : '' }}" href="{{ route('cash.index') }}"><x-icon name="cash"/><b>Caja</b></a>@endif
+                @if($isKitchen)<a class="nav-link {{ request()->routeIs('kitchen.*') ? 'active' : '' }}" href="{{ route('kitchen.index') }}"><x-icon name="dish"/><b>Operación de cocina</b></a>@endif
+                <a class="nav-link {{ request()->routeIs('incidents.*') ? 'active' : '' }}" href="{{ route('incidents.index') }}"><x-icon name="alert"/><b>Incidencias</b></a>
+            </div>
+            @endif
 
-            @if($canAdminister)
+            @if(($canAdminister || $isManager) && !$isSuperAdministrator)
             <div class="nav-section"><span>Operación</span>
                 <a class="nav-link {{ request()->routeIs('tables.*') ? 'active' : '' }}" href="{{ route('tables.index') }}"><x-icon name="map"/><b>Mesas y zonas</b></a>
                 <a class="nav-link {{ request()->routeIs('groups.*') ? 'active' : '' }}" href="{{ route('groups.index') }}"><x-icon name="group"/><b>Grupos y entregas</b></a>
@@ -69,9 +102,13 @@
             </div>
             <div class="nav-section"><span>Control</span>
                 <a class="nav-link {{ request()->routeIs('incidents.*') ? 'active' : '' }}" href="{{ route('incidents.index') }}"><x-icon name="alert"/><b>Incidencias</b></a>
+                <a class="nav-link {{ request()->routeIs('orders.*') ? 'active' : '' }}" href="{{ route('orders.index') }}"><x-icon name="box"/><b>Pedidos</b></a>
+                <a class="nav-link {{ request()->routeIs('requisitions.*') ? 'active' : '' }}" href="{{ route('requisitions.index') }}"><x-icon name="layers"/><b>Requisiciones</b></a>
+                <a class="nav-link {{ request()->routeIs('cash.*') ? 'active' : '' }}" href="{{ route('cash.index') }}"><x-icon name="cash"/><b>Caja</b></a>
+                <a class="nav-link {{ request()->routeIs('kitchen.*') ? 'active' : '' }}" href="{{ route('kitchen.index') }}"><x-icon name="dish"/><b>Operación de cocina</b></a>
             </div>
             @endif
-            @if($canAdminister || $isManager)
+            @if(($canAdminister || $isManager) && !$isSuperAdministrator)
             <div class="nav-section"><span>Reportes</span>
                 <a class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}" href="{{ route('reports.index') }}"><x-icon name="chart"/><b>Reportes</b></a>
             </div>
@@ -85,7 +122,9 @@
         <header class="topbar">
             <div class="topbar-left">
                 <button class="mobile-menu" type="button" data-sidebar-toggle aria-controls="app-sidebar" aria-label="Abrir menú"><span></span><span></span><span></span></button>
-                @if($isCommonUser)
+                @if($isSuperAdministrator)
+                <div class="site-context-note"><x-icon name="building"/><div><small>Contexto</small><strong>Administración global</strong></div></div>
+                @elseif($isCommonUser)
                 <div class="site-context-note"><x-icon name="group"/><div><small>Estado de cuenta</small><strong>Sin puesto operativo asignado</strong></div></div>
                 @else
                 <form method="POST" action="{{ route('sites.select.update') }}" class="site-selector">@csrf

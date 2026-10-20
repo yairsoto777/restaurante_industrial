@@ -319,3 +319,8 @@ textarea{width:100%;padding:9px 11px;border:1px solid #d5deea;border-radius:8px;
     .public-page *,.public-page *:before,.public-page *:after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}
     .public-feature-card:hover,.public-button:hover{transform:none}
 }
+
+.company-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin-bottom:20px}
+.company-summary>div{display:grid;gap:5px;padding-right:20px;border-right:1px solid var(--border,#e3e9f0)}
+.company-summary>div:last-child{border-right:0}.company-summary small,.company-summary span{color:#718096}.company-summary strong{font-size:18px}
+@media(max-width:760px){.company-summary{grid-template-columns:1fr}.company-summary>div{padding:0 0 16px;border-right:0;border-bottom:1px solid var(--border,#e3e9f0)}.company-summary>div:last-child{border-bottom:0}}

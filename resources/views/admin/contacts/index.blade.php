@@ -15,7 +15,7 @@
     <form class="form-grid" method="GET" action="{{ route('admin.contacts.index') }}">
         <label>
             Buscar
-            <input name="buscar" value="{{ request('buscar') }}" maxlength="100" placeholder="Nombre, correo o mensaje">
+            <input name="buscar" value="{{ request('buscar') }}" maxlength="100" placeholder="Nombre, empresa, correo o mensaje">
         </label>
         <label>
             Estado
@@ -50,7 +50,7 @@
             @forelse($contacts as $contact)
                 @php($statusClass = \Illuminate\Support\Str::slug($contact->estado ?: 'nuevo'))
                 <tr>
-                    <td><strong>{{ $contact->nombre }}</strong></td>
+                    <td><strong>{{ $contact->fullName() }}</strong></td>
                     <td>{{ $contact->correo }}</td>
                     <td class="message-cell">{{ \Illuminate\Support\Str::limit($contact->mensaje, 100) }}</td>
                     <td>{{ $contact->fecha_contacto?->format('d/m/Y H:i') ?? 'Sin fecha' }}</td>

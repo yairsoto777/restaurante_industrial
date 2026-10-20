@@ -8,6 +8,7 @@ export default defineConfig({
         laravel({
             input: [
                 'resources/css/app.css',
+                'resources/css/nutriliado-login.css',
                 'resources/css/nutriliado-public.css',
                 'resources/js/app.js',
             ],

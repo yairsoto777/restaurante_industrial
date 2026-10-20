@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\Site;
 use App\Models\User;
+use App\Support\EmploymentRoles;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +18,15 @@ class UserController extends Controller
 {
     public function index(): View
     {
-        return view('admin.users.index', ['users' => User::with(['sites', 'roles'])->orderBy('nombre')->paginate(15)]);
+        $roleNames = Role::query()->get()
+            ->filter(fn (Role $role): bool => EmploymentRoles::isManager($role->nombre) || in_array($role->nombre, ['Administrador', 'Super Administrador', 'Superadministrador'], true))
+            ->pluck('nombre');
+
+        return view('admin.users.index', [
+            'users' => User::with(['sites', 'roles'])
+                ->whereHas('roles', fn ($query) => $query->whereIn('roles.nombre', $roleNames))
+                ->orderBy('nombre')->paginate(15),
+        ]);
     }
 
     public function create(): View
@@ -127,13 +136,17 @@ class UserController extends Controller
 
     private function assignableRoles(User $actor)
     {
-        return Role::query()->whereIn('nombre', $this->assignableRoleNames($actor))->orderBy('nombre')->get();
+        return Role::query()->get()
+            ->filter(fn (Role $role): bool => EmploymentRoles::isManager($role->nombre) || $role->nombre === 'Administrador')
+            ->sortBy('nombre')
+            ->values();
     }
 
     private function assignableRoleNames(User $actor, ?User $target = null): array
     {
-        return $actor->isSuperAdministrator() && $target?->isSuperAdministrator()
-            ? ['Super Administrador', 'Administrador', 'Gerente']
-            : ['Administrador', 'Gerente'];
+        return Role::query()->get()
+            ->filter(fn (Role $role): bool => EmploymentRoles::isManager($role->nombre) || $role->nombre === 'Administrador')
+            ->pluck('nombre')
+            ->all();
     }
 }

@@ -26,8 +26,20 @@ Route::middleware('guest')->group(function () {
     Route::post('/forgot-password', [AuthController::class, 'sendTemporaryPassword'])
         ->middleware('throttle:5,1')
         ->name('password.send-temporary');
+    Route::get('/activar-cuenta/{token}', [AuthController::class, 'showActivation'])->name('password.activation');
+    Route::post('/activar-cuenta', [AuthController::class, 'activate'])
+        ->middleware('throttle:5,1')
+        ->name('password.activation.store');
+    Route::get('/restablecer-contrasena/{token}', [AuthController::class, 'showActivation'])->name('password.reset');
+    Route::post('/restablecer-contrasena', [AuthController::class, 'activate'])
+        ->middleware('throttle:5,1')
+        ->name('password.reset.store');
 });
 Route::post('/logout', [AuthController::class, 'destroy'])->middleware('auth')->name('logout');
+Route::middleware('auth')->group(function () {
+    Route::get('/cambiar-contrasena', [AuthController::class, 'showChangePassword'])->name('password.change');
+    Route::post('/cambiar-contrasena', [AuthController::class, 'changePassword'])->middleware('throttle:5,1')->name('password.change.store');
+});
 
 Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
@@ -44,30 +56,46 @@ Route::middleware(['auth', 'active'])->group(function () {
         });
     });
 
-    Route::middleware('role:super-administrator,administrator,manager')->group(function () {
+    Route::middleware('role:administrator,manager,Recepcion de insumos,Jefe de almacen')->group(function () {
         Route::get('/recepciones', [OperationalModuleController::class, 'show'])->name('receptions.index');
+    });
+    Route::middleware('role:administrator,manager,Personal de cocina,Jefe de cocina,Mesero,Capitan de meseros')->group(function () {
         Route::get('/servicios', [OperationalModuleController::class, 'show'])->name('services.index');
         Route::get('/servicios/en-vivo', [OperationalModuleController::class, 'show'])->name('services.live');
-        Route::get('/reportes', [OperationalModuleController::class, 'show'])->name('reports.index');
     });
+    Route::middleware('role:administrator,manager,Jefe de cocina,Jefe de almacen,Capitan de meseros')->get('/reportes', [OperationalModuleController::class, 'show'])->name('reports.index');
 
-    Route::middleware('role:super-administrator,administrator')->group(function () {
+    Route::middleware('role:administrator,manager,Personal de cocina,Jefe de cocina,Recepcion de insumos,Jefe de almacen')->group(function () {
         Route::get('/inventario', [OperationalModuleController::class, 'show'])->name('inventory.index');
+    });
+    Route::middleware('role:administrator,manager,Personal de cocina,Mesero,Capitan de meseros')->group(function () {
         Route::get('/mesas-y-zonas', [OperationalModuleController::class, 'show'])->name('tables.index');
         Route::get('/grupos-y-entregas', [OperationalModuleController::class, 'show'])->name('groups.index');
+    });
+    Route::middleware('role:administrator,manager,Personal de cocina,Jefe de cocina')->group(function () {
         Route::get('/menus', [OperationalModuleController::class, 'show'])->name('menus.index');
         Route::get('/platillos', [OperationalModuleController::class, 'show'])->name('dishes.index');
+    });
+    Route::middleware('role:administrator,manager,Personal de cocina,Jefe de cocina,Recepcion de insumos,Jefe de almacen,Mesero,Capitan de meseros,Cajero')->group(function () {
         Route::get('/incidencias', [OperationalModuleController::class, 'show'])->name('incidents.index');
     });
+    Route::middleware('role:administrator,manager,Jefe de almacen')->get('/pedidos', [OperationalModuleController::class, 'show'])->name('orders.index');
+    Route::middleware('role:administrator,manager,Jefe de cocina,Jefe de almacen')->get('/requisiciones', [OperationalModuleController::class, 'show'])->name('requisitions.index');
+    Route::middleware('role:administrator,manager,Cajero')->get('/caja', [OperationalModuleController::class, 'show'])->name('cash.index');
+    Route::middleware('role:administrator,manager,Jefe de cocina')->get('/cocina', [OperationalModuleController::class, 'show'])->name('kitchen.index');
 
     Route::prefix('administracion')->name('admin.')->middleware('role:super-administrator,administrator')->group(function () {
         Route::patch('usuarios/{user}/hacer-administrador', [UserController::class, 'promote'])->name('users.promote');
         Route::patch('usuarios/{user}/hacer-gerente', [UserController::class, 'demote'])->name('users.demote');
         Route::resource('usuarios', UserController::class)->parameters(['usuarios' => 'user'])->except('show')->names('users');
         Route::get('sedes', [SiteController::class, 'index'])->name('sites.index');
+        Route::view('configuracion', 'admin.settings')->name('settings');
+        Route::get('empresas/{site}', [DashboardController::class, 'company'])->name('companies.show');
+    });
+
+    Route::prefix('administracion')->name('admin.')->middleware('role:administrator')->group(function () {
         Route::post('sedes', [SiteController::class, 'store'])->name('sites.store');
         Route::put('sedes/{site}', [SiteController::class, 'update'])->name('sites.update');
-        Route::view('configuracion', 'admin.settings')->name('settings');
     });
 
     Route::prefix('administracion')->name('admin.')->middleware('role:super-administrator')->group(function () {
@@ -76,10 +104,12 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::patch('contactos/{contact}', [CommercialContactController::class, 'update'])->name('contacts.update');
         Route::get('contactos/{contact}/convertir', [CommercialContactController::class, 'createConversion'])->name('contacts.convert.create');
         Route::post('contactos/{contact}/convertir', [CommercialContactController::class, 'convert'])->name('contacts.convert.store');
+        Route::post('contactos/{contact}/reenviar-activacion', [CommercialContactController::class, 'resendActivation'])->name('contacts.activation.resend');
     });
 
     Route::prefix('operacion')->name('manager.')->middleware('role:manager')->group(function () {
         Route::get('sedes', [ModuleController::class, 'sites'])->name('sites');
+        Route::post('sedes', [ModuleController::class, 'saveSite'])->name('sites.save');
         Route::resource('empleados', EmployeeController::class)
             ->parameters(['empleados' => 'employee'])
             ->except(['show', 'destroy'])

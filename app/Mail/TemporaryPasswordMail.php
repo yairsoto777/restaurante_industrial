@@ -19,7 +19,7 @@ class TemporaryPasswordMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'Recuperación de contraseña');
+        return new Envelope(subject: 'Recuperación de acceso | Gestión Industrial');
     }
 
     public function content(): Content
