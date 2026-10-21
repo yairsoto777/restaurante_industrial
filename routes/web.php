@@ -21,6 +21,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PublicContactController::class, 'index'])->name('home');
 Route::get('/empresas/{slug}', [PublicSiteController::class, 'show'])->name('sites.public');
+Route::get('/operacion/mi-pagina-web/preview/{slug}', [PublicSiteController::class, 'preview'])
+    ->middleware(['auth', 'active', 'role:manager'])
+    ->name('manager.site-page.preview');
 Route::post('/solicita-informacion', [PublicContactController::class, 'store'])
     ->middleware('throttle:5,1')
     ->name('contact.store');

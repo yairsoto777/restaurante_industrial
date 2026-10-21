@@ -14,7 +14,13 @@
                 $theme[$colorKey] = $candidate;
             }
         }
-        $siteImage = fn ($value, $fallback) => $value ? Storage::disk('public')->url(is_array($value) ? ($value['path'] ?? '') : $value) : $fallback;
+        $siteImage = function ($value, $fallback) {
+            $path = is_array($value) ? ($value['path'] ?? null) : $value;
+            if (!$path || !is_string($path)) return $fallback;
+            if (preg_match('~^https?://~i', $path)) return $path;
+            if (str_starts_with($path, '/storage/')) return $path;
+            return Storage::disk('public')->url($path);
+        };
         $isVideo = fn ($value) => is_array($value) && (($value['type'] ?? '') === 'video' || str_starts_with((string) ($value['mime'] ?? ''), 'video/'));
         $heroMedia = $content['hero_image'] ?? null;
         $heroPoster = $siteImage($content['hero_poster'] ?? null, 'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=2000&q=85');

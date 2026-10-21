@@ -1,0 +1,29 @@
+/* Personalización EXCLUSIVA de las páginas de sede; NO cargar en welcome original.
+   Se sirve después de nutriliado-public.css mediante site-page-template.blade.php.
+   Valores predeterminados coinciden con la plantilla NUTRILIADO. */
+:root {--site-bg:#0b0d10;--site-panel:#12171d;--site-primary:#2384ff;--site-accent:#8ac5ff;--site-text:#f8fafc}
+body.nutriliado-public {--nu-black:var(--site-bg);--nu-panel:var(--site-panel);--nu-blue:var(--site-primary);--nu-light:var(--site-accent);--nu-white:var(--site-text);background:var(--site-bg)!important;color:var(--site-text)!important}
+body.nutriliado-public .public-header,body.nutriliado-public .public-header.is-scrolled{background:var(--site-panel)!important;border-bottom-color:var(--site-primary)!important}
+body.nutriliado-public .public-footer {background:var(--site-panel)!important}
+body.nutriliado-public .public-navigation a,body.nutriliado-public .public-navigation a:hover{color:var(--site-text)!important}
+body.nutriliado-public .public-navigation .public-login-link {background:var(--site-primary)!important;border-color:var(--site-primary)!important;color:var(--site-text)!important}
+body.nutriliado-public .nu-hero {background-color:var(--site-bg)!important}
+body.nutriliado-public .nu-hero-visual {background-color:var(--site-bg)!important}
+body.nutriliado-public .nu-vision,body.nutriliado-public .nu-solutions,body.nutriliado-public .nu-experience,body.nutriliado-public .nu-contact {background:var(--site-bg)!important}
+body.nutriliado-public .nu-benefits-clean{background:var(--site-bg)!important}
+body.nutriliado-public .nu-hero h1,body.nutriliado-public .nu-hero p,body.nutriliado-public .nu-section h2,body.nutriliado-public .nu-section p,body.nutriliado-public .nu-benefit-card h3,body.nutriliado-public .nu-benefit-card p,body.nutriliado-public .nu-solution-card h3,body.nutriliado-public .nu-solution-card p,body.nutriliado-public .nu-contact-card h3,body.nutriliado-public .nu-timeline strong,body.nutriliado-public .nu-timeline p,body.nutriliado-public .nu-vision-list li,body.nutriliado-public .nu-contact-features,body.nutriliado-public .nu-benefits-badge strong,body.nutriliado-public .nu-benefits-badge small,body.nutriliado-public .nu-benefits-stat strong,body.nutriliado-public .nu-benefits-stat span,body.nutriliado-public .nu-footer-content p,body.nutriliado-public .nu-footer-content small {color:var(--site-text)!important}
+body.nutriliado-public em,body.nutriliado-public .nu-hero em,body.nutriliado-public .nu-section h2 em,body.nutriliado-public .nu-benefits-copy h2 em,body.nutriliado-public .nu-eyebrow,body.nutriliado-public .nu-benefit-icon,body.nutriliado-public .nu-benefits-badge > span,body.nutriliado-public .nu-solution-number,body.nutriliado-public .nu-timeline span,body.nutriliado-public .nu-scroll-down {color:var(--site-accent)!important}
+body.nutriliado-public .nu-benefit-card,body.nutriliado-public .nu-contact-card,body.nutriliado-public .nu-solutions-grid .nu-solution-card,body.nutriliado-public .nu-solutions-grid .nu-solution-body,body.nutriliado-public .nu-benefits-badge,body.nutriliado-public .nu-benefits-stat{background:var(--site-panel)!important}
+body.nutriliado-public .nu-button-blue,body.nutriliado-public .nu-submit {background:var(--site-primary)!important;border-color:var(--site-primary)!important;color:var(--site-text)!important}
+body.nutriliado-public .nu-benefit-number {background:var(--site-primary)!important;border-color:var(--site-primary)!important;color:var(--site-text)!important}
+body.nutriliado-public .nu-benefit-line{background:var(--site-primary)!important}
+body.nutriliado-public .nu-vision-list li::before,body.nutriliado-public .nu-hero-points span::before {color:var(--site-accent)!important}
+body.nutriliado-public .nu-form-grid input:focus,body.nutriliado-public .nu-form-grid textarea:focus,body.nutriliado-public .nu-form-grid select:focus{border-color:var(--site-primary)!important}
+body.nutriliado-public .nu-form-grid label {color:var(--site-text)!important}
+/* Los componentes con degradados se mantienen estáticos en estructura, pero reciben color sólido personalizable. */
+
+/* Temas por sede: estilos originales importantes se sobrescriben de forma controlada. */
+body.nutriliado-public .nu-hero-layer{background:linear-gradient(90deg,rgba(0,0,0,.87),rgba(0,0,0,.48),rgba(0,0,0,.23))!important}
+body.nutriliado-public .nu-contact .nu-form-grid input, body.nutriliado-public .nu-contact .nu-form-grid textarea,body.nutriliado-public .nu-contact .nu-form-grid select{background:var(--site-bg)!important;color:var(--site-text)!important}
+body.nutriliado-public .nu-benefits-badge,body.nutriliado-public .nu-benefit-card{border-color:var(--site-accent)!important}
+body.nutriliado-public .nu-hero-points,body.nutriliado-public .nu-form-note{color:var(--site-text)!important}

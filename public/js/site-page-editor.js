@@ -6,6 +6,7 @@
     const iframe = $('#site-preview');
     const raw = JSON.parse($('#page-data').textContent || '{}');
     const data = structuredClone(raw);
+    delete data.saved_at;
     const fields = $('#property-panel');
     const status = $('#save-state');
     const sections = [
@@ -41,7 +42,7 @@
         const wrap=elem('label');wrap.append(document.createTextNode(label));
         const val=get(key)??fallback;
         const input=elem(type==='textarea'?'textarea':'input',type==='textarea'?{}:{type:type==='color'?'color':'text'});
-        input.value=val;
+        input.value=(type==='color' && !/^#[0-9a-f]{6}$/i.test(String(val))) ? ({'theme.background':'#0b0d10','theme.panel':'#12171d','theme.primary':'#2384ff','theme.light':'#8ac5ff','theme.text':'#f8fafc'}[key] || '#2384ff') : val;
         input.addEventListener('input',()=>put(key,input.value));wrap.append(input);parent.append(wrap);
     }
     function addMedia(parent,label,key){
@@ -119,26 +120,21 @@
         }
         const poster=mediaURL(get('hero_poster'));if(video&&poster)video.poster=poster;
         const theme=get('theme')||{};
+        // El CSS es compartido por la vista previa y la página publicada.
+        // No depende de ninguna clase especial del body.
         const defaults={background:'#0b0d10',panel:'#12171d',primary:'#2384ff',light:'#8ac5ff',text:'#f8fafc'};
-        const t={};Object.keys(defaults).forEach(k=>t[k]=/^#[0-9a-f]{6}$/i.test(theme[k]||'')?theme[k]:defaults[k]);
-        // En algunas versiones de layouts.public el body no lleva la clase nutriliado-public.
-        // Aplicamos las variables en html y body del IFRAME exclusivamente, no en el panel gerente.
-        const html=doc.documentElement,body=doc.body;
-        const vars={ '--nu-black':t.background,'--nu-panel':t.panel,'--nu-blue':t.primary,'--nu-light':t.light,'--nu-white':t.text,
-            '--nu-primary':t.primary,'--nu-background':t.background,'--nu-text':t.text};
-        for(const [key,value] of Object.entries(vars)){html.style.setProperty(key,value,'important');body.style.setProperty(key,value,'important');}
-        let style=doc.getElementById('nu-editor-theme');
-        if(!style){style=doc.createElement('style');style.id='nu-editor-theme';doc.head.append(style);}
-        style.textContent=`
- html body{background-color:${t.background}!important;color:${t.text}!important}
- body .public-header,body .public-footer,body .nu-section{background-color:${t.background}!important;color:${t.text}!important}
- body .nu-benefit-card,body .nu-contact-card,body .nu-solution-body{background-color:${t.panel}!important;color:${t.text}!important}
- body .nu-button-blue,body .nu-submit,body .public-header .nu-button-blue{background-color:${t.primary}!important;border-color:${t.primary}!important}
- body .nu-hero em,body .nu-section em,body .nu-eyebrow{color:${t.light}!important}
- body .nu-hero h1,body .nu-section h2,body .nu-section h3,body .nu-section p,body .nu-vision-list,body .nu-timeline{color:${t.text}!important}
- body .nu-hero{--nu-blue:${t.primary};--nu-light:${t.light};--nu-white:${t.text}}
- `;
-
+        const names={background:'--site-bg',panel:'--site-panel',primary:'--site-primary',light:'--site-accent',text:'--site-text'};
+        if(!doc.getElementById('site-theme-css')){
+            const link=doc.createElement('link');link.id='site-theme-css';link.rel='stylesheet';
+            link.href=new URL('/css/site-page-theme.css',location.origin).href;
+            doc.head.append(link);
+        }
+        Object.entries(names).forEach(([key,variable])=>{
+            const candidate=theme[key];
+            const color=typeof candidate==='string'&&/^#[0-9a-f]{6}$/i.test(candidate)?candidate:defaults[key];
+            doc.documentElement.style.setProperty(variable,color,'important');
+            doc.body.style.setProperty(variable,color,'important');
+        });
     }
     let initiallySeeded=false;
     function seedFromPage(){
@@ -156,7 +152,7 @@
     function putSilently(k,v){const parts=k.split('.');let obj=data;for(let i=0;i<parts.length-1;i++)obj=obj[parts[i]]??={};obj[parts.at(-1)]=v;}
     iframe.addEventListener('load',()=>{seedFromPage();updatePreview();});
     $('#save-page').addEventListener('click',async()=>{
-        mark('Guardando…');try{const res=await fetch(root.dataset.saveUrl,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':root.dataset.csrf},body:JSON.stringify(data)});if(!res.ok){const detail=await res.text();throw Error(`${res.status} ${detail.slice(0,160)}`);}changed=false;mark('Borrador guardado');}catch(e){mark('Error al guardar');alert('Error: '+e.message);}
+        mark('Guardando…');try{const res=await fetch(root.dataset.saveUrl,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':root.dataset.csrf},body:JSON.stringify({content:data})});if(!res.ok){const detail=await res.text();throw Error(`${res.status} ${detail.slice(0,160)}`);}changed=false;mark('Borrador guardado');}catch(e){mark('Error al guardar');alert('Error: '+e.message);}
     });
     $('#publish-form')?.addEventListener('submit',e=>{if(changed&&!confirm('Hay cambios sin guardar. ¿Publicar el último borrador guardado?'))e.preventDefault();});
     window.addEventListener('beforeunload',e=>{if(changed){e.preventDefault();e.returnValue='';}});
