@@ -15,9 +15,12 @@ use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SiteSelectionController;
 use App\Http\Controllers\User\EmploymentApplicationController as UserEmploymentApplicationController;
 use App\Http\Controllers\User\ServiceController as UserServiceController;
+use App\Http\Controllers\Manager\SitePageController;
+use App\Http\Controllers\PublicSiteController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PublicContactController::class, 'index'])->name('home');
+Route::get('/empresas/{slug}', [PublicSiteController::class, 'show'])->name('sites.public');
 Route::post('/solicita-informacion', [PublicContactController::class, 'store'])
     ->middleware('throttle:5,1')
     ->name('contact.store');
@@ -124,6 +127,14 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::prefix('operacion')->name('manager.')->middleware('role:manager')->group(function () {
         Route::get('sedes', [ModuleController::class, 'sites'])->name('sites');
         Route::post('sedes', [ModuleController::class, 'saveSite'])->name('sites.save');
+        Route::get('mi-pagina-web', [SitePageController::class, 'edit'])->name('site-page.edit');
+        Route::get('mi-pagina-web/editor', [SitePageController::class, 'editor'])->name('site-page.editor');
+        Route::post('mi-pagina-web/editor', [SitePageController::class, 'saveEditor'])->name('site-page.editor.save');
+        Route::get('mi-pagina-web/media', [SitePageController::class, 'media'])->name('site-page.media');
+        Route::post('mi-pagina-web/media', [SitePageController::class, 'uploadMedia'])->name('site-page.media.upload');
+        Route::delete('mi-pagina-web/media/{media}', [SitePageController::class, 'deleteMedia'])->name('site-page.media.delete');
+        Route::post('mi-pagina-web', [SitePageController::class, 'save'])->name('site-page.save');
+        Route::post('mi-pagina-web/publicar', [SitePageController::class, 'publish'])->name('site-page.publish');
         Route::resource('empleados', EmployeeController::class)
             ->parameters(['empleados' => 'employee'])
             ->except(['show', 'destroy'])

@@ -47,6 +47,7 @@
             <div class="nav-section"><span>Administración</span>
                 @if($isManager)
                     <a class="nav-link {{ request()->routeIs('manager.sites*') ? 'active' : '' }}" href="{{ route('manager.sites') }}"><x-icon name="building"/><b>Gestión de sede</b></a>
+                    <a class="nav-link {{ request()->routeIs('manager.site-page.*') ? 'active' : '' }}" href="{{ route('manager.site-page.edit') }}"><x-icon name="layers"/><b>Mi página web</b></a>
                 @else
                     <a class="nav-link {{ request()->routeIs('sites.select*') ? 'active' : '' }}" href="{{ route('sites.select') }}"><x-icon name="building"/><b>Selección de sede</b></a>
                 @endif

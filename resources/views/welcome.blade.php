@@ -4,23 +4,30 @@
 @section('meta_description', 'Controla sedes, inventarios, personal y servicios alimentarios desde una sola plataforma.')
 
 @section('content')
+@php
+    $content = $content ?? [];
+    $siteImage = fn ($value, $fallback) => $value ? Storage::disk('public')->url(is_array($value) ? ($value['path'] ?? '') : $value) : $fallback;
+    $isVideo = fn ($value) => is_array($value) && (($value['type'] ?? '') === 'video' || str_starts_with((string) ($value['mime'] ?? ''), 'video/'));
+    $heroPoster = $siteImage($content['hero_image'] ?? null, 'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=2000&q=85');
+    $visionPhoto = $siteImage($content['vision_image'] ?? null, 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=1200&q=85');
+    $experiencePhoto = $siteImage($content['experience_image'] ?? null, 'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=1200&q=85');
+@endphp
+<style>body.nutriliado-public{background:{{ $content['theme']['background'] ?? '#0b0d10' }}!important;--nu-black:{{ $content['theme']['background'] ?? '#0b0d10' }};--nu-panel:{{ $content['theme']['panel'] ?? '#12171d' }};--nu-blue:{{ $content['theme']['primary'] ?? '#2384ff' }};--nu-light:{{ $content['theme']['light'] ?? '#8ac5ff' }};--nu-white:{{ $content['theme']['text'] ?? '#f8fafc' }}}body.nutriliado-public .public-header,body.nutriliado-public .nu-section,body.nutriliado-public .public-footer{background-color:{{ $content['theme']['background'] ?? '#0b0d10' }}!important}body.nutriliado-public .nu-benefit-card,body.nutriliado-public .nu-contact-card{background:{{ $content['theme']['panel'] ?? '#12171d' }}!important}body.nutriliado-public .nu-button-blue,.nu-submit{background:{{ $content['theme']['primary'] ?? '#2384ff' }}!important}body.nutriliado-public em,body.nutriliado-public .nu-eyebrow{color:{{ $content['theme']['light'] ?? '#8ac5ff' }}!important}</style>
 <section class="nu-hero" id="inicio">
     <div class="nu-hero-visual" aria-hidden="true">
-        <video class="nu-hero-video" autoplay muted loop playsinline preload="metadata" poster="https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=2000&q=85">
-            <source src="{{ asset('videos/comedor-industrial.mp4') }}" type="video/mp4">
-        </video>
+        <video class="nu-hero-video" autoplay muted loop playsinline preload="metadata" poster="{{ $heroPoster }}"><source src="{{ $isVideo($content['hero_image'] ?? null) ? $heroPoster : asset('videos/comedor-industrial.mp4') }}" type="{{ $isVideo($content['hero_image'] ?? null) ? ($content['hero_image']['mime'] ?? 'video/mp4') : 'video/mp4' }}"></video>
     </div>
     <div class="nu-hero-layer" aria-hidden="true"></div>
     <div class="public-container nu-hero-inner">
         <div class="nu-hero-copy">
-            <span class="nu-eyebrow">SOLUCIONES PARA COMEDORES INDUSTRIALES</span>
-            <h1>Una operación impecable comienza con <em>mejor gestión.</em></h1>
-            <p>Una sola plataforma para conectar sedes, equipos, inventarios y servicios con claridad, seguridad y eficiencia.</p>
+            <span class="nu-eyebrow">{{ $content['hero_eyebrow'] ?? 'SOLUCIONES PARA COMEDORES INDUSTRIALES' }}</span>
+            <h1>{{ $content['hero_title'] ?? 'Una operación impecable comienza con' }} <em>{{ $content['hero_title_emphasis'] ?? 'mejor gestión.' }}</em></h1>
+            <p>{{ $content['hero_description'] ?? 'Una sola plataforma para conectar sedes, equipos, inventarios y servicios con claridad, seguridad y eficiencia.' }}</p>
             <div class="nu-actions">
-                <a class="nu-button nu-button-blue" href="#contacto">Solicitar información <span aria-hidden="true">↗</span></a>
-                <a class="nu-button nu-button-ghost" href="#soluciones">Explorar soluciones <span aria-hidden="true">↓</span></a>
+                <a class="nu-button nu-button-blue" href="#contacto">{{ $content['hero_button_primary'] ?? 'Solicitar información' }} <span aria-hidden="true">↗</span></a>
+                <a class="nu-button nu-button-ghost" href="#soluciones">{{ $content['hero_button_secondary'] ?? 'Explorar soluciones' }} <span aria-hidden="true">↓</span></a>
             </div>
-            <div class="nu-hero-points"><span>CONTROL POR SEDE</span><span>PERSONAL CONECTADO</span><span>OPERACIÓN INTELIGENTE</span></div>
+            <div class="nu-hero-points">@foreach($content['hero_points'] ?? ['CONTROL POR SEDE','PERSONAL CONECTADO','OPERACIÓN INTELIGENTE'] as $point)<span>{{ $point }}</span>@endforeach</div>
         </div>
         <div class="nu-hero-decoration" aria-hidden="true">OPERACIONES ALIMENTARIAS — NUTRILIADO</div>
     </div>
@@ -30,18 +37,15 @@
 <section class="nu-section nu-vision" id="vision">
     <div class="public-container nu-vision-grid">
         <figure class="nu-vision-image">
-            <img src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=1200&q=85" alt="Equipo de cocina profesional preparando alimentos" loading="lazy">
+            <img src="{{ $visionPhoto }}" alt="{{ $content['vision_image_alt'] ?? 'Equipo de cocina profesional preparando alimentos' }}" loading="lazy">
             <figcaption>VISIÓN OPERATIVA / NUTRILIADO</figcaption>
         </figure>
         <div class="nu-vision-content">
-            <span class="nu-eyebrow">01 / NUESTRA VISIÓN</span>
-            <h2>Tu comedor empieza con <em>información conectada.</em></h2>
-            <p>NUTRILIADO reúne las tareas que sostienen una operación alimentaria en un entorno claro y práctico, sin perder la coordinación de cada sede.</p>
-            <p>Menos información dispersa y más tiempo para lo que realmente importa: brindar un servicio de calidad.</p>
+            <span class="nu-eyebrow">{{ $content['vision_eyebrow'] ?? '01 / NUESTRA VISIÓN' }}</span>
+            <h2>{{ $content['vision_title'] ?? 'Tu comedor empieza con' }} <em>{{ $content['vision_title_emphasis'] ?? 'información conectada.' }}</em></h2>
+            @foreach($content['vision_paragraphs'] ?? ['NUTRILIADO reúne las tareas que sostienen una operación alimentaria en un entorno claro y práctico, sin perder la coordinación de cada sede.','Menos información dispersa y más tiempo para lo que realmente importa: brindar un servicio de calidad.'] as $paragraph)<p>{{ $paragraph }}</p>@endforeach
             <ul class="nu-vision-list">
-                <li>Organización por sede</li>
-                <li>Roles y accesos claros</li>
-                <li>Información útil para decidir</li>
+                @foreach($content['vision_list'] ?? ['Organización por sede','Roles y accesos claros','Información útil para decidir'] as $item)<li>{{ $item }}</li>@endforeach
             </ul>
         </div>
     </div>
@@ -51,10 +55,10 @@
     <div class="public-container">
         <div class="nu-section-heading">
             <div>
-                <span class="nu-eyebrow">02 / SOLUCIONES</span>
-                <h2>Todo conectado.<br><em>Todo bajo control.</em></h2>
+                <span class="nu-eyebrow">{{ $content['solutions_eyebrow'] ?? '02 / SOLUCIONES' }}</span>
+                <h2>{{ $content['solutions_title'] ?? 'Todo conectado.' }}<br><em>{{ $content['solutions_title_emphasis'] ?? 'Todo bajo control.' }}</em></h2>
             </div>
-            <p>Seis áreas de trabajo para enlazar la administración con los procesos que ocurren todos los días.</p>
+            <p>{{ $content['solutions_description'] ?? 'Seis áreas de trabajo para enlazar la administración con los procesos que ocurren todos los días.' }}</p>
         </div>
         @php
             $solutions = [
@@ -65,12 +69,14 @@
                 ['05', 'Personal y equipos', 'Roles, responsabilidades y comunicación operativa.', 'photo-1556910103-1c02745aae4d'],
                 ['06', 'Reportes e incidencias', 'Seguimiento de actividades y datos para tomar decisiones.', 'photo-1460925895917-afdab827c52f'],
             ];
+            if (!empty($content['solutions'])) $solutions = $content['solutions'];
         @endphp
         <div class="nu-solutions-grid">
             @foreach($solutions as $solution)
                 <article class="nu-solution-card">
                     <div class="nu-solution-photo">
-                        <img src="https://images.unsplash.com/{{ $solution[3] }}?auto=format&fit=crop&w=850&q=82" alt="{{ $solution[1] }}" loading="lazy">
+                        @php $solutionImage = $solution[3] && str_starts_with((string) $solution[3], 'photo-') ? 'https://images.unsplash.com/'.$solution[3].'?auto=format&fit=crop&w=850&q=82' : $siteImage($solution[3] ?? null, 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=850&q=82'); @endphp
+                        <img src="{{ $solutionImage }}" alt="{{ $solution[1] }}" loading="lazy">
                     </div>
                     <div class="nu-solution-body">
                         <span class="nu-solution-number">{{ $solution[0] }}</span>
@@ -86,17 +92,13 @@
 <section class="nu-section nu-experience" id="experiencia">
     <div class="public-container nu-experience-grid">
         <div>
-            <span class="nu-eyebrow">03 / EXPERIENCIA</span>
-            <h2>Diseñado para el <em>ritmo real del servicio.</em></h2>
-            <p>Una plataforma para unir al personal administrativo con la operación diaria del restaurante o comedor industrial.</p>
-            <div class="nu-timeline">
-                <div><span>01</span><strong>Accede y selecciona</strong><p>Inicio de sesión seguro y elección de sede.</p></div>
-                <div><span>02</span><strong>Organiza la operación</strong><p>Coordina equipos, inventarios y servicios.</p></div>
-                <div><span>03</span><strong>Revisa y mejora</strong><p>Información centralizada para tomar mejores decisiones.</p></div>
-            </div>
+            <span class="nu-eyebrow">{{ $content['experience_eyebrow'] ?? '03 / EXPERIENCIA' }}</span>
+            <h2>{{ $content['experience_title'] ?? 'Diseñado para el' }} <em>{{ $content['experience_title_emphasis'] ?? 'ritmo real del servicio.' }}</em></h2>
+            <p>{{ $content['experience_description'] ?? 'Una plataforma para unir al personal administrativo con la operación diaria del restaurante o comedor industrial.' }}</p>
+            <div class="nu-timeline">@foreach($content['experience_steps'] ?? [['01','Accede y selecciona','Inicio de sesión seguro y elección de sede.'],['02','Organiza la operación','Coordina equipos, inventarios y servicios.'],['03','Revisa y mejora','Información centralizada para tomar mejores decisiones.']] as $step)<div><span>{{ $step[0] }}</span><strong>{{ $step[1] }}</strong><p>{{ $step[2] }}</p></div>@endforeach</div>
         </div>
         <figure class="nu-experience-image">
-            <img src="https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=1200&q=85" alt="Restaurante con área de servicio organizada" loading="lazy">
+            <img src="{{ $experiencePhoto }}" alt="{{ $content['experience_image_alt'] ?? 'Restaurante con área de servicio organizada' }}" loading="lazy">
             <figcaption>UNA EXPERIENCIA CONECTADA</figcaption>
         </figure>
     </div>
@@ -107,14 +109,14 @@
     <div class="public-container">
         <div class="nu-benefits-head">
             <div class="nu-benefits-copy">
-                <span class="nu-eyebrow">04 / BENEFICIOS</span>
-                <h2 id="nu-benefits-title">Más control. <em>Mejores decisiones.</em></h2>
-                <p>Organiza tu operación alimentaria con información más clara, procesos mejor coordinados y visibilidad por sede.</p>
+                <span class="nu-eyebrow">{{ $content['benefits_eyebrow'] ?? '04 / BENEFICIOS' }}</span>
+                <h2 id="nu-benefits-title">{{ $content['benefits_title'] ?? 'Más control.' }} <em>{{ $content['benefits_title_emphasis'] ?? 'Mejores decisiones.' }}</em></h2>
+                <p>{{ $content['benefits_description'] ?? 'Organiza tu operación alimentaria con información más clara, procesos mejor coordinados y visibilidad por sede.' }}</p>
             </div>
             <div class="nu-benefits-badge" aria-label="Seis beneficios clave">
-                <span>LA VENTAJA NUTRILIADO</span>
-                <strong>6 beneficios clave</strong>
-                <small>Una forma más sencilla de coordinar tu operación.</small>
+                <span>{{ $content['benefit_badge_title'] ?? 'LA VENTAJA NUTRILIADO' }}</span>
+                <strong>{{ $content['benefit_badge_count'] ?? '6 beneficios clave' }}</strong>
+                <small>{{ $content['benefit_badge_description'] ?? 'Una forma más sencilla de coordinar tu operación.' }}</small>
             </div>
         </div>
 
@@ -127,6 +129,7 @@
                 ['05', 'Decisiones con datos', 'Utiliza reportes e indicadores para detectar oportunidades de mejora.'],
                 ['06', 'Preparada para crecer', 'Administra una sede o coordina varias operaciones con una misma plataforma.'],
             ];
+            if (!empty($content['benefits'])) $benefits = $content['benefits'];
         @endphp
 
         <div class="nu-benefits-grid">
@@ -143,29 +146,23 @@
             @endforeach
         </div>
 
-        <div class="nu-benefits-footer">
-            <div class="nu-benefits-stat"><strong>Una sola plataforma</strong><span>Para sedes, personal, servicios e inventarios</span></div>
-            <div class="nu-benefits-stat"><strong>Claridad operativa</strong><span>Información mejor organizada para tu equipo</span></div>
-            <div class="nu-benefits-stat"><strong>Mejora continua</strong><span>Seguimiento y datos para tomar decisiones</span></div>
-        </div>
+            <div class="nu-benefits-footer">@foreach($content['benefit_stats'] ?? [['Una sola plataforma','Para sedes, personal, servicios e inventarios'],['Claridad operativa','Información mejor organizada para tu equipo'],['Mejora continua','Seguimiento y datos para tomar decisiones']] as $stat)<div class="nu-benefits-stat"><strong>{{ $stat[0] }}</strong><span>{{ $stat[1] }}</span></div>@endforeach</div>
     </div>
 </section>
 
 <section class="nu-section nu-contact" id="contacto">
     <div class="public-container nu-contact-grid">
         <div class="nu-contact-aside">
-            <span class="nu-eyebrow">05 / CONTACTO</span>
-            <h2>Hablemos de lo que <em>tu empresa necesita.</em></h2>
-            <p>Déjanos tus datos y cuéntanos cómo podemos ayudarte con tu comedor industrial o restaurante.</p>
+            <span class="nu-eyebrow">{{ $content['contact_eyebrow'] ?? '05 / CONTACTO' }}</span>
+            <h2>{{ $content['contact_title'] ?? 'Hablemos de lo que' }} <em>{{ $content['contact_title_emphasis'] ?? 'tu empresa necesita.' }}</em></h2>
+            <p>{{ $content['contact_description'] ?? 'Déjanos tus datos y cuéntanos cómo podemos ayudarte con tu comedor industrial o restaurante.' }}</p>
             <div class="nu-contact-features">
-                <span>✉ Puedes solicitar respuesta por correo.</span>
-                <span>☎ También podemos coordinar una llamada.</span>
-                <span>✓ Tu solicitud llegará al panel de contactos comerciales.</span>
+                @foreach($content['contact_features'] ?? ['Puedes solicitar respuesta por correo.','También podemos coordinar una llamada.','Tu solicitud llegará al panel de contactos comerciales.'] as $feature)<span>✓ {{ $feature }}</span>@endforeach
             </div>
         </div>
         <div class="nu-contact-card">
             <span class="nu-eyebrow">SOLICITUD DE INFORMACIÓN</span>
-            <h3>Cuéntanos tu proyecto</h3>
+            <h3>{{ $content['contact_form_title'] ?? 'Cuéntanos tu proyecto' }}</h3>
             @if(session('contact_status'))
                 <div class="nu-form-message" data-contact-feedback tabindex="-1">{{ session('contact_status') }}</div>
             @endif
