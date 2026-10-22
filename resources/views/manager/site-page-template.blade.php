@@ -19,7 +19,7 @@
             if (!$path || !is_string($path)) return $fallback;
             if (preg_match('~^https?://~i', $path)) return $path;
             if (str_starts_with($path, '/storage/')) return $path;
-            return Storage::disk('public')->url($path);
+            return '/storage/'.ltrim(preg_replace('~^public/~', '', $path), '/');
         };
         $isVideo = fn ($value) => is_array($value) && (($value['type'] ?? '') === 'video' || str_starts_with((string) ($value['mime'] ?? ''), 'video/'));
         $heroMedia = $content['hero_image'] ?? null;
@@ -109,7 +109,13 @@
                 @foreach($solutions as $solution)
                     <article class="nu-solution-card">
                         <div class="nu-solution-photo">
-                            @php $solutionImage = $solution[3] && str_starts_with((string) $solution[3], 'photo-') ? 'https://images.unsplash.com/'.$solution[3].'?auto=format&fit=crop&w=850&q=82' : $siteImage($solution[3] ?? null, 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=850&q=82'); @endphp
+                            @php
+                                $solutionMedia = $solution[3] ?? null;
+                                $solutionPath = is_array($solutionMedia) ? ($solutionMedia['path'] ?? null) : $solutionMedia;
+                                $solutionImage = is_string($solutionPath) && str_starts_with($solutionPath, 'photo-')
+                                    ? 'https://images.unsplash.com/'.$solutionPath.'?auto=format&fit=crop&w=850&q=82'
+                                    : $siteImage($solutionMedia, 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=850&q=82');
+                            @endphp
                             <img src="{{ $solutionImage }}" alt="{{ $solution[1] }}" loading="lazy">
                         </div>
                         <div class="nu-solution-body">

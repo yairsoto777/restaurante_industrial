@@ -51,13 +51,19 @@
         const message=elem('small',{},'JPG, PNG, WebP, GIF, MP4 o WebM. El servidor también debe validar los archivos.');
         input.addEventListener('change',async()=>{
             const file=input.files?.[0];if(!file)return;
-            const body=new FormData();body.append('file',file);
+            const body=new FormData();body.append('files[]',file);
             mark('Subiendo archivo…');
             try{
                 const res=await fetch(root.dataset.uploadUrl,{method:'POST',headers:{'X-CSRF-TOKEN':root.dataset.csrf,'Accept':'application/json'},body});
-                if(!res.ok)throw Error(`Error HTTP ${res.status}`);
+                if(!res.ok){
+                    let detail=`Error HTTP ${res.status}`;
+                    try{const error=await res.json();const messages=Object.values(error.errors||{}).flat();if(messages.length)detail=messages.join(' ');else if(error.message)detail=error.message;}catch{}
+                    throw Error(detail);
+                }
                 const out=await res.json();
-                const media=out.media??out.data??out;
+                const media=Array.isArray(out)
+                    ? out[0]
+                    : (out.media??out.data??out);
                 const path=media.path??media.file_path;
                 if(!path)throw Error('El servidor no devolvió la ruta del archivo (path)');
                 put(key,{path,type:file.type.startsWith('video/')?'video':'image',mime:file.type});

@@ -193,9 +193,18 @@ class SitePageController extends Controller
             'files.*' => [
                 'required',
                 'file',
+                'mimes:jpg,jpeg,png,webp,gif,mp4,webm',
                 'mimetypes:image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm',
                 'max:51200',
             ],
+        ], [
+            'files.required' => 'Selecciona al menos un archivo.',
+            'files.array' => 'La carga multimedia debe enviarse como una lista de archivos.',
+            'files.max' => 'Puedes cargar como máximo 10 archivos a la vez.',
+            'files.*.file' => 'El elemento seleccionado no es un archivo válido.',
+            'files.*.mimes' => 'El archivo debe ser JPG, PNG, WebP, GIF, MP4 o WebM.',
+            'files.*.mimetypes' => 'El tipo MIME del archivo no está permitido.',
+            'files.*.max' => 'Cada archivo puede pesar como máximo 50 MB.',
         ]);
 
         $uploaded = [];

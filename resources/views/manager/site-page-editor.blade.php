@@ -14,7 +14,7 @@
         <aside class="nu-editor-panel"><h3>Secciones fijas</h3><nav id="section-list" aria-label="Secciones editables"></nav></aside>
         <main class="nu-editor-center">
             <div class="nu-editor-toolbar"><strong>Vista previa real</strong><span id="save-state" role="status">Borrador cargado</span><div class="nu-devices"><button type="button" data-device="desktop" class="active">Escritorio</button><button type="button" data-device="tablet">Tablet</button><button type="button" data-device="mobile">Móvil</button></div></div>
-            <div class="nu-frame-outer"><iframe title="Vista previa de la página NUTRILIADO" id="site-preview" src="{{ route('sites.public', $page->slug) }}" loading="eager"></iframe></div>
+            <div class="nu-frame-outer"><iframe title="Vista previa de la página NUTRILIADO" id="site-preview" src="{{ route('manager.site-page.preview', $page->slug) }}" loading="eager"></iframe></div>
             <p class="nu-editor-note">Esta vista muestra la estructura real de la página. Los cambios son locales hasta guardar y publicar.</p>
         </main>
         <aside class="nu-editor-panel nu-editor-fields"><h3 id="properties-title">Contenido editable</h3><div id="property-panel"></div></aside>
