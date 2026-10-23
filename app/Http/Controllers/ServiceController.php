@@ -6,8 +6,10 @@ use App\Models\Service;
 use App\Support\SiteContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class ServiceController extends Controller
@@ -65,21 +67,94 @@ class ServiceController extends Controller
     public function kitchenIndex(Request $request, SiteContext $siteContext): View
     {
         $site = $this->operationalSite($request, $siteContext);
-        $services = Service::query()->where('id_sede', $site->id_sede)
-            ->when(! $request->user()->hasRole('Jefe de cocina'), fn ($query) => $query->where('estado_aprobacion', 'Aprobado')->whereDate('fecha', '>=', now()->toDateString()))
+        $isKitchenStaff = $request->user()->hasRole('Personal de cocina');
+        $listingDate = ($isKitchenStaff ? now('America/Mexico_City') : now())->toDateString();
+        $baseQuery = Service::query()->where('id_sede', $site->id_sede);
+        $visibleQuery = clone $baseQuery;
+        if (! $request->user()->hasRole('Jefe de cocina')) {
+            $visibleQuery->where('estado_aprobacion', 'Aprobado')
+                ->whereDate('fecha', '>=', $listingDate);
+            if ($isKitchenStaff) {
+                $visibleQuery->where(fn ($query) => $query->whereNull('estado')->orWhere('estado', '<>', 'Cancelado'));
+            }
+        }
+        $totalCount = (clone $visibleQuery)->count();
+        $pendingCount = $request->user()->hasRole('Jefe de cocina')
+            ? (clone $visibleQuery)->where('estado_aprobacion', 'Pendiente')->count()
+            : 0;
+        $approvedCount = (clone $visibleQuery)->where('estado_aprobacion', 'Aprobado')->count();
+        $activeCount = (clone $visibleQuery)->where('estado_aprobacion', 'Aprobado')->where('estado', 'En curso')->count();
+        $scheduledCount = (clone $visibleQuery)->where('estado_aprobacion', 'Aprobado')->where('estado', 'Programado')->count();
+        $search = trim((string) $request->query('q', ''));
+        $filterState = (string) $request->query('estado', '');
+        $validFilters = $isKitchenStaff
+            ? ['Programado', 'En curso', 'Finalizado']
+            : ['Pendiente', 'Aprobado', 'Rechazado', 'Programado', 'En curso', 'Finalizado', 'Cancelado'];
+        if (! in_array($filterState, $validFilters, true)) {
+            $filterState = '';
+        }
+
+        $services = (clone $baseQuery)
+            ->when(! $request->user()->hasRole('Jefe de cocina'), function ($query) use ($listingDate, $isKitchenStaff): void {
+                $query->where('estado_aprobacion', 'Aprobado')->whereDate('fecha', '>=', $listingDate);
+                if ($isKitchenStaff) {
+                    $query->where(fn ($stateQuery) => $stateQuery->whereNull('estado')->orWhere('estado', '<>', 'Cancelado'));
+                }
+            })
+            ->when($search !== '', fn ($query) => $query->where('nombre', 'like', '%'.$search.'%'))
+            ->when($filterState !== '', function ($query) use ($filterState): void {
+                if (in_array($filterState, ['Pendiente', 'Aprobado', 'Rechazado'], true)) {
+                    $query->where('estado_aprobacion', $filterState);
+                } else {
+                    $query->where('estado', $filterState);
+                }
+            })
             ->orderBy('fecha')->orderBy('inicio_hora')->paginate(15);
 
-        return view('kitchen.services.index', compact('site', 'services'));
+        return view('kitchen.services.index', compact('site', 'services', 'totalCount', 'pendingCount', 'approvedCount', 'activeCount', 'scheduledCount', 'search', 'filterState'));
+    }
+
+    public function updateOperationalStatus(Request $request, Service $service, SiteContext $siteContext): RedirectResponse
+    {
+        $site = $this->kitchenChiefSite($request, $siteContext);
+        abort_unless((int) $service->id_sede === (int) $site->id_sede, 404);
+
+        $validated = $request->validate([
+            'estado' => ['required', Rule::in(['En curso', 'Finalizado', 'Cancelado'])],
+        ]);
+
+        DB::transaction(function () use ($service, $site, $validated): void {
+            $lockedService = Service::query()
+                ->whereKey($service->getKey())
+                ->where('id_sede', $site->id_sede)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            abort_unless($lockedService->estado_aprobacion === 'Aprobado', 422, 'Solo se puede operar un servicio aprobado.');
+            if (! $this->validTransition($lockedService->estado, $validated['estado'])) {
+                throw ValidationException::withMessages([
+                    'estado' => 'Ese cambio de estado no está permitido desde el estado actual.',
+                ]);
+            }
+
+            $lockedService->update(['estado' => $validated['estado']]);
+        }, 3);
+
+        return redirect()->route('services.index')->with('status', 'El estado del servicio fue actualizado.');
     }
 
     public function live(Request $request, SiteContext $siteContext): View
     {
         $site = $this->operationalSite($request, $siteContext);
-        $today = now()->toDateString();
+        $isKitchenStaff = $request->user()->hasRole('Personal de cocina');
+        $today = ($isKitchenStaff ? now('America/Mexico_City') : now())->toDateString();
         $active = Service::query()->where('id_sede', $site->id_sede)->where('estado_aprobacion', 'Aprobado')->whereDate('fecha', $today)
             ->whereIn('estado', ['En curso', 'en curso'])->orderBy('inicio_hora')->first();
-        $todayServices = Service::query()->where('id_sede', $site->id_sede)->where('estado_aprobacion', 'Aprobado')->whereDate('fecha', $today)
-            ->orderBy('inicio_hora')->get();
+        $todayQuery = Service::query()->where('id_sede', $site->id_sede)->where('estado_aprobacion', 'Aprobado')->whereDate('fecha', $today);
+        if ($isKitchenStaff) {
+            $todayQuery->where(fn ($query) => $query->whereNull('estado')->orWhere('estado', '<>', 'Cancelado'));
+        }
+        $todayServices = $todayQuery->orderBy('inicio_hora')->get();
 
         return view('kitchen.services.live', compact('site', 'active', 'todayServices'));
     }
@@ -121,9 +196,9 @@ class ServiceController extends Controller
     private function validTransition(?string $from, string $to): bool
     {
         return match ($from) {
-            'Finalizado', 'Cancelado' => false,
-            'En curso' => in_array($to, ['En curso', 'Finalizado', 'Cancelado'], true),
-            default => in_array($to, self::STATES, true),
+            'Programado' => in_array($to, ['En curso', 'Cancelado'], true),
+            'En curso' => in_array($to, ['Finalizado', 'Cancelado'], true),
+            default => false,
         };
     }
 

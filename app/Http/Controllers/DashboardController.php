@@ -134,11 +134,70 @@ class DashboardController extends Controller
     {
         $site = $siteContext->currentFor($request, $request->user());
         abort_unless($site && $request->user()->sites()->whereKey($site->getKey())->exists(), 403);
-        $services = DB::table('servicios')->where('id_sede', $site->getKey())
-            ->whereDate('fecha', now()->toDateString())->orderBy('inicio_hora')->limit(5)
+        $today = Carbon::now('America/Mexico_City')->toDateString();
+        $approvedToday = DB::table('servicios')->where('id_sede', $site->getKey())
+            ->where('estado_aprobacion', 'Aprobado')->whereDate('fecha', $today)
+            ->where(fn ($query) => $query->whereNull('estado')->orWhere('estado', '<>', 'Cancelado'));
+        $services = (clone $approvedToday)->orderBy('inicio_hora')->limit(5)
             ->get(['nombre', 'inicio_hora', 'fin_hora', 'estado']);
+        $activeServiceCount = (clone $approvedToday)->where('estado', 'En curso')->count();
 
-        return view('kitchen.dashboard', compact('site', 'services'));
+        $pendingOrderLines = 0;
+        if ($this->tablesExist(['comanda_detalles', 'comandas', 'atenciones'])) {
+            $pendingOrderLines = DB::table('comanda_detalles as detalle')
+                ->join('comandas as comanda', 'comanda.id_comanda', '=', 'detalle.id_comanda')
+                ->join('atenciones as atencion', 'atencion.id_atencion', '=', 'comanda.id_atencion')
+                ->join('servicios as servicio', 'servicio.id_servicio', '=', 'atencion.id_servicio')
+                ->where('servicio.id_sede', $site->getKey())
+                ->where('servicio.estado_aprobacion', 'Aprobado')
+                ->whereNotIn('servicio.estado', ['Cancelado', 'Finalizado'])
+                ->whereRaw('LOWER(detalle.estado) = ?', ['pendiente'])
+                ->count();
+        }
+
+        $lowStock = 0;
+        $depletedStock = 0;
+        if (Schema::hasTable('insumo_sedes') && Schema::hasColumn('insumo_sedes', 'id_sede')) {
+            $stock = DB::table('insumo_sedes')->where('id_sede', $site->getKey());
+            if (Schema::hasColumn('insumo_sedes', 'stock')) {
+                $depletedStock = (clone $stock)->where('stock', '<=', 0)->count();
+                if (Schema::hasColumn('insumo_sedes', 'punto_de_reorden')) {
+                    $lowStock = (clone $stock)->whereNotNull('punto_de_reorden')
+                        ->whereColumn('stock', '<=', 'punto_de_reorden')->count();
+                }
+            }
+        }
+
+        $openIncidents = 0;
+        if (Schema::hasTable('incidencias') && Schema::hasColumn('incidencias', 'id_sede')) {
+            $incidentQuery = DB::table('incidencias')->where('id_sede', $site->getKey());
+            $openIncidents = Schema::hasColumn('incidencias', 'fecha_cierre')
+                ? (clone $incidentQuery)->whereNull('fecha_cierre')->count()
+                : $incidentQuery->count();
+        }
+
+        return view('kitchen.dashboard', [
+            'site' => $site,
+            'services' => $services,
+            'today' => Carbon::parse($today, 'America/Mexico_City'),
+            'metrics' => [
+                ['label' => 'Servicios aprobados hoy', 'value' => (clone $approvedToday)->count(), 'detail' => $activeServiceCount.' en curso', 'icon' => 'calendar', 'tone' => 'blue'],
+                ['label' => 'Comandas pendientes', 'value' => $pendingOrderLines, 'detail' => 'Renglones por preparar', 'icon' => 'plates', 'tone' => 'amber'],
+                ['label' => 'Existencias bajas', 'value' => $lowStock, 'detail' => $depletedStock.' agotados', 'icon' => 'warehouse', 'tone' => 'orange'],
+                ['label' => 'Incidencias abiertas', 'value' => $openIncidents, 'detail' => 'Registradas en esta sede', 'icon' => 'alert', 'tone' => 'red'],
+            ],
+        ]);
+    }
+
+    private function tablesExist(array $tables): bool
+    {
+        foreach ($tables as $table) {
+            if (! Schema::hasTable($table)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public function company(Site $site): View

@@ -17,6 +17,9 @@
     @case('bell')<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>@break
     @case('chevron')<path d="m9 18 6-6-6-6"/>@break
     @case('clock')<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>@break
+    @case('search')<circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.2 4.2"/>@break
+    @case('check')<path d="m5 12 4 4L19 6"/>@break
+    @case('plus')<path d="M12 5v14M5 12h14"/>@break
     @case('plates')<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>@break
     @case('cash')<rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M7 9H6v2M17 13h1v2"/>@break
     @case('layers')<path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 17l9 5 9-5"/>@break

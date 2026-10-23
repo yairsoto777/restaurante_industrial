@@ -31,6 +31,7 @@
             <div class="nav-section"><span>Administración</span>
                 <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}"><x-icon name="users"/><b>Clientes / Gerentes</b></a>
                 <a class="nav-link {{ request()->routeIs('admin.sites.*', 'admin.companies.*') ? 'active' : '' }}" href="{{ route('admin.sites.index') }}"><x-icon name="building"/><b>Gestión de sedes</b></a>
+                <a class="nav-link {{ request()->routeIs('admin.units.*') ? 'active' : '' }}" href="{{ route('admin.units.index') }}"><x-icon name="box"/><b>Catálogo de unidades</b></a>
                 <a class="nav-link {{ request()->routeIs('admin.contacts.*') ? 'active' : '' }}" href="{{ route('admin.contacts.index') }}"><x-icon name="layers"/><b>Contactos</b></a>
             </div>
             <div class="nav-section"><span>Supervisión</span>
@@ -54,6 +55,7 @@
                 @if($canAdminister)
                     <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}"><x-icon name="users"/><b>Usuarios y permisos</b></a>
                     <a class="nav-link {{ request()->routeIs('admin.sites.*') ? 'active' : '' }}" href="{{ route('admin.sites.index') }}"><x-icon name="building"/><b>Gestión de sedes</b></a>
+                    <a class="nav-link {{ request()->routeIs('admin.units.*') ? 'active' : '' }}" href="{{ route('admin.units.index') }}"><x-icon name="box"/><b>Catálogo de unidades</b></a>
                     @if($authenticatedUser->isSuperAdministrator())
                         <a class="nav-link {{ request()->routeIs('admin.contacts.*') ? 'active' : '' }}" href="{{ route('admin.contacts.index') }}"><x-icon name="layers"/><b>Contactos</b></a>
                     @endif
@@ -72,6 +74,7 @@
             <div class="nav-section"><span>Recepción / Inventario</span>
                 <a class="nav-link {{ request()->routeIs('receptions.*') ? 'active' : '' }}" href="{{ route('receptions.index') }}"><x-icon name="box"/><b>Recepción de insumos</b></a>
                 <a class="nav-link {{ request()->routeIs('inventory.*') ? 'active' : '' }}" href="{{ route('inventory.index') }}"><x-icon name="warehouse"/><b>Inventario de insumos</b></a>
+                @if(auth()->user()->hasRole('Jefe de cocina') && !$canAdminister)<a class="nav-link {{ request()->routeIs('admin.units.*') ? 'active' : '' }}" href="{{ route('admin.units.index') }}"><x-icon name="box"/><b>Administrar unidades</b></a>@endif
             </div>
             @if(!$isManager)
             <div class="nav-section"><span>Servicios</span>
@@ -84,9 +87,16 @@
             <div class="nav-section"><span>Mi operación</span>
                 @if($isWarehouse)<a class="nav-link {{ request()->routeIs('receptions.*') ? 'active' : '' }}" href="{{ route('receptions.index') }}"><x-icon name="box"/><b>Recepción</b></a>@endif
                 @if($isWarehouse || $isKitchen)<a class="nav-link {{ request()->routeIs('inventory.*') ? 'active' : '' }}" href="{{ route('inventory.index') }}"><x-icon name="warehouse"/><b>Inventario</b></a>@endif
+                @if(auth()->user()->hasRole('Jefe de cocina'))<a class="nav-link {{ request()->routeIs('admin.units.*') ? 'active' : '' }}" href="{{ route('admin.units.index') }}"><x-icon name="box"/><b>Administrar unidades</b></a>@endif
                 @if($isKitchen || $isService)<a class="nav-link {{ request()->routeIs('services.*') ? 'active' : '' }}" href="{{ route('services.index') }}"><x-icon name="calendar"/><b>Servicios</b></a>@endif
                 @if($isKitchen)<a class="nav-link {{ request()->routeIs('groups.*') ? 'active' : '' }}" href="{{ route('groups.index') }}"><x-icon name="group"/><b>Grupos y entregas</b></a>@endif
-                @if($isKitchen)<a class="nav-link {{ request()->routeIs('menus.*') ? 'active' : '' }}" href="{{ route('menus.index') }}"><x-icon name="utensils"/><b>Menú por servicio</b></a><a class="nav-link {{ request()->routeIs('dishes.*') ? 'active' : '' }}" href="{{ route('dishes.index') }}"><x-icon name="dish"/><b>Platillos</b></a>@endif
+                @if($isKitchen)
+                    <a class="nav-link {{ request()->routeIs('menus.*') ? 'active' : '' }}" href="{{ route('menus.index') }}"><x-icon name="utensils"/><b>Menú por servicio</b></a>
+                    <a class="nav-link {{ request()->routeIs('dishes.*') ? 'active' : '' }}" href="{{ route('dishes.index') }}"><x-icon name="dish"/><b>Platillos</b></a>
+                    @if($authenticatedUser->hasRole('Jefe de cocina'))
+                        <a class="nav-link {{ request()->routeIs('dishes.categories.*') ? 'active' : '' }}" href="{{ route('dishes.categories.index') }}"><x-icon name="layers"/><b>Administrar categorías</b></a>
+                    @endif
+                @endif
                 @if($isService)<a class="nav-link {{ request()->routeIs('tables.*') ? 'active' : '' }}" href="{{ route('tables.index') }}"><x-icon name="map"/><b>Mesas y zonas</b></a>@endif
                 @if($isWarehouse)<a class="nav-link {{ request()->routeIs('orders.*') ? 'active' : '' }}" href="{{ route('orders.index') }}"><x-icon name="box"/><b>Pedidos</b></a>@endif
                 @if($isCashier)<a class="nav-link {{ request()->routeIs('cash.*') ? 'active' : '' }}" href="{{ route('cash.index') }}"><x-icon name="cash"/><b>Caja</b></a>@endif
@@ -103,6 +113,7 @@
             <div class="nav-section"><span>Menú</span>
                 <a class="nav-link {{ request()->routeIs('menus.*') ? 'active' : '' }}" href="{{ route('menus.index') }}"><x-icon name="utensils"/><b>Menú por servicio</b></a>
                 <a class="nav-link {{ request()->routeIs('dishes.*') ? 'active' : '' }}" href="{{ route('dishes.index') }}"><x-icon name="dish"/><b>Platillos</b></a>
+                @if($authenticatedUser->hasRole('Jefe de cocina'))<a class="nav-link {{ request()->routeIs('dishes.categories.*') ? 'active' : '' }}" href="{{ route('dishes.categories.index') }}"><x-icon name="layers"/><b>Administrar categorías</b></a>@endif
             </div>
             <div class="nav-section"><span>Control</span>
                 <a class="nav-link {{ request()->routeIs('incidents.*') ? 'active' : '' }}" href="{{ route('incidents.index') }}"><x-icon name="alert"/><b>Incidencias</b></a>

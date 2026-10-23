@@ -34,11 +34,6 @@ class OperationalModuleController extends Controller
         $site = $siteContext->currentFor($request, $request->user());
         abort_unless($site && ($request->user()->canAdminister() || $request->user()->sites()->whereKey($site->id_sede)->exists()), 403);
 
-        if ($routeName === 'inventory.index') {
-            $table = collect(['insumo_sedes', 'inventarios_finales', 'inventarios', 'existencias'])->first(fn ($name) => Schema::hasTable($name));
-            $rows = $table ? DB::table($table)->where('id_sede', $site->id_sede)->limit(200)->get() : collect();
-            return view('modules.inventory', compact('site', 'rows', 'table'));
-        }
         if ($routeName === 'incidents.index') {
             $incidents = Schema::hasTable('incidencias') ? DB::table('incidencias')->where('id_sede', $site->id_sede)->orderByDesc('fecha')->limit(100)->get() : collect();
             return view('modules.incidents', compact('site', 'incidents'));
