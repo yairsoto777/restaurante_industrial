@@ -1,3 +1,4 @@
+
 <?php
 
 use App\Http\Controllers\Admin\CommercialContactController;
@@ -5,6 +6,7 @@ use App\Http\Controllers\Admin\SiteController;
 use App\Http\Controllers\Admin\UnitController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CashController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DishCategoryController;
 use App\Http\Controllers\Manager\EmployeeController;
@@ -32,6 +34,7 @@ Route::get('/operacion/mi-pagina-web/preview/{slug}', [PublicSiteController::cla
 Route::post('/solicita-informacion', [PublicContactController::class, 'store'])
     ->middleware('throttle:5,1')
     ->name('contact.store');
+
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'create'])->name('login');
     Route::post('/login', [AuthController::class, 'store'])->name('login.store');
@@ -48,7 +51,9 @@ Route::middleware('guest')->group(function () {
         ->middleware('throttle:5,1')
         ->name('password.reset.store');
 });
+
 Route::post('/logout', [AuthController::class, 'destroy'])->middleware('auth')->name('logout');
+
 Route::middleware('auth')->group(function () {
     Route::get('/cambiar-contrasena', [AuthController::class, 'showChangePassword'])->name('password.change');
     Route::post('/cambiar-contrasena', [AuthController::class, 'changePassword'])->middleware('throttle:5,1')->name('password.change.store');
@@ -72,10 +77,12 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::middleware('role:administrator,manager,Recepcion de insumos,Jefe de almacen')->group(function () {
         Route::get('/recepciones', [OperationalModuleController::class, 'show'])->name('receptions.index');
     });
+
     Route::middleware('role:administrator,manager,Personal de cocina,Jefe de cocina,Mesero,Capitan de meseros')->group(function () {
         Route::get('/servicios', [ServiceController::class, 'kitchenIndex'])->name('services.index');
         Route::get('/servicios/en-vivo', [ServiceController::class, 'live'])->name('services.live');
     });
+
     Route::middleware('role:Jefe de cocina')->group(function () {
         Route::get('/servicios/nuevo', [ServiceController::class, 'create'])->name('kitchen.services.create');
         Route::post('/servicios', [ServiceController::class, 'store'])->name('kitchen.services.store');
@@ -83,12 +90,19 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::put('/servicios/{service}', [ServiceController::class, 'update'])->name('kitchen.services.update');
         Route::patch('/servicios/{service}/estado', [ServiceController::class, 'updateOperationalStatus'])->name('kitchen.services.status');
     });
-    Route::middleware('role:administrator,manager,Jefe de cocina,Jefe de almacen,Capitan de meseros')->get('/reportes', [OperationalModuleController::class, 'show'])->name('reports.index');
+
+    Route::middleware('role:administrator,manager,Jefe de cocina,Jefe de almacen,Capitan de meseros')
+        ->get('/reportes', [OperationalModuleController::class, 'show'])
+        ->name('reports.index');
 
     Route::middleware('role:administrator,manager,Personal de cocina,Jefe de cocina,Recepcion de insumos,Jefe de almacen')->group(function () {
         Route::get('/inventario', [InventoryController::class, 'index'])->name('inventory.index');
     });
-    Route::middleware('role:Jefe de cocina,Recepcion de insumos')->post('/inventario/catalogo', [InventoryController::class, 'storeIngredient'])->name('inventory.ingredients.store');
+
+    Route::middleware('role:Jefe de cocina,Recepcion de insumos')
+        ->post('/inventario/catalogo', [InventoryController::class, 'storeIngredient'])
+        ->name('inventory.ingredients.store');
+
     Route::middleware('role:Jefe de cocina')->group(function () {
         Route::post('/inventario/asignaciones', [InventoryController::class, 'assignIngredient'])->name('inventory.assignments.store');
         Route::post('/inventario/movimientos', [InventoryController::class, 'storeMovement'])->name('inventory.movements.store');
@@ -96,47 +110,94 @@ Route::middleware(['auth', 'active'])->group(function () {
             ->whereNumber('ingredient')
             ->name('inventory.reorder.update');
     });
+
     Route::middleware('role:administrator,manager,Personal de cocina,Jefe de cocina,Mesero,Capitan de meseros')->group(function () {
         Route::get('/mesas-y-zonas', [OperationalModuleController::class, 'show'])->name('tables.index');
         Route::get('/grupos-y-entregas', [KitchenWorkflowController::class, 'groups'])->name('groups.index');
     });
+
     Route::middleware('role:Jefe de cocina')->group(function () {
         Route::post('/grupos-y-entregas/grupos', [KitchenWorkflowController::class, 'storeGroup'])->name('groups.store');
         Route::post('/grupos-y-entregas/atenciones', [KitchenWorkflowController::class, 'storeAttention'])->name('groups.attentions.store');
         Route::post('/grupos-y-entregas/entregas', [KitchenWorkflowController::class, 'storeDelivery'])->name('groups.deliveries.store');
     });
+
     Route::middleware('role:administrator,manager,Personal de cocina,Jefe de cocina')->group(function () {
         Route::get('/menus', [MenuController::class, 'index'])->name('menus.index');
-        Route::post('/menus/{service}', [MenuController::class, 'store'])->middleware('role:Jefe de cocina')->name('menus.store');
+        Route::post('/menus/{service}', [MenuController::class, 'store'])
+            ->middleware('role:Jefe de cocina')
+            ->name('menus.store');
+
         Route::get('/platillos', [App\Http\Controllers\DishController::class, 'index'])->name('dishes.index');
-        Route::get('/platillos/nuevo', [App\Http\Controllers\DishController::class, 'create'])->middleware('role:Jefe de cocina')->name('dishes.create');
-        Route::post('/platillos', [App\Http\Controllers\DishController::class, 'store'])->middleware('role:Jefe de cocina')->name('dishes.store');
-        Route::get('/platillos/categorias', [DishCategoryController::class, 'index'])->middleware('role:Jefe de cocina')->name('dishes.categories.index');
-        Route::post('/platillos/categorias', [DishCategoryController::class, 'store'])->middleware('role:Jefe de cocina')->name('dishes.categories.store');
-        Route::delete('/platillos/categorias/{category}', [DishCategoryController::class, 'destroy'])->whereNumber('category')->middleware('role:Jefe de cocina')->name('dishes.categories.destroy');
+        Route::get('/platillos/nuevo', [App\Http\Controllers\DishController::class, 'create'])
+            ->middleware('role:Jefe de cocina')
+            ->name('dishes.create');
+        Route::post('/platillos', [App\Http\Controllers\DishController::class, 'store'])
+            ->middleware('role:Jefe de cocina')
+            ->name('dishes.store');
+
+        Route::get('/platillos/categorias', [DishCategoryController::class, 'index'])
+            ->middleware('role:Jefe de cocina')
+            ->name('dishes.categories.index');
+        Route::post('/platillos/categorias', [DishCategoryController::class, 'store'])
+            ->middleware('role:Jefe de cocina')
+            ->name('dishes.categories.store');
+        Route::delete('/platillos/categorias/{category}', [DishCategoryController::class, 'destroy'])
+            ->whereNumber('category')
+            ->middleware('role:Jefe de cocina')
+            ->name('dishes.categories.destroy');
+
         Route::get('/platillos/{dish}', [App\Http\Controllers\DishController::class, 'show'])->name('dishes.show');
-        Route::get('/platillos/{dish}/editar', [App\Http\Controllers\DishController::class, 'edit'])->middleware('role:Jefe de cocina')->name('dishes.edit');
-        Route::put('/platillos/{dish}', [App\Http\Controllers\DishController::class, 'update'])->middleware('role:Jefe de cocina')->name('dishes.update');
+        Route::get('/platillos/{dish}/editar', [App\Http\Controllers\DishController::class, 'edit'])
+            ->middleware('role:Jefe de cocina')
+            ->name('dishes.edit');
+        Route::put('/platillos/{dish}', [App\Http\Controllers\DishController::class, 'update'])
+            ->middleware('role:Jefe de cocina')
+            ->name('dishes.update');
     });
+
     Route::middleware('role:administrator,manager,Personal de cocina,Jefe de cocina,Recepcion de insumos,Jefe de almacen,Mesero,Capitan de meseros,Cajero')->group(function () {
         Route::get('/incidencias', [IncidentController::class, 'index'])->name('incidents.index');
         Route::post('/incidencias', [IncidentController::class, 'store'])->name('incidents.store');
     });
-    Route::middleware('role:administrator,manager,Jefe de almacen')->get('/pedidos', [OperationalModuleController::class, 'show'])->name('orders.index');
-    Route::middleware('role:administrator,manager,Jefe de cocina,Jefe de almacen')->get('/requisiciones', [OperationalModuleController::class, 'show'])->name('requisitions.index');
-    Route::middleware('role:administrator,manager,Cajero')->get('/caja', [OperationalModuleController::class, 'show'])->name('cash.index');
+
+    Route::middleware('role:administrator,manager,Jefe de almacen')
+        ->get('/pedidos', [OperationalModuleController::class, 'show'])
+        ->name('orders.index');
+
+    Route::middleware('role:administrator,manager,Jefe de cocina,Jefe de almacen')
+        ->get('/requisiciones', [OperationalModuleController::class, 'show'])
+        ->name('requisitions.index');
+
+    // MODULO CAJERO: conservar las funcionalidades implementadas.
+    Route::middleware('role:administrator,manager,Cajero')->group(function () {
+        Route::get('/caja', [CashController::class, 'index'])->name('cash.index');
+        Route::post('/caja/aperturas', [CashController::class, 'open'])->name('cash.open');
+        Route::get('/caja/turnos/{cashSession}', [CashController::class, 'show'])->name('cash.sessions.show');
+        Route::get('/caja/turnos/{cashSession}/fondo/editar', [CashController::class, 'editFund'])->name('cash.fund.edit');
+        Route::post('/caja/turnos/{cashSession}/fondo', [CashController::class, 'updateFund'])->name('cash.fund.update');
+        Route::get('/caja/turnos/{cashSession}/anular', [CashController::class, 'confirmCancellation'])->name('cash.cancel.confirm');
+        Route::post('/caja/turnos/{cashSession}/anular', [CashController::class, 'cancelOpening'])->name('cash.cancel');
+    });
+
+    // MODULO COCINA: conservar las rutas nuevas de los compañeros.
     Route::middleware('role:administrator,manager,Personal de cocina,Jefe de cocina')->group(function () {
         Route::get('/cocina', [KitchenWorkflowController::class, 'kitchen'])->name('kitchen.index');
     });
+
     Route::middleware('role:Personal de cocina')->group(function () {
         Route::patch('/cocina/comandas/{detail}/estado', [KitchenWorkflowController::class, 'updateOrderStatus'])
-            ->whereNumber('detail')->name('kitchen.order-status.update');
+            ->whereNumber('detail')
+            ->name('kitchen.order-status.update');
     });
 
     Route::prefix('administracion')->name('admin.')->middleware('role:super-administrator,administrator')->group(function () {
         Route::patch('usuarios/{user}/hacer-administrador', [UserController::class, 'promote'])->name('users.promote');
         Route::patch('usuarios/{user}/hacer-gerente', [UserController::class, 'demote'])->name('users.demote');
-        Route::resource('usuarios', UserController::class)->parameters(['usuarios' => 'user'])->except('show')->names('users');
+        Route::resource('usuarios', UserController::class)
+            ->parameters(['usuarios' => 'user'])
+            ->except('show')
+            ->names('users');
         Route::get('sedes', [SiteController::class, 'index'])->name('sites.index');
         Route::view('configuracion', 'admin.settings')->name('settings');
         Route::get('empresas/{site}', [DashboardController::class, 'company'])->name('companies.show');
@@ -174,14 +235,17 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::delete('mi-pagina-web/media/{media}', [SitePageController::class, 'deleteMedia'])->name('site-page.media.delete');
         Route::post('mi-pagina-web', [SitePageController::class, 'save'])->name('site-page.save');
         Route::post('mi-pagina-web/publicar', [SitePageController::class, 'publish'])->name('site-page.publish');
+
         Route::resource('empleados', EmployeeController::class)
             ->parameters(['empleados' => 'employee'])
             ->except(['show', 'destroy'])
             ->names('employees');
+
         Route::get('solicitudes-empleo', [ManagerEmploymentApplicationController::class, 'index'])->name('applications.index');
         Route::get('solicitudes-empleo/{application}', [ManagerEmploymentApplicationController::class, 'show'])->name('applications.show');
         Route::patch('solicitudes-empleo/{application}/aprobar', [ManagerEmploymentApplicationController::class, 'approve'])->name('applications.approve');
         Route::patch('solicitudes-empleo/{application}/rechazar', [ManagerEmploymentApplicationController::class, 'reject'])->name('applications.reject');
+
         Route::get('servicios', [ServiceController::class, 'managerIndex'])->name('services.index');
         Route::get('servicios/nuevo', [ServiceController::class, 'create'])->name('services.create');
         Route::post('servicios', [ServiceController::class, 'store'])->name('services.store');
@@ -189,6 +253,9 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::put('servicios/{service}', [ServiceController::class, 'update'])->name('services.update');
         Route::patch('servicios/{service}/aprobar', [ServiceController::class, 'approve'])->name('services.approve');
         Route::patch('servicios/{service}/rechazar', [ServiceController::class, 'reject'])->name('services.reject');
-        Route::get('{module}', [ModuleController::class, 'show'])->whereIn('module', ['recepcion', 'servicios', 'reportes'])->name('module');
+
+        Route::get('{module}', [ModuleController::class, 'show'])
+            ->whereIn('module', ['recepcion', 'servicios', 'reportes'])
+            ->name('module');
     });
 });
