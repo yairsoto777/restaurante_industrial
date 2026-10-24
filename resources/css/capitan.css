@@ -1,0 +1,3584 @@
+
+
+/* ==========================================================
+
+   NUTRILIADO - CAPITÁN DE MESEROS
+
+   DISEÑO PREMIUM AZUL / BLANCO / NAVY
+
+\========================================================== */
+
+.capitan-page {
+
+    --cp-blue: #1679eb;
+
+    --cp-light-blue: #49a9ff;
+
+    --cp-navy: #081f41;
+
+    --cp-text: #102f54;
+
+    --cp-muted: #788aa3;
+
+    --cp-border: #dce7f5;
+
+    width: 100%;
+
+    min-width: 0;
+
+    color: var(--cp-text);
+
+    font-family: inherit;
+
+}
+
+.capitan-page,
+
+.capitan-page * {
+
+    box-sizing: border-box;
+
+}
+
+.capitan-page button,
+
+.capitan-page select,
+
+.capitan-page textarea {
+
+    font: inherit;
+
+}
+
+/* ENCABEZADO */
+
+.cp-page-heading {
+
+    display: flex;
+
+    align-items: end;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    margin-bottom: 25px;
+
+    animation: cp-enter .55s ease both;
+
+}
+
+.cp-kicker {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 9px;
+
+    color: #0c77ee;
+
+    font-size: 10px;
+
+    font-weight: 850;
+
+    letter-spacing: 1.6px;
+
+    text-transform: uppercase;
+
+}
+
+.cp-live-dot {
+
+    flex: 0 0 auto;
+
+    display: inline-block;
+
+    width: 7px;
+
+    height: 7px;
+
+    border-radius: 50%;
+
+    background: #15cca0;
+
+    box-shadow: 0 0 0 4px rgba(21,204,160,.14);
+
+    animation: cp-pulse 2s infinite;
+
+}
+
+.cp-page-heading h1 {
+
+    margin: 12px 0 8px;
+
+    color: #081d3c;
+
+    font-size: clamp(26px,3vw,38px);
+
+    line-height: 1.1;
+
+    font-weight: 850;
+
+    letter-spacing: -1.1px;
+
+}
+
+.cp-page-heading p {
+
+    margin: 0;
+
+    font-size: 12px;
+
+    color: #8190a5;
+
+}
+
+.cp-separator {
+
+    padding: 0 8px;
+
+    color: #b7c4d4;
+
+}
+
+.cp-date {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 7px;
+
+    text-align: right;
+
+}
+
+.cp-date span {
+
+    color: #8a9bb1;
+
+    font-size: 9px;
+
+    font-weight: 800;
+
+    letter-spacing: 1.5px;
+
+}
+
+.cp-date strong {
+
+    color: #164a84;
+
+    font-size: 14px;
+
+    font-weight: 800;
+
+}
+
+/* HERO */
+
+.cp-hero {
+
+    position: relative;
+
+    isolation: isolate;
+
+    display: flex;
+
+    align-items: center;
+
+    min-height: 310px;
+
+    padding: 40px;
+
+    overflow: hidden;
+
+    margin-bottom: 33px;
+
+    color: #fff;
+
+    background: #071c39;
+
+    border-radius: 22px;
+
+    box-shadow: 0 18px 42px rgba(8,34,80,.16);
+
+    animation: cp-enter .65s ease both;
+
+}
+
+.cp-hero-image {
+
+    position: absolute;
+
+    inset: 0;
+
+    z-index: -2;
+
+    width: 100%;
+
+    height: 100%;
+
+    object-fit: cover;
+
+    transition: transform .8s ease;
+
+}
+
+.cp-hero:hover .cp-hero-image {
+
+    transform: scale(1.045);
+
+}
+
+.cp-hero::after {
+
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    z-index: -1;
+
+    background: linear-gradient(
+
+        90deg,
+
+        rgba(3,17,39,.98) 0%,
+
+        rgba(5,25,54,.89) 46%,
+
+        rgba(4,23,49,.18) 100%
+
+    );
+
+}
+
+.cp-hero-content {
+
+    position: relative;
+
+    z-index: 1;
+
+    max-width: 560px;
+
+}
+
+.cp-hero-tag {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 9px 13px;
+
+    color: #d6eaff;
+
+    border: 1px solid rgba(255,255,255,.22);
+
+    background: rgba(255,255,255,.09);
+
+    border-radius: 30px;
+
+    font-size: 10px;
+
+    font-weight: 800;
+
+    letter-spacing: 1.2px;
+
+}
+
+.cp-hero h2 {
+
+    margin: 23px 0 15px;
+
+    color: white;
+
+    font-size: clamp(38px,5vw,62px);
+
+    font-weight: 850;
+
+    line-height: 1.03;
+
+    letter-spacing: -2px;
+
+}
+
+.cp-hero h2 em {
+
+    color: #70beff;
+
+    font-style: normal;
+
+}
+
+.cp-hero-content > p {
+
+    max-width: 430px;
+
+    margin: 0;
+
+    color: #d2e2f5;
+
+    font-size: 14px;
+
+    line-height: 1.8;
+
+}
+
+.cp-hero-location {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    margin-top: 27px;
+
+    color: #eaf5ff;
+
+    font-size: 11px;
+
+    font-weight: 750;
+
+}
+
+.cp-hero-number {
+
+    position: absolute;
+
+    right: 25px;
+
+    bottom: 23px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: flex-end;
+
+    gap: 5px;
+
+}
+
+.cp-hero-number small {
+
+    font-size: 9px;
+
+    letter-spacing: 2px;
+
+    color: #c7dff8;
+
+}
+
+.cp-hero-number strong {
+
+    font-size: 15px;
+
+    color: #fff;
+
+}
+
+/* ENCABEZADOS DE BLOQUES */
+
+.cp-metrics-section {
+
+    margin-bottom: 29px;
+
+}
+
+.cp-section-heading {
+
+    display: flex;
+
+    align-items: end;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    margin-bottom: 19px;
+
+}
+
+.cp-section-heading h2 {
+
+    margin: 9px 0 0;
+
+    color: #081e3d;
+
+    font-size: clamp(21px,2.4vw,27px);
+
+    font-weight: 850;
+
+    letter-spacing: -.7px;
+
+}
+
+.cp-section-note {
+
+    font-size: 11px;
+
+    color: #93a2b5;
+
+}
+
+/* TARJETAS FOTOGRÁFICAS */
+
+.cp-metrics {
+
+    display: grid;
+
+    grid-template-columns: repeat(4,minmax(0,1fr));
+
+    gap: 16px;
+
+}
+
+.cp-metric {
+
+    position: relative;
+
+    isolation: isolate;
+
+    overflow: hidden;
+
+    min-height: 186px;
+
+    border: 1px solid #dce8f6;
+
+    background: #fff;
+
+    border-radius: 17px;
+
+    box-shadow: 0 6px 22px rgba(15,59,113,.05);
+
+    transition:
+
+        transform .28s ease,
+
+        border-color .28s ease,
+
+        box-shadow .28s ease;
+
+    animation: cp-enter .6s ease both;
+
+}
+
+.cp-metric:nth-child(2) {
+
+    animation-delay: .07s;
+
+}
+
+.cp-metric:nth-child(3) {
+
+    animation-delay: .14s;
+
+}
+
+.cp-metric:nth-child(4) {
+
+    animation-delay: .21s;
+
+}
+
+.cp-metric:hover {
+
+    transform: translateY(-5px);
+
+    border-color: #93c6ff;
+
+    box-shadow: 0 19px 36px rgba(20,89,167,.13);
+
+}
+
+.cp-metric-photo {
+
+    position: absolute;
+
+    top: 0;
+
+    right: 0;
+
+    z-index: -1;
+
+    width: 57%;
+
+    height: 100%;
+
+}
+
+.cp-metric-photo img {
+
+    width: 100%;
+
+    height: 100%;
+
+    object-fit: cover;
+
+    filter: saturate(.9);
+
+    transition: transform .7s ease;
+
+}
+
+.cp-metric:hover .cp-metric-photo img {
+
+    transform: scale(1.12);
+
+}
+
+.cp-metric-photo::after {
+
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    background: linear-gradient(
+
+        90deg,
+
+        #fff 0%,
+
+        rgba(255,255,255,.95) 12%,
+
+        rgba(255,255,255,.55) 52%,
+
+        rgba(255,255,255,.14) 100%
+
+    );
+
+}
+
+.cp-metric-content {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    padding: 23px 18px;
+
+}
+
+.cp-metric-content > span {
+
+    margin-bottom: 21px;
+
+    color: #407dbb;
+
+    font-size: 9px;
+
+    font-weight: 850;
+
+    letter-spacing: 1.2px;
+
+}
+
+.cp-metric-content > strong {
+
+    color: #062953;
+
+    font-size: clamp(34px,3vw,44px);
+
+    line-height: 1;
+
+    font-weight: 900;
+
+    letter-spacing: -1.5px;
+
+}
+
+.cp-metric-content > p {
+
+    max-width: 135px;
+
+    margin: 13px 0 0;
+
+    color: #60758f;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    line-height: 1.5;
+
+}
+
+.cp-metric-line {
+
+    position: absolute;
+
+    bottom: 0;
+
+    left: 18px;
+
+    width: 42px;
+
+    height: 3px;
+
+    background: linear-gradient(90deg,#136ce2,#6cc6ff);
+
+    border-radius: 5px 5px 0 0;
+
+    transition: width .35s ease;
+
+}
+
+.cp-metric:hover .cp-metric-line {
+
+    width: calc(100% - 36px);
+
+}
+
+/* GRÁFICA */
+
+.cp-chart-card {
+
+    margin-bottom: 25px;
+
+    padding: 28px 30px 22px;
+
+    background: #fff;
+
+    border: 1px solid var(--cp-border);
+
+    border-radius: 20px;
+
+    box-shadow: 0 8px 26px rgba(15,59,113,.045);
+
+    animation: cp-enter .7s ease both;
+
+}
+
+.cp-chart-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 20px;
+
+    margin-bottom: 29px;
+
+}
+
+.cp-chart-header h2 {
+
+    margin: 10px 0 8px;
+
+    color: #081e3e;
+
+    font-size: clamp(22px,2.5vw,28px);
+
+    font-weight: 850;
+
+    letter-spacing: -.8px;
+
+}
+
+.cp-chart-header p {
+
+    margin: 0;
+
+    color: #8292a8;
+
+    font-size: 12px;
+
+}
+
+.cp-chart-total {
+
+    min-width: 140px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: flex-end;
+
+    gap: 4px;
+
+    padding: 14px 19px;
+
+    background: #edf5ff;
+
+    border: 1px solid #d8e9ff;
+
+    border-radius: 14px;
+
+}
+
+.cp-chart-total small {
+
+    font-size: 9px;
+
+    letter-spacing: 1px;
+
+    font-weight: 850;
+
+    color: #6088b6;
+
+}
+
+.cp-chart-total strong {
+
+    color: #0c68d3;
+
+    font-size: 32px;
+
+    line-height: 1.1;
+
+    font-weight: 900;
+
+}
+
+.cp-chart-total span {
+
+    font-size: 10px;
+
+    color: #8298b2;
+
+}
+
+.cp-chart-scroll {
+
+    width: 100%;
+
+    overflow-x: auto;
+
+    scrollbar-width: thin;
+
+}
+
+.cp-chart {
+
+    position: relative;
+
+    width: 100%;
+
+    max-width: 840px;
+
+    min-width: max(320px,calc(var(--cp-columns) * 66px));
+
+    height: 295px;
+
+    margin: 0 auto;
+
+}
+
+.cp-chart-grid {
+
+    position: absolute;
+
+    inset: 27px 0 34px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: space-between;
+
+    pointer-events: none;
+
+}
+
+.cp-chart-grid span {
+
+    width: 100%;
+
+    border-top: 1px dashed #e3ebf6;
+
+}
+
+.cp-chart-grid span:last-child {
+
+    border-top-style: solid;
+
+    border-top-color: #cbd9e9;
+
+}
+
+.cp-chart-bars {
+
+    position: relative;
+
+    display: grid;
+
+    grid-template-columns: repeat(var(--cp-columns),minmax(0,1fr));
+
+    justify-items: center;
+
+    gap: 9px;
+
+    height: 100%;
+
+}
+
+.cp-chart-column {
+
+    display: grid;
+
+    grid-template-rows: 27px minmax(0,1fr) 34px;
+
+    justify-items: center;
+
+    align-items: end;
+
+    width: 100%;
+
+}
+
+.cp-chart-value {
+
+    color: #076cd8;
+
+    font-size: 12px;
+
+    font-weight: 850;
+
+    font-variant-numeric: tabular-nums;
+
+}
+
+.cp-chart-bar-area {
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: flex-end;
+
+    width: 100%;
+
+    height: 100%;
+
+}
+
+.cp-chart-bar {
+
+    position: relative;
+
+    width: min(45px,80%);
+
+    height: var(--cp-bar-height);
+
+    border-radius: 8px 8px 2px 2px;
+
+    background: linear-gradient(
+
+        180deg,
+
+        #4bb3ff,
+
+        #1a83ed 48%,
+
+        #0d59c7
+
+    );
+
+    box-shadow: 0 5px 16px rgba(20,115,221,.2);
+
+    transform-origin: bottom;
+
+    animation: cp-grow .85s ease both;
+
+    transition: filter .2s ease;
+
+}
+
+.cp-chart-bar::after {
+
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+
+    left: 7px;
+
+    right: 7px;
+
+    height: 2px;
+
+    background: rgba(255,255,255,.65);
+
+    border-radius: 4px;
+
+}
+
+.cp-chart-column:hover .cp-chart-bar {
+
+    filter: brightness(1.18);
+
+}
+
+.cp-chart-hour {
+
+    align-self: center;
+
+    color: #7188a6;
+
+    font-size: 11px;
+
+    font-weight: 800;
+
+    white-space: nowrap;
+
+}
+
+.cp-chart-footer {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    padding-top: 15px;
+
+    margin-top: 13px;
+
+    border-top: 1px solid #edf2f9;
+
+    color: #8498af;
+
+    font-size: 10px;
+
+    font-weight: 750;
+
+}
+
+.cp-chart-empty {
+
+    min-height: 225px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: center;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 25px;
+
+    text-align: center;
+
+    border-radius: 13px;
+
+    background:
+
+        repeating-linear-gradient(
+
+            0deg,
+
+            transparent,
+
+            transparent 49px,
+
+            #eaf1fa 50px
+
+        );
+
+}
+
+.cp-chart-empty strong {
+
+    color: #174e87;
+
+    font-size: 15px;
+
+}
+
+.cp-chart-empty p {
+
+    max-width: 340px;
+
+    margin: 0;
+
+    color: #8196b0;
+
+    font-size: 12px;
+
+    line-height: 1.7;
+
+}
+
+/* TARJETAS INFERIORES */
+
+.cp-bottom-grid {
+
+    display: grid;
+
+    grid-template-columns: repeat(2,minmax(0,1fr));
+
+    gap: 18px;
+
+}
+
+.cp-info-card {
+
+    padding: 27px;
+
+    background: #fff;
+
+    border: 1px solid #dce8f6;
+
+    border-radius: 18px;
+
+    transition:
+
+        transform .25s ease,
+
+        box-shadow .25s ease;
+
+}
+
+.cp-info-card:hover {
+
+    transform: translateY(-4px);
+
+    box-shadow: 0 12px 28px rgba(18,80,154,.1);
+
+}
+
+.cp-info-card-blue {
+
+    background: #092448;
+
+    border-color: #092448;
+
+}
+
+.cp-info-card-blue .cp-kicker {
+
+    color: #85caff;
+
+}
+
+.cp-info-card h3 {
+
+    margin: 13px 0 18px;
+
+    color: #092346;
+
+    font-size: 20px;
+
+    font-weight: 850;
+
+}
+
+.cp-info-card-blue h3 {
+
+    color: #fff;
+
+}
+
+.cp-info-number {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 18px;
+
+}
+
+.cp-info-number strong {
+
+    color: #106fe0;
+
+    font-size: 53px;
+
+    font-weight: 900;
+
+    line-height: 1;
+
+    letter-spacing: -2px;
+
+}
+
+.cp-info-card-blue .cp-info-number strong {
+
+    color: #7bc5ff;
+
+}
+
+.cp-info-number span {
+
+    color: #7d92ab;
+
+    font-size: 12px;
+
+    line-height: 1.6;
+
+}
+
+.cp-info-card-blue .cp-info-number span {
+
+    color: #bad1ea;
+
+}
+
+.cp-info-divider {
+
+    height: 1px;
+
+    margin: 23px 0 16px;
+
+    background: #e5edf7;
+
+}
+
+.cp-info-card-blue .cp-info-divider {
+
+    background: rgba(255,255,255,.16);
+
+}
+
+.cp-info-card p {
+
+    margin: 0;
+
+    color: #7f90a6;
+
+    font-size: 12px;
+
+    line-height: 1.7;
+
+}
+
+.cp-info-card-blue p {
+
+    color: #b9d0e9;
+
+}
+
+/* MÓDULOS OPERATIVOS */
+
+.cp-workspace {
+
+    min-height: 330px;
+
+    padding: 29px;
+
+    background: #fff;
+
+    border: 1px solid #dce8f6;
+
+    border-radius: 20px;
+
+    box-shadow: 0 8px 25px rgba(15,59,113,.04);
+
+    animation: cp-enter .5s ease both;
+
+}
+
+.cp-workspace-heading {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 20px;
+
+    margin-bottom: 27px;
+
+}
+
+.cp-workspace-heading h2 {
+
+    margin: 10px 0 7px;
+
+    color: #081f42;
+
+    font-size: clamp(21px,2.4vw,29px);
+
+    font-weight: 850;
+
+    letter-spacing: -.7px;
+
+}
+
+.cp-workspace-heading p {
+
+    margin: 0;
+
+    color: #8293aa;
+
+    font-size: 12px;
+
+    line-height: 1.6;
+
+}
+
+.cp-count {
+
+    flex-shrink: 0;
+
+    padding: 9px 14px;
+
+    color: #176fcf;
+
+    background: #edf5ff;
+
+    border: 1px solid #d7e8fc;
+
+    border-radius: 30px;
+
+    font-size: 11px;
+
+    font-weight: 800;
+
+}
+
+.cp-zones {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 9px;
+
+    margin-bottom: 23px;
+
+}
+
+.cp-zones span {
+
+    padding: 10px 14px;
+
+    color: #156fd3;
+
+    background: #edf5ff;
+
+    border: 1px solid #daebfd;
+
+    border-radius: 30px;
+
+    font-size: 11px;
+
+    font-weight: 800;
+
+}
+
+.cp-zones p {
+
+    color: #8293aa;
+
+    font-size: 12px;
+
+}
+
+/* TABLAS */
+
+.cp-table-container {
+
+    width: 100%;
+
+    overflow-x: auto;
+
+    border: 1px solid #dce8f6;
+
+    border-radius: 13px;
+
+    scrollbar-width: thin;
+
+}
+
+.cp-table {
+
+    width: 100%;
+
+    min-width: 560px;
+
+    border-collapse: collapse;
+
+}
+
+.cp-table th {
+
+    padding: 16px;
+
+    color: #53749c;
+
+    background: #eff5fc;
+
+    font-size: 10px;
+
+    font-weight: 850;
+
+    letter-spacing: .6px;
+
+    text-align: left;
+
+    text-transform: uppercase;
+
+}
+
+.cp-table td {
+
+    padding: 16px;
+
+    color: #506781;
+
+    font-size: 12px;
+
+    line-height: 1.65;
+
+    vertical-align: middle;
+
+    border-top: 1px solid #eaf0f8;
+
+}
+
+.cp-table tbody tr {
+
+    transition: background .2s ease;
+
+}
+
+.cp-table tbody tr:hover {
+
+    background: #f6faff;
+
+}
+
+.cp-table .cp-strong {
+
+    color: #0b315f;
+
+    font-weight: 800;
+
+}
+
+.cp-table .cp-empty {
+
+    padding: 34px 16px;
+
+    color: #8599b0;
+
+    text-align: center;
+
+}
+
+.cp-status {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    padding: 6px 11px;
+
+    color: #186ec1;
+
+    background: #eef6ff;
+
+    border: 1px solid #d5e7fa;
+
+    border-radius: 24px;
+
+    font-size: 11px;
+
+    font-weight: 750;
+
+}
+
+.cp-status::before {
+
+    content: "";
+
+    width: 6px;
+
+    height: 6px;
+
+    background: currentColor;
+
+    border-radius: 50%;
+
+}
+
+/* FORMULARIOS */
+
+.cp-form {
+
+    display: grid;
+
+    grid-template-columns:
+
+        minmax(0,1fr)
+
+        minmax(0,1fr)
+
+        auto;
+
+    align-items: end;
+
+    gap: 15px;
+
+    margin-bottom: 30px;
+
+    padding: 22px;
+
+    background: #f7faff;
+
+    border: 1px solid #e0eaf7;
+
+    border-radius: 15px;
+
+}
+
+.cp-form-column {
+
+    grid-template-columns: 1fr;
+
+}
+
+.cp-form label {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 9px;
+
+    min-width: 0;
+
+    color: #24466d;
+
+    font-size: 11px;
+
+    font-weight: 800;
+
+}
+
+.cp-form select,
+
+.cp-form textarea {
+
+    display: block;
+
+    width: 100%;
+
+    min-height: 45px;
+
+    padding: 12px 13px;
+
+    color: #163b69;
+
+    background: #fff;
+
+    border: 1px solid #c9dcee;
+
+    border-radius: 10px;
+
+    outline: none;
+
+    font-size: 12px;
+
+    font-weight: 500;
+
+    transition:
+
+        border-color .2s ease,
+
+        box-shadow .2s ease;
+
+}
+
+.cp-form textarea {
+
+    min-height: 135px;
+
+    resize: vertical;
+
+    line-height: 1.7;
+
+}
+
+.cp-form select:focus,
+
+.cp-form textarea:focus {
+
+    border-color: #2688f5;
+
+    box-shadow: 0 0 0 3px rgba(38,136,245,.12);
+
+}
+
+.cp-button {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 15px;
+
+    min-height: 45px;
+
+    padding: 12px 20px;
+
+    color: #fff;
+
+    background: linear-gradient(110deg,#105dcc,#358fff);
+
+    border: 0;
+
+    border-radius: 10px;
+
+    cursor: pointer;
+
+    font-size: 12px;
+
+    font-weight: 850;
+
+    box-shadow: 0 7px 17px rgba(15,102,222,.18);
+
+    transition:
+
+        transform .2s ease,
+
+        box-shadow .2s ease;
+
+}
+
+.cp-button:hover:not(:disabled) {
+
+    transform: translateY(-2px);
+
+    box-shadow: 0 12px 24px rgba(15,102,222,.27);
+
+}
+
+.cp-button:disabled {
+
+    opacity: .5;
+
+    cursor: not-allowed;
+
+}
+
+.cp-button-outline {
+
+    padding: 9px 15px;
+
+    color: #136fd2;
+
+    background: #fff;
+
+    border: 1px solid #bcd7f7;
+
+    border-radius: 9px;
+
+    cursor: pointer;
+
+    font-size: 11px;
+
+    font-weight: 800;
+
+    transition:
+
+        background .2s ease,
+
+        border-color .2s ease;
+
+}
+
+.cp-button-outline:hover {
+
+    background: #edf5ff;
+
+    border-color: #65aaf6;
+
+}
+
+.cp-subheading {
+
+    margin: 26px 0 17px;
+
+    color: #102e55;
+
+    font-size: 16px;
+
+    font-weight: 850;
+
+}
+
+/* REPORTES */
+
+.cp-reports {
+
+    display: grid;
+
+    grid-template-columns: repeat(2,minmax(0,1fr));
+
+    gap: 15px;
+
+}
+
+.cp-report-item {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    min-height: 89px;
+
+    padding: 20px;
+
+    background: linear-gradient(110deg,#f2f7ff,#fff);
+
+    border: 1px solid #dce8f7;
+
+    border-radius: 13px;
+
+    transition:
+
+        transform .2s ease,
+
+        box-shadow .2s ease;
+
+}
+
+.cp-report-item:hover {
+
+    transform: translateY(-3px);
+
+    box-shadow: 0 10px 25px rgba(17,89,177,.1);
+
+}
+
+.cp-report-item span {
+
+    color: #5a7594;
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+}
+
+.cp-report-item strong {
+
+    color: #116cdd;
+
+    font-size: 32px;
+
+    font-weight: 900;
+
+    font-variant-numeric: tabular-nums;
+
+}
+
+/* ACCESIBILIDAD */
+
+.capitan-page button:focus-visible,
+
+.capitan-page select:focus-visible,
+
+.capitan-page textarea:focus-visible {
+
+    outline: 2px solid #2588f5;
+
+    outline-offset: 3px;
+
+}
+
+/* ANIMACIONES */
+
+@keyframes cp-enter {
+
+    from {
+
+        opacity: 0;
+
+        transform: translateY(14px);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform: translateY(0);
+
+    }
+
+}
+
+@keyframes cp-grow {
+
+    from {
+
+        scale: 1 .05;
+
+        opacity: .4;
+
+    }
+
+    to {
+
+        scale: 1 1;
+
+        opacity: 1;
+
+    }
+
+}
+
+@keyframes cp-pulse {
+
+    0%, 100% {
+
+        box-shadow: 0 0 0 4px rgba(21,204,160,.14);
+
+    }
+
+    50% {
+
+        box-shadow: 0 0 0 8px rgba(21,204,160,.025);
+
+    }
+
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 1250px) {
+
+    .cp-metrics {
+
+        grid-template-columns: repeat(2,minmax(0,1fr));
+
+    }
+
+}
+
+@media (max-width: 900px) {
+
+    .cp-hero {
+
+        min-height: 290px;
+
+        padding: 30px;
+
+    }
+
+    .cp-bottom-grid {
+
+        grid-template-columns: 1fr;
+
+    }
+
+    .cp-form {
+
+        grid-template-columns: 1fr;
+
+    }
+
+    .cp-button {
+
+        width: 100%;
+
+    }
+
+}
+
+@media (max-width: 650px) {
+
+    .cp-page-heading {
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+    }
+
+    .cp-date {
+
+        text-align: left;
+
+    }
+
+    .cp-hero {
+
+        min-height: 360px;
+
+        padding: 24px;
+
+        align-items: flex-end;
+
+    }
+
+    .cp-hero::after {
+
+        background: linear-gradient(
+
+            0deg,
+
+            rgba(3,17,39,.98) 0%,
+
+            rgba(5,25,54,.86) 55%,
+
+            rgba(4,23,49,.22) 100%
+
+        );
+
+    }
+
+    .cp-hero h2 {
+
+        font-size: 40px;
+
+    }
+
+    .cp-hero-number {
+
+        top: 20px;
+
+        bottom: auto;
+
+    }
+
+    .cp-section-note {
+
+        display: none;
+
+    }
+
+    .cp-metrics {
+
+        grid-template-columns: repeat(2,minmax(0,1fr));
+
+        gap: 10px;
+
+    }
+
+    .cp-metric {
+
+        min-height: 170px;
+
+    }
+
+    .cp-metric-content {
+
+        padding: 19px 12px;
+
+    }
+
+    .cp-metric-content strong {
+
+        font-size: 34px;
+
+    }
+
+    .cp-chart-card,
+
+    .cp-workspace {
+
+        padding: 19px 15px;
+
+    }
+
+    .cp-chart-header {
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+    }
+
+    .cp-chart-total {
+
+        width: 100%;
+
+        align-items: flex-start;
+
+    }
+
+    .cp-workspace-heading {
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+    }
+
+    .cp-reports {
+
+        grid-template-columns: 1fr;
+
+    }
+
+}
+
+@media (max-width: 380px) {
+
+    .cp-metrics {
+
+        grid-template-columns: 1fr;
+
+    }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .capitan-page *,
+
+    .capitan-page *::before,
+
+    .capitan-page *::after {
+
+        animation-duration: .01ms !important;
+
+        transition-duration: .01ms !important;
+
+    }
+
+}
+
+/* ==========================================================
+
+   NUTRILIADO · CAPITÁN DE MESEROS
+
+   MEJORAS VISUALES DE MÓDULOS OPERATIVOS
+
+   Conserva el diseño del panel principal
+
+\========================================================== */
+
+/* CONTENEDOR DE CADA MÓDULO */
+
+.capitan-page .cp-workspace {
+
+    position: relative;
+
+    overflow: hidden;
+
+    min-height: 380px;
+
+    padding: 34px;
+
+    background:
+
+        radial-gradient(
+
+            circle at 100% 0%,
+
+            rgba(35, 142, 255, .055),
+
+            transparent 36%
+
+        ),
+
+        #ffffff;
+
+    border: 1px solid #dbe7f5;
+
+    border-radius: 22px;
+
+    box-shadow: 0 12px 38px rgba(10, 46, 96, .055);
+
+    animation: cp-module-enter .55s ease both;
+
+}
+
+.capitan-page .cp-workspace::before {
+
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+
+    left: 34px;
+
+    width: 115px;
+
+    height: 3px;
+
+    border-radius: 0 0 8px 8px;
+
+    background: linear-gradient(
+
+        90deg,
+
+        #1162cc,
+
+        #3cafff
+
+    );
+
+}
+
+.capitan-page .cp-workspace-heading {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 24px;
+
+    margin-bottom: 32px;
+
+}
+
+.capitan-page .cp-workspace-heading h2 {
+
+    margin: 12px 0 9px;
+
+    color: #071d3e;
+
+    font-size: clamp(24px, 2.5vw, 33px);
+
+    font-weight: 850;
+
+    letter-spacing: -1px;
+
+}
+
+.capitan-page .cp-workspace-heading p {
+
+    color: #788ca7;
+
+    font-size: 13px;
+
+    line-height: 1.7;
+
+}
+
+.capitan-page .cp-count {
+
+    padding: 11px 17px;
+
+    color: #116dd3;
+
+    background: linear-gradient(
+
+        135deg,
+
+        #edf6ff,
+
+        #e4f1ff
+
+    );
+
+    border: 1px solid #cfe4fc;
+
+    border-radius: 50px;
+
+    font-size: 11px;
+
+    font-weight: 850;
+
+    white-space: nowrap;
+
+}
+
+/* ==========================================================
+
+   TABLAS PREMIUM
+
+\========================================================== */
+
+.capitan-page .cp-table-container {
+
+    overflow-x: auto;
+
+    border: 1px solid #dbe6f5;
+
+    border-radius: 16px;
+
+    background: #ffffff;
+
+    box-shadow: 0 6px 22px rgba(11, 58, 120, .035);
+
+}
+
+.capitan-page .cp-table {
+
+    width: 100%;
+
+    border-collapse: collapse;
+
+}
+
+.capitan-page .cp-table thead {
+
+    background: linear-gradient(
+
+        110deg,
+
+        #edf5ff,
+
+        #f5f9ff
+
+    );
+
+}
+
+.capitan-page .cp-table th {
+
+    padding: 19px 20px;
+
+    color: #306493;
+
+    font-size: 10px;
+
+    font-weight: 850;
+
+    letter-spacing: 1px;
+
+    text-transform: uppercase;
+
+    border-bottom: 1px solid #dbe6f4;
+
+}
+
+.capitan-page .cp-table td {
+
+    padding: 19px 20px;
+
+    color: #4e6580;
+
+    font-size: 12px;
+
+    line-height: 1.65;
+
+    border-bottom: 1px solid #edf2f8;
+
+    transition: color .2s ease;
+
+}
+
+.capitan-page .cp-table tbody tr {
+
+    transition:
+
+        background .22s ease,
+
+        box-shadow .22s ease;
+
+}
+
+.capitan-page .cp-table tbody tr:hover {
+
+    background: #f0f7ff;
+
+    box-shadow: inset 3px 0 #258dff;
+
+}
+
+.capitan-page .cp-table tbody tr:hover td {
+
+    color: #153f6b;
+
+}
+
+.capitan-page .cp-table tbody tr:last-child td {
+
+    border-bottom: none;
+
+}
+
+.capitan-page .cp-table .cp-strong {
+
+    color: #092b58;
+
+    font-weight: 850;
+
+}
+
+.capitan-page .cp-table .cp-empty {
+
+    padding: 45px 20px;
+
+    text-align: center;
+
+    color: #8c9db2;
+
+    font-size: 12px;
+
+}
+
+/* ESTADOS */
+
+.capitan-page .cp-status {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    padding: 8px 13px;
+
+    color: #126cd0;
+
+    background: #eaf4ff;
+
+    border: 1px solid #d0e5ff;
+
+    border-radius: 50px;
+
+    font-size: 11px;
+
+    font-weight: 800;
+
+    white-space: nowrap;
+
+}
+
+.capitan-page .cp-status::before {
+
+    content: "";
+
+    width: 7px;
+
+    height: 7px;
+
+    border-radius: 50%;
+
+    background: currentColor;
+
+    box-shadow: 0 0 0 3px rgba(28, 120, 226, .1);
+
+}
+
+/* ==========================================================
+
+   MESAS Y ZONAS
+
+\========================================================== */
+
+.capitan-page .cp-zones {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 11px;
+
+    margin-bottom: 26px;
+
+}
+
+.capitan-page .cp-zones span {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 13px 17px;
+
+    color: #176dcc;
+
+    background: linear-gradient(
+
+        135deg,
+
+        #eaf4ff,
+
+        #f5faff
+
+    );
+
+    border: 1px solid #d3e6fb;
+
+    border-radius: 12px;
+
+    font-size: 11px;
+
+    font-weight: 850;
+
+    transition:
+
+        transform .25s ease,
+
+        border-color .25s ease,
+
+        box-shadow .25s ease;
+
+}
+
+.capitan-page .cp-zones span::before {
+
+    content: "";
+
+    width: 8px;
+
+    height: 8px;
+
+    border-radius: 3px;
+
+    background: #238aff;
+
+    transform: rotate(45deg);
+
+}
+
+.capitan-page .cp-zones span:hover {
+
+    transform: translateY(-3px);
+
+    border-color: #87bfff;
+
+    box-shadow: 0 8px 20px rgba(28, 121, 229, .09);
+
+}
+
+/* ==========================================================
+
+   FORMULARIOS Y ASIGNACIÓN DE MESEROS
+
+\========================================================== */
+
+.capitan-page .cp-form {
+
+    display: grid;
+
+    grid-template-columns:
+
+        minmax(0, 1fr)
+
+        minmax(0, 1fr)
+
+        auto;
+
+    gap: 18px;
+
+    align-items: end;
+
+    padding: 26px;
+
+    margin-bottom: 33px;
+
+    background: linear-gradient(
+
+        145deg,
+
+        #f2f7ff,
+
+        #f9fbff
+
+    );
+
+    border: 1px solid #dce8f7;
+
+    border-radius: 17px;
+
+}
+
+.capitan-page .cp-form-column {
+
+    grid-template-columns: minmax(0, 1fr);
+
+}
+
+.capitan-page .cp-form label {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 11px;
+
+    min-width: 0;
+
+    color: #173d69;
+
+    font-size: 12px;
+
+    font-weight: 800;
+
+}
+
+.capitan-page .cp-form select,
+
+.capitan-page .cp-form textarea {
+
+    width: 100%;
+
+    min-height: 49px;
+
+    padding: 13px 15px;
+
+    color: #173a65;
+
+    background: #fff;
+
+    border: 1px solid #cdddf0;
+
+    border-radius: 11px;
+
+    outline: none;
+
+    font-size: 12px;
+
+    font-weight: 600;
+
+    transition:
+
+        border-color .22s ease,
+
+        box-shadow .22s ease,
+
+        background .22s ease;
+
+}
+
+.capitan-page .cp-form select:hover,
+
+.capitan-page .cp-form textarea:hover {
+
+    border-color: #89bdf5;
+
+}
+
+.capitan-page .cp-form select:focus,
+
+.capitan-page .cp-form textarea:focus {
+
+    border-color: #288cf5;
+
+    background: #fff;
+
+    box-shadow:
+
+        0 0 0 4px rgba(35, 136, 255, .12),
+
+        0 6px 18px rgba(35, 136, 255, .07);
+
+}
+
+.capitan-page .cp-form textarea {
+
+    min-height: 145px;
+
+    resize: vertical;
+
+    line-height: 1.8;
+
+}
+
+.capitan-page .cp-form textarea::placeholder {
+
+    color: #9aaac0;
+
+}
+
+/* BOTÓN PRINCIPAL */
+
+.capitan-page .cp-button {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 12px;
+
+    min-height: 49px;
+
+    padding: 13px 24px;
+
+    color: #ffffff;
+
+    background: linear-gradient(
+
+        115deg,
+
+        #095ac8,
+
+        #258af5 70%,
+
+        #46a7ff
+
+    );
+
+    border: 1px solid rgba(255, 255, 255, .15);
+
+    border-radius: 11px;
+
+    cursor: pointer;
+
+    font-size: 12px;
+
+    font-weight: 850;
+
+    box-shadow: 0 8px 19px rgba(15, 101, 224, .2);
+
+    transition:
+
+        transform .22s ease,
+
+        box-shadow .22s ease,
+
+        filter .22s ease;
+
+}
+
+.capitan-page .cp-button:hover:not(:disabled) {
+
+    transform: translateY(-3px);
+
+    filter: brightness(1.07);
+
+    box-shadow: 0 13px 27px rgba(15, 101, 224, .3);
+
+}
+
+.capitan-page .cp-button:active:not(:disabled) {
+
+    transform: translateY(0);
+
+}
+
+.capitan-page .cp-button:disabled {
+
+    opacity: .45;
+
+    cursor: not-allowed;
+
+    box-shadow: none;
+
+}
+
+/* RETIRAR MESERO */
+
+.capitan-page .cp-button-outline {
+
+    min-height: 37px;
+
+    padding: 9px 17px;
+
+    color: #156ac8;
+
+    background: #ffffff;
+
+    border: 1px solid #bcd8f8;
+
+    border-radius: 9px;
+
+    cursor: pointer;
+
+    font-size: 11px;
+
+    font-weight: 850;
+
+    transition:
+
+        color .22s ease,
+
+        background .22s ease,
+
+        border-color .22s ease,
+
+        transform .22s ease;
+
+}
+
+.capitan-page .cp-button-outline:hover {
+
+    transform: translateY(-2px);
+
+    color: #ffffff;
+
+    background: #1479eb;
+
+    border-color: #1479eb;
+
+}
+
+.capitan-page .cp-subheading {
+
+    margin: 29px 0 18px;
+
+    padding-left: 14px;
+
+    color: #0a2c59;
+
+    border-left: 3px solid #2089f6;
+
+    font-size: 17px;
+
+    font-weight: 850;
+
+}
+
+/* ==========================================================
+
+   REPORTES CON TARJETAS MEJORADAS
+
+\========================================================== */
+
+.capitan-page .cp-reports {
+
+    display: grid;
+
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 17px;
+
+}
+
+.capitan-page .cp-report-item {
+
+    position: relative;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    min-height: 110px;
+
+    padding: 25px;
+
+    overflow: hidden;
+
+    background: linear-gradient(
+
+        125deg,
+
+        #f0f6ff,
+
+        #ffffff 80%
+
+    );
+
+    border: 1px solid #dce8f8;
+
+    border-radius: 15px;
+
+    transition:
+
+        transform .25s ease,
+
+        box-shadow .25s ease,
+
+        border-color .25s ease;
+
+}
+
+.capitan-page .cp-report-item::before {
+
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+
+    bottom: 0;
+
+    left: 0;
+
+    width: 4px;
+
+    background: linear-gradient(
+
+        180deg,
+
+        #0b65dc,
+
+        #64bdff
+
+    );
+
+}
+
+.capitan-page .cp-report-item::after {
+
+    content: "";
+
+    position: absolute;
+
+    top: -48px;
+
+    right: -48px;
+
+    width: 145px;
+
+    height: 145px;
+
+    border: 1px solid rgba(25, 119, 225, .09);
+
+    border-radius: 50%;
+
+    pointer-events: none;
+
+}
+
+.capitan-page .cp-report-item:hover {
+
+    transform: translateY(-5px);
+
+    border-color: #9dcaff;
+
+    box-shadow: 0 15px 32px rgba(20, 91, 176, .1);
+
+}
+
+.capitan-page .cp-report-item span {
+
+    position: relative;
+
+    z-index: 1;
+
+    color: #557596;
+
+    font-size: 12px;
+
+    font-weight: 800;
+
+    line-height: 1.5;
+
+}
+
+.capitan-page .cp-report-item strong {
+
+    position: relative;
+
+    z-index: 1;
+
+    color: #0b6cda;
+
+    font-size: 39px;
+
+    font-weight: 900;
+
+    letter-spacing: -1px;
+
+    font-variant-numeric: tabular-nums;
+
+}
+
+/* ==========================================================
+
+   ACCESIBILIDAD Y ANIMACIONES
+
+\========================================================== */
+
+.capitan-page .cp-button:focus-visible,
+
+.capitan-page .cp-button-outline:focus-visible {
+
+    outline: 3px solid #76bcff;
+
+    outline-offset: 3px;
+
+}
+
+@keyframes cp-module-enter {
+
+    from {
+
+        opacity: 0;
+
+        transform: translateY(13px);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform: translateY(0);
+
+    }
+
+}
+
+/* ==========================================================
+
+   DISEÑO RESPONSIVO
+
+\========================================================== */
+
+@media (max-width: 1000px) {
+
+    .capitan-page .cp-workspace {
+
+        padding: 25px;
+
+    }
+
+    .capitan-page .cp-form {
+
+        grid-template-columns: 1fr;
+
+    }
+
+    .capitan-page .cp-button {
+
+        width: 100%;
+
+    }
+
+}
+
+@media (max-width: 700px) {
+
+    .capitan-page .cp-workspace {
+
+        padding: 19px 15px;
+
+        border-radius: 15px;
+
+    }
+
+    .capitan-page .cp-workspace-heading {
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        gap: 13px;
+
+    }
+
+    .capitan-page .cp-workspace-heading h2 {
+
+        font-size: 25px;
+
+    }
+
+    .capitan-page .cp-workspace::before {
+
+        left: 15px;
+
+    }
+
+    .capitan-page .cp-form {
+
+        padding: 17px;
+
+    }
+
+    .capitan-page .cp-reports {
+
+        grid-template-columns: 1fr;
+
+    }
+
+    .capitan-page .cp-table th,
+
+    .capitan-page .cp-table td {
+
+        padding: 14px 12px;
+
+    }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .capitan-page .cp-workspace,
+
+    .capitan-page .cp-workspace *,
+
+    .capitan-page .cp-report-item,
+
+    .capitan-page .cp-zones span {
+
+        animation: none !important;
+
+        transition: none !important;
+
+    }
+
+}
+
+/* ==========================================================
+
+   TARJETAS CON IMAGEN · RESUMEN OPERATIVO DEL CAPITÁN
+
+\========================================================== */
+
+.capitan-page .cp-metric-grid {
+
+    display: grid;
+
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 18px;
+
+    margin-top: 22px;
+
+}
+
+.capitan-page .cp-metric-card {
+
+    position: relative;
+
+    overflow: hidden;
+
+    min-height: 160px;
+
+    padding: 22px 24px;
+
+    border-radius: 18px;
+
+    border: 1px solid rgba(146, 186, 232, 0.35);
+
+    background-color: #0a1f44;
+
+    background-image:
+
+        linear-gradient(135deg, rgba(5, 19, 44, 0.88), rgba(10, 84, 185, 0.42)),
+
+        var(--card-image);
+
+    background-size: cover;
+
+    background-position: center;
+
+    box-shadow: 0 14px 30px rgba(10, 46, 96, 0.12);
+
+    isolation: isolate;
+
+    transition:
+
+        transform .28s ease,
+
+        box-shadow .28s ease,
+
+        border-color .28s ease;
+
+}
+
+.capitan-page .cp-metric-card::before {
+
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    background:
+
+        radial-gradient(circle at top right, rgba(96, 185, 255, 0.18), transparent 28%),
+
+        linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0));
+
+    z-index: 0;
+
+    pointer-events: none;
+
+}
+
+.capitan-page .cp-metric-card::after {
+
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    border-left: 4px solid #2f95ff;
+
+    border-radius: 18px;
+
+    opacity: .95;
+
+    z-index: 0;
+
+}
+
+.capitan-page .cp-metric-card:hover {
+
+    transform: translateY(-5px);
+
+    box-shadow: 0 18px 38px rgba(15, 77, 157, 0.2);
+
+    border-color: rgba(97, 179, 255, 0.55);
+
+}
+
+.capitan-page .cp-metric-card > * {
+
+    position: relative;
+
+    z-index: 1;
+
+}
+
+.capitan-page .cp-metric-top {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 14px;
+
+    margin-bottom: 20px;
+
+}
+
+.capitan-page .cp-metric-kicker {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    padding: 7px 12px;
+
+    border-radius: 999px;
+
+    background: rgba(255, 255, 255, 0.12);
+
+    border: 1px solid rgba(255, 255, 255, 0.15);
+
+    color: #d9ebff;
+
+    font-size: 10px;
+
+    font-weight: 800;
+
+    letter-spacing: 1.1px;
+
+    text-transform: uppercase;
+
+    backdrop-filter: blur(10px);
+
+}
+
+.capitan-page .cp-metric-kicker::before {
+
+    content: "";
+
+    width: 8px;
+
+    height: 8px;
+
+    border-radius: 50%;
+
+    background: #47d7ac;
+
+    box-shadow: 0 0 10px rgba(71, 215, 172, 0.7);
+
+}
+
+.capitan-page .cp-metric-icon {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    width: 52px;
+
+    height: 52px;
+
+    border-radius: 16px;
+
+    background: rgba(255, 255, 255, 0.14);
+
+    border: 1px solid rgba(255, 255, 255, 0.15);
+
+    color: #ffffff;
+
+    font-size: 22px;
+
+    backdrop-filter: blur(8px);
+
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+
+}
+
+.capitan-page .cp-metric-body {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 8px;
+
+}
+
+.capitan-page .cp-metric-title {
+
+    color: #ffffff;
+
+    font-size: 15px;
+
+    font-weight: 800;
+
+    line-height: 1.45;
+
+}
+
+.capitan-page .cp-metric-value {
+
+    color: #ffffff;
+
+    font-size: clamp(34px, 4vw, 44px);
+
+    font-weight: 900;
+
+    line-height: 1;
+
+    letter-spacing: -1.5px;
+
+    text-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+
+}
+
+.capitan-page .cp-metric-caption {
+
+    color: rgba(232, 242, 255, 0.9);
+
+    font-size: 12px;
+
+    line-height: 1.65;
+
+    max-width: 90%;
+
+}
+
+.capitan-page .cp-metric-footer {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 12px;
+
+    margin-top: 16px;
+
+    padding-top: 14px;
+
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+
+}
+
+.capitan-page .cp-metric-footer span {
+
+    color: rgba(231, 241, 255, 0.86);
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+}
+
+.capitan-page .cp-metric-pill {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    min-width: 76px;
+
+    padding: 7px 12px;
+
+    border-radius: 999px;
+
+    background: rgba(255, 255, 255, 0.14);
+
+    color: #ffffff;
+
+    font-size: 10px;
+
+    font-weight: 800;
+
+    letter-spacing: .8px;
+
+    text-transform: uppercase;
+
+    border: 1px solid rgba(255, 255, 255, 0.12);
+
+}
+
+@media (max-width: 920px) {
+
+    .capitan-page .cp-metric-grid {
+
+        grid-template-columns: 1fr;
+
+    }
+
+}
+
+@media (max-width: 640px) {
+
+    .capitan-page .cp-metric-card {
+
+        min-height: 145px;
+
+        padding: 18px;
+
+    }
+
+    .capitan-page .cp-metric-caption {
+
+        max-width: 100%;
+
+    }
+
+    .capitan-page .cp-metric-footer {
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+    }
+
+}
+
+/* ==========================================================
+   AJUSTES FINALES · REPORTES CON IMÁGENES VISIBLES
+   Estas reglas prevalecen sobre las tarjetas anteriores.
+========================================================== */
+.capitan-page .cp-reports {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.capitan-page .cp-report-item {
+    position:relative;isolation:isolate;overflow:hidden;
+    display:flex;flex-direction:column;align-items:flex-start;justify-content:center;
+    min-height:190px;padding:25px 28px;gap:6px;
+    background:#061a3c;border:1px solid #2b568c;border-radius:18px;
+    color:white;box-shadow:0 12px 30px rgba(4,31,72,.16);
+    transition:transform .28s ease,box-shadow .28s ease;
+}
+.capitan-page .cp-report-item::before {
+    content:"";position:absolute;inset:0;width:auto;height:auto;left:0;top:0;bottom:0;
+    border:0;border-radius:0;pointer-events:none;z-index:-1;
+    background-image:linear-gradient(90deg,rgba(4,16,38,.96) 0%,rgba(5,28,63,.85) 42%,rgba(6,32,66,.28) 100%),var(--cp-report-image);
+    background-size:cover;background-position:center;
+    transition:transform .45s ease;
+}
+.capitan-page .cp-report-item::after {content:none}
+.capitan-page .cp-report-item:hover {transform:translateY(-5px);box-shadow:0 20px 38px rgba(10,55,115,.24);border-color:#54a9fa}
+.capitan-page .cp-report-item:hover::before {transform:scale(1.05)}
+.capitan-page .cp-report-item .cp-report-code {font-size:10px;letter-spacing:1.4px;color:#80caff;font-weight:850}
+.capitan-page .cp-report-item .cp-report-name {font-size:14px;line-height:1.4;font-weight:800;color:white}
+.capitan-page .cp-report-item strong {font-size:46px;line-height:1.12;font-weight:900;color:white;letter-spacing:-1px}
+.capitan-page .cp-report-item small {font-size:10px;line-height:1.4;color:#d2e6fd}
+/* Barras centrales agrupadas; valores arriba, horas debajo */
+.capitan-page .cp-chart {width:max-content!important;max-width:none!important;min-width:min(100%,360px)!important;margin:0 auto!important;padding:0 18px!important}
+.capitan-page .cp-chart-bars {display:flex!important;justify-content:center!important;align-items:stretch!important;gap:15px!important;width:max-content;min-width:100%;margin:auto}
+.capitan-page .cp-chart-column {flex:0 0 65px;width:65px!important;min-width:65px}
+.capitan-page .cp-chart-bar {width:40px!important;max-width:40px}
+.capitan-page .cp-chart-grid {inset:27px 14px 34px}
+@media(max-width:700px){.capitan-page .cp-reports{grid-template-columns:1fr}.capitan-page .cp-chart-column{flex-basis:55px;min-width:55px;width:55px!important}.capitan-page .cp-chart-bars{gap:9px!important}}
+@media(prefers-reduced-motion:reduce){.capitan-page .cp-report-item::before{transition:none!important}}
+
+/* ==========================================================
+   NUTRILIADO · CAPITÁN DE MESEROS
+   GRÁFICA PROFESIONAL CON EJES X / Y
+========================================================== */
+
+.capitan-page .cp-chart-professional {
+    width: 100%;
+    overflow: hidden;
+}
+
+/* Distribución principal */
+
+.capitan-page .cp-graph-layout {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 12px;
+    width: 100%;
+    margin-top: 35px;
+}
+
+/* EJE VERTICAL */
+
+.capitan-page .cp-graph-y-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: #174f99;
+    font-size: 13px;
+    font-weight: 850;
+    letter-spacing: .3px;
+
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+}
+
+.capitan-page .cp-graph-content {
+    min-width: 0;
+    width: 100%;
+}
+
+.capitan-page .cp-graph-scroll {
+    width: 100%;
+    padding: 24px 8px 38px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+}
+
+/* ESCALA Y GRÁFICA */
+
+.capitan-page .cp-graph-body {
+    display: grid;
+    grid-template-columns: 39px minmax(0, 1fr);
+    gap: 12px;
+
+    min-width: max(330px, calc(var(--graph-count) * 68px));
+    width: 100%;
+}
+
+/* NÚMEROS VERTICALES */
+
+.capitan-page .cp-graph-y-scale {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: space-between;
+
+    height: 300px;
+
+    color: #627d9f;
+    font-size: 12px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+.capitan-page .cp-graph-y-scale span {
+    line-height: 1;
+    transform: translateY(-50%);
+}
+
+.capitan-page .cp-graph-y-scale span:last-child {
+    transform: translateY(50%);
+}
+
+/* PLANO DE LA GRÁFICA */
+
+.capitan-page .cp-graph-plot {
+    position: relative;
+    isolation: isolate;
+
+    width: 100%;
+    height: 300px;
+
+    border-left: 2px solid #8397b5;
+    border-bottom: 2px solid #8397b5;
+
+    background: #ffffff;
+}
+
+/* LÍNEAS HORIZONTALES */
+
+.capitan-page .cp-graph-lines {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    pointer-events: none;
+}
+
+.capitan-page .cp-graph-lines span {
+    width: 100%;
+    height: 1px;
+    border-top: 1px dashed #d9e5f4;
+}
+
+.capitan-page .cp-graph-lines span:last-child {
+    border-top: none;
+}
+
+/* CONTENEDOR DE LAS BARRAS */
+
+.capitan-page .cp-graph-columns {
+    position: relative;
+    z-index: 1;
+
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: clamp(24px, 4vw, 65px);
+
+    width: 100%;
+    height: 100%;
+    padding: 0 26px;
+}
+
+/* COLUMNA INDIVIDUAL */
+
+.capitan-page .cp-graph-column {
+    position: relative;
+
+    flex: 0 0 clamp(56px, 8vw, 105px);
+    width: clamp(56px, 8vw, 105px);
+    height: 100%;
+
+    --graph-height: 0%;
+}
+
+/* BARRA AZUL */
+
+.capitan-page .cp-graph-bar {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+
+    width: 100%;
+    height: var(--graph-height);
+
+    transform: translateX(-50%);
+
+    border-radius: 5px 5px 0 0;
+    border: 1px solid #1771de;
+
+    background: linear-gradient(
+        180deg,
+        #67c2ff 0%,
+        #278cf3 42%,
+        #0c62d3 100%
+    );
+
+    box-shadow:
+        0 6px 19px rgba(11, 103, 226, .18);
+
+    transition:
+        filter .25s ease,
+        box-shadow .25s ease;
+}
+
+.capitan-page .cp-graph-column:hover .cp-graph-bar {
+    filter: brightness(1.13);
+    box-shadow: 0 9px 24px rgba(11, 103, 226, .32);
+}
+
+/* VALOR ENCIMA DE LA BARRA */
+
+.capitan-page .cp-graph-number {
+    position: absolute;
+    left: 50%;
+    bottom: calc(var(--graph-height) + 9px);
+
+    transform: translateX(-50%);
+
+    color: #095dca;
+    font-size: 14px;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* HORA DEBAJO DE LA BARRA */
+
+.capitan-page .cp-graph-time {
+    position: absolute;
+    left: 50%;
+    bottom: -31px;
+
+    transform: translateX(-50%);
+
+    color: #466993;
+    font-size: 12px;
+    font-weight: 850;
+    white-space: nowrap;
+}
+
+/* EJE HORIZONTAL */
+
+.capitan-page .cp-graph-x-title {
+    width: 100%;
+    padding-top: 16px;
+
+    color: #174f99;
+    font-size: 13px;
+    font-weight: 850;
+    letter-spacing: .3px;
+    text-align: center;
+}
+
+/* RESPONSIVO */
+
+@media (max-width: 700px) {
+    .capitan-page .cp-graph-layout {
+        grid-template-columns: 27px minmax(0, 1fr);
+        gap: 5px;
+        margin-top: 25px;
+    }
+
+    .capitan-page .cp-graph-y-title {
+        font-size: 11px;
+    }
+
+    .capitan-page .cp-graph-body {
+        grid-template-columns: 27px minmax(0, 1fr);
+        gap: 7px;
+    }
+
+    .capitan-page .cp-graph-y-scale,
+    .capitan-page .cp-graph-plot {
+        height: 250px;
+    }
+
+    .capitan-page .cp-graph-columns {
+        gap: 17px;
+        padding: 0 15px;
+    }
+
+    .capitan-page .cp-graph-column {
+        flex-basis: 57px;
+        width: 57px;
+    }
+
+    .capitan-page .cp-graph-number {
+        font-size: 12px;
+    }
+
+    .capitan-page .cp-graph-time {
+        font-size: 10px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .capitan-page .cp-graph-bar {
+        transition: none;
+    }
+}

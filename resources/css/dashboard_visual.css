@@ -1,0 +1,1053 @@
+
+/* ==========================================================
+   NUTRILIADO - DASHBOARD VISUAL PREMIUM
+   PANEL PRINCIPAL COMPLETO
+
+   Encabezado fotográfico
+   Tarjetas con fotografías
+   Actividad reciente
+   Ocupación
+   Servicios
+   Gráfica con ejes X/Y y escala numérica
+
+   No modifica sidebar, login ni landing.
+========================================================== */
+
+/* ==========================================================
+   01 - ENCABEZADO PREMIUM
+========================================================== */
+
+.dashboard-heading {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 25px;
+
+    min-height: 230px;
+    padding: 37px 40px;
+    margin-bottom: 25px;
+
+    border: 1px solid rgba(96, 160, 240, .28);
+    border-radius: 22px;
+
+    background-color: #071c3c;
+
+    background-image:
+        linear-gradient(
+            90deg,
+            rgba(4, 18, 40, .97) 0%,
+            rgba(5, 25, 54, .93) 40%,
+            rgba(4, 25, 56, .65) 75%,
+            rgba(4, 20, 45, .35) 100%
+        ),
+        url("https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=1800&q=85");
+
+    background-position: center;
+    background-size: cover;
+
+    box-shadow: 0 19px 43px rgba(5, 34, 78, .15);
+
+    animation: dash-appear .65s ease both;
+}
+
+.dashboard-heading > div:first-child {
+    position: relative;
+    z-index: 1;
+    max-width: 650px;
+}
+
+.dashboard-heading .section-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 8px 13px;
+    margin-bottom: 17px;
+
+    color: #91cbff;
+    background: rgba(37, 125, 242, .16);
+    border: 1px solid rgba(132, 191, 255, .3);
+    border-radius: 50px;
+
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+}
+
+.dashboard-heading .section-kicker::before {
+    content: "";
+
+    width: 7px;
+    height: 7px;
+
+    background: #25d7a1;
+    border-radius: 50%;
+
+    box-shadow: 0 0 0 4px rgba(37, 215, 161, .13);
+
+    animation: dash-pulse 2s infinite;
+}
+
+.dashboard-heading h1 {
+    margin: 0 0 13px;
+
+    color: #ffffff;
+    font-size: clamp(29px, 3.5vw, 45px);
+    font-weight: 900;
+    line-height: 1.12;
+    letter-spacing: -1.5px;
+}
+
+.dashboard-heading p {
+    max-width: 520px;
+    margin: 0;
+
+    color: #d5e6f9;
+    font-size: 13px;
+    line-height: 1.8;
+}
+
+/* FECHA DEL DASHBOARD */
+
+.dashboard-heading .current-date {
+    position: relative;
+    z-index: 1;
+
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    flex-shrink: 0;
+
+    padding: 14px 18px;
+
+    background: rgba(255, 255, 255, .11);
+    border: 1px solid rgba(255, 255, 255, .26);
+    border-radius: 13px;
+
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.dashboard-heading .current-date .ui-icon {
+    color: #8ccaff;
+}
+
+.dashboard-heading .current-date small {
+    color: #bad5f3;
+    font-size: 10px;
+}
+
+.dashboard-heading .current-date strong {
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 850;
+}
+
+/* ==========================================================
+   02 - ESTADÍSTICAS FOTOGRÁFICAS
+========================================================== */
+
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 23px;
+}
+
+.kpi-grid .kpi-card {
+    position: relative;
+    isolation: isolate;
+
+    display: flex;
+    align-items: center;
+    gap: 15px;
+
+    min-width: 0;
+    min-height: 165px;
+    padding: 20px 17px;
+
+    overflow: hidden;
+
+    background-color: #ffffff;
+    background-size: cover;
+    background-position: center;
+
+    border: 1px solid #dbe7f7;
+    border-radius: 17px;
+
+    box-shadow: 0 9px 25px rgba(13, 65, 132, .07);
+
+    transition:
+        transform .28s ease,
+        box-shadow .28s ease,
+        border-color .28s ease;
+
+    animation: dash-appear .65s ease both;
+}
+
+/* SERVICIOS */
+
+.kpi-grid .kpi-card:nth-child(1) {
+    background-image:
+        linear-gradient(
+            90deg,
+            #fff 0%,
+            rgba(255,255,255,.99) 35%,
+            rgba(255,255,255,.78) 67%,
+            rgba(255,255,255,.18) 100%
+        ),
+        url("https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=750&q=80");
+}
+
+/* COMENSALES */
+
+.kpi-grid .kpi-card:nth-child(2) {
+    background-image:
+        linear-gradient(
+            90deg,
+            #fff 0%,
+            rgba(255,255,255,.99) 35%,
+            rgba(255,255,255,.78) 67%,
+            rgba(255,255,255,.18) 100%
+        ),
+        url("https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=750&q=80");
+}
+
+/* PLATILLOS */
+
+.kpi-grid .kpi-card:nth-child(3) {
+    background-image:
+        linear-gradient(
+            90deg,
+            #fff 0%,
+            rgba(255,255,255,.99) 35%,
+            rgba(255,255,255,.78) 67%,
+            rgba(255,255,255,.18) 100%
+        ),
+        url("https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=750&q=80");
+}
+
+/* INCIDENCIAS */
+
+.kpi-grid .kpi-card:nth-child(4) {
+    background-image:
+        linear-gradient(
+            90deg,
+            #fff 0%,
+            rgba(255,255,255,.99) 35%,
+            rgba(255,255,255,.78) 67%,
+            rgba(255,255,255,.18) 100%
+        ),
+        url("https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=750&q=80");
+}
+
+.kpi-grid .kpi-card::after {
+    content: "";
+
+    position: absolute;
+    left: 0;
+    bottom: 0;
+
+    width: 55px;
+    height: 4px;
+
+    background: linear-gradient(90deg, #0969db, #5ebcff);
+    border-radius: 0 5px 0 0;
+
+    transition: width .3s ease;
+}
+
+.kpi-grid .kpi-card:hover {
+    transform: translateY(-6px);
+    border-color: #9ccaff;
+    box-shadow: 0 18px 37px rgba(15, 79, 159, .16);
+}
+
+.kpi-grid .kpi-card:hover::after {
+    width: 100%;
+}
+
+.kpi-grid .kpi-icon {
+    position: relative;
+    z-index: 1;
+
+    display: grid;
+    place-items: center;
+
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+
+    border-radius: 13px;
+    backdrop-filter: blur(8px);
+
+    transition: transform .28s ease;
+}
+
+.kpi-grid .kpi-card:hover .kpi-icon {
+    transform: scale(1.08);
+}
+
+.kpi-grid .kpi-copy {
+    position: relative;
+    z-index: 1;
+
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.kpi-grid .kpi-copy > span {
+    color: #426c9b;
+    font-size: 10px;
+    font-weight: 850;
+}
+
+.kpi-grid .kpi-copy strong {
+    margin: 7px 0 4px;
+
+    color: #082b59;
+    font-size: clamp(30px, 3vw, 42px);
+    font-weight: 900;
+    line-height: 1;
+
+    letter-spacing: -1.5px;
+}
+
+.kpi-grid .kpi-copy small {
+    color: #657e9e;
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+/* ==========================================================
+   03 - TARJETAS INTERNAS
+========================================================== */
+
+.dashboard-grid {
+    gap: 18px;
+}
+
+.dashboard-grid .dashboard-card {
+    position: relative;
+    min-width: 0;
+    padding: 25px;
+
+    background:
+        radial-gradient(
+            circle at 100% 0%,
+            rgba(27, 122, 244, .035),
+            transparent 35%
+        ),
+        #ffffff;
+
+    border: 1px solid #dce7f5;
+    border-radius: 19px;
+
+    box-shadow: 0 9px 28px rgba(11, 56, 111, .055);
+
+    transition:
+        box-shadow .25s ease,
+        border-color .25s ease;
+}
+
+.dashboard-grid .dashboard-card:hover {
+    border-color: #b7d6f9;
+    box-shadow: 0 13px 32px rgba(11, 56, 111, .09);
+}
+
+.dashboard-grid .card-heading {
+    margin-bottom: 22px;
+}
+
+.dashboard-grid .card-heading .section-kicker {
+    color: #0d77eb;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    font-weight: 900;
+}
+
+.dashboard-grid .card-heading h2 {
+    margin-top: 10px;
+
+    color: #092348;
+    font-size: 20px;
+    font-weight: 850;
+    letter-spacing: -.5px;
+}
+
+/* ==========================================================
+   04 - ACTIVIDAD RECIENTE
+========================================================== */
+
+.dashboard-grid .activity-item {
+    display: grid;
+    grid-template-columns: 10px 45px minmax(0, 1fr);
+    gap: 13px;
+
+    padding: 15px 5px;
+    border-bottom: 1px solid #e9eff7;
+
+    transition: background .2s ease;
+}
+
+.dashboard-grid .activity-item:hover {
+    background: #f3f8ff;
+    border-radius: 8px;
+}
+
+.dashboard-grid .activity-dot {
+    width: 9px;
+    height: 9px;
+    margin-top: 5px;
+}
+
+.dashboard-grid .activity-item time {
+    color: #6687ae;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.dashboard-grid .activity-item strong {
+    color: #153559;
+    font-size: 12px;
+    font-weight: 850;
+}
+
+.dashboard-grid .activity-item div span {
+    color: #8296ae;
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+/* ==========================================================
+   05 - OCUPACIÓN DEL COMEDOR
+========================================================== */
+
+.dashboard-grid .occupation-content {
+    gap: 24px;
+    padding: 12px 0;
+}
+
+.dashboard-grid .donut {
+    width: 155px;
+    height: 155px;
+    flex-shrink: 0;
+
+    background: conic-gradient(
+        #137cf3 calc(var(--value) * 1%),
+        #e6eef8 0
+    );
+
+    transition: transform .3s ease;
+}
+
+.dashboard-grid .donut:hover {
+    transform: scale(1.04);
+}
+
+.dashboard-grid .donut::before {
+    inset: 13px;
+}
+
+.dashboard-grid .donut strong {
+    color: #092e60;
+    font-size: 29px;
+    font-weight: 900;
+}
+
+.dashboard-grid .occupation-legend {
+    gap: 11px;
+}
+
+.dashboard-grid .occupation-legend p {
+    color: #6983a2;
+    font-size: 11px;
+}
+
+.dashboard-grid .occupation-legend b {
+    color: #0e407a;
+    font-size: 12px;
+}
+
+/* ==========================================================
+   06 - ESTADO DE SERVICIOS
+========================================================== */
+
+.dashboard-grid .services-list {
+    display: grid;
+    gap: 10px;
+}
+
+.dashboard-grid .service-row {
+    display: grid;
+    grid-template-columns: 72px 1fr auto;
+    align-items: center;
+    gap: 15px;
+
+    padding: 17px 16px;
+
+    background: #f8fbff;
+    border: 1px solid #e1ebf8;
+    border-radius: 11px;
+
+    transition:
+        transform .2s ease,
+        background .2s ease,
+        border-color .2s ease;
+}
+
+.dashboard-grid .service-row:hover {
+    transform: translateX(3px);
+    background: #edf6ff;
+    border-color: #aed3fa;
+}
+
+.dashboard-grid .service-time strong {
+    color: #116fda;
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.dashboard-grid .service-name strong {
+    color: #14365d;
+    font-size: 12px;
+    font-weight: 850;
+}
+
+.dashboard-grid .service-name span {
+    margin-top: 4px;
+    color: #8399b0;
+    font-size: 11px;
+}
+
+/* ==========================================================
+   07 - GRÁFICA PROFESIONAL
+========================================================== */
+
+.dashboard-grid .chart-card {
+    overflow: hidden;
+}
+
+.dashboard-grid .chart-card .card-heading {
+    padding-bottom: 19px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid #e8eff8;
+}
+
+.dashboard-grid .chart-date {
+    padding: 8px 15px;
+
+    color: #0b6dde;
+    background: #eaf4ff;
+
+    border: 1px solid #d1e6ff;
+    border-radius: 30px;
+
+    font-size: 11px;
+    font-weight: 850;
+}
+
+/* CONTENEDOR DE LA GRÁFICA */
+
+.dashboard-grid .dash-chart {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 12px;
+
+    width: 100%;
+    padding: 22px 20px 14px;
+
+    border: 1px solid #e0eafa;
+    border-radius: 16px;
+
+    background:
+        linear-gradient(
+            180deg,
+            #ffffff,
+            #f8fbff
+        );
+}
+
+/* TEXTO VERTICAL: EJE Y */
+
+.dashboard-grid .dash-y-title {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+
+    color: #205ca7;
+    font-size: 12px;
+    font-weight: 900;
+
+    letter-spacing: .5px;
+    text-align: center;
+}
+
+/* CUERPO GENERAL */
+
+.dashboard-grid .dash-chart-main {
+    min-width: 0;
+}
+
+.dashboard-grid .dash-chart-scroll {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    padding: 24px 4px 32px;
+    scrollbar-width: thin;
+}
+
+/* ESCALA + ÁREA DE BARRAS */
+
+.dashboard-grid .dash-chart-body {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 10px;
+
+    width: 100%;
+    min-width: 300px;
+}
+
+/* MARCAS NUMÉRICAS DEL EJE Y */
+
+.dashboard-grid .dash-y-ticks {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-end;
+
+    height: 220px;
+
+    color: #7086a5;
+    font-size: 11px;
+    font-weight: 800;
+
+    font-variant-numeric: tabular-nums;
+}
+
+.dashboard-grid .dash-y-ticks span {
+    line-height: 1;
+    transform: translateY(-50%);
+}
+
+.dashboard-grid .dash-y-ticks span:last-child {
+    transform: translateY(50%);
+}
+
+/* ZONA DE DIBUJO */
+
+.dashboard-grid .dash-plot {
+    position: relative;
+    height: 220px;
+
+    border-left: 2px solid #a9bdd8;
+    border-bottom: 2px solid #a9bdd8;
+
+    background: transparent;
+}
+
+/* LÍNEAS HORIZONTALES */
+
+.dashboard-grid .dash-horizontal-lines {
+    position: absolute;
+    inset: 0;
+
+    z-index: 0;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    pointer-events: none;
+}
+
+.dashboard-grid .dash-horizontal-lines span {
+    display: block;
+    width: 100%;
+    height: 1px;
+
+    border-top: 1px dashed #dce7f5;
+}
+
+.dashboard-grid .dash-horizontal-lines span:last-child {
+    border-top: none;
+}
+
+/* GRUPO DE BARRAS */
+
+.dashboard-grid .dash-bars {
+    position: relative;
+    z-index: 1;
+
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 18px;
+
+    height: 100%;
+    width: 100%;
+
+    padding: 0 18px;
+}
+
+/* CADA COLUMNA */
+
+.dashboard-grid .dash-bar-column {
+    position: relative;
+
+    flex: 0 0 48px;
+
+    width: 48px;
+    height: 100%;
+
+    text-align: center;
+
+    --bar-height: 0%;
+}
+
+/* BARRA AZUL */
+
+.dashboard-grid .dash-bar-fill {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+
+    width: 35px;
+    height: var(--bar-height);
+
+    transform: translateX(-50%);
+
+    border-radius: 8px 8px 0 0;
+
+    background:
+        linear-gradient(
+            180deg,
+            #64c3ff 0%,
+            #238df7 47%,
+            #0963d5 100%
+        );
+
+    box-shadow:
+        0 7px 17px rgba(18, 111, 224, .22);
+
+    transition:
+        filter .25s ease,
+        box-shadow .25s ease;
+}
+
+.dashboard-grid .dash-bar-column:hover .dash-bar-fill {
+    filter: brightness(1.12);
+
+    box-shadow:
+        0 10px 22px rgba(18, 111, 224, .34);
+}
+
+/* VALOR ENCIMA DE CADA BARRA */
+
+.dashboard-grid .dash-bar-number {
+    position: absolute;
+
+    left: 50%;
+    bottom: calc(var(--bar-height) + 8px);
+
+    transform: translateX(-50%);
+
+    color: #075fcf;
+    font-size: 13px;
+    font-weight: 900;
+
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* HORA DEBAJO DE CADA BARRA */
+
+.dashboard-grid .dash-bar-time {
+    position: absolute;
+
+    left: 50%;
+    bottom: -26px;
+
+    transform: translateX(-50%);
+
+    color: #627d9f;
+    font-size: 11px;
+    font-weight: 850;
+
+    white-space: nowrap;
+}
+
+/* TEXTO INFERIOR: EJE X */
+
+.dashboard-grid .dash-x-title {
+    margin-top: 8px;
+    padding: 10px 0 0;
+
+    text-align: center;
+
+    color: #205ca7;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: .5px;
+}
+
+/* RESUMEN DE LA GRÁFICA */
+
+.dashboard-grid .dash-chart-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+
+    flex-wrap: wrap;
+
+    margin-top: 19px;
+    padding: 15px 17px;
+
+    background: #f2f7ff;
+    border: 1px solid #dce9fa;
+    border-radius: 11px;
+}
+
+.dashboard-grid .dash-chart-summary > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+
+    color: #5c7799;
+    font-size: 11px;
+    font-weight: 750;
+}
+
+.dashboard-grid .dash-summary-dot {
+    display: inline-block;
+
+    width: 9px;
+    height: 9px;
+
+    background: #167ef0;
+    border-radius: 3px;
+}
+
+.dashboard-grid .dash-chart-summary strong {
+    color: #0a4f9e;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+/* GRÁFICA SIN DATOS */
+
+.dashboard-grid .chart-empty {
+    position: relative;
+
+    min-height: 245px;
+    overflow: hidden;
+
+    border: 1px solid #e1ebf8;
+    border-radius: 13px;
+
+    background: #f8fbff;
+}
+
+.dashboard-grid .chart-empty .ui-icon {
+    color: #83a4c9;
+}
+
+.dashboard-grid .chart-empty p {
+    color: #8197b1;
+    font-size: 12px;
+}
+
+/* ==========================================================
+   08 - ANIMACIONES
+========================================================== */
+
+@keyframes dash-appear {
+    from {
+        opacity: 0;
+        transform: translateY(13px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes dash-pulse {
+    0%, 100% {
+        box-shadow:
+            0 0 0 4px rgba(37, 215, 161, .14);
+    }
+
+    50% {
+        box-shadow:
+            0 0 0 8px rgba(37, 215, 161, .03);
+    }
+}
+
+/* ==========================================================
+   09 - DISEÑO RESPONSIVO
+========================================================== */
+
+@media (max-width: 1200px) {
+    .kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 850px) {
+    .dashboard-heading {
+        padding: 27px;
+        min-height: 225px;
+    }
+
+    .dashboard-grid .dashboard-card {
+        padding: 20px;
+    }
+
+    .dashboard-grid .dash-chart {
+        grid-template-columns: 35px minmax(0, 1fr);
+        gap: 8px;
+        padding: 18px 10px;
+    }
+
+    .dashboard-grid .dash-bars {
+        gap: 12px;
+    }
+
+    .dashboard-grid .dash-bar-column {
+        flex-basis: 43px;
+        width: 43px;
+    }
+}
+
+@media (max-width: 600px) {
+    .dashboard-heading {
+        flex-direction: column;
+        align-items: flex-start;
+
+        min-height: 290px;
+        padding: 25px 20px;
+    }
+
+    .dashboard-heading h1 {
+        font-size: 29px;
+    }
+
+    .dashboard-heading .current-date {
+        width: 100%;
+    }
+
+    .kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .kpi-grid .kpi-card {
+        flex-direction: column;
+        align-items: flex-start;
+
+        min-height: 175px;
+        padding: 16px 12px;
+    }
+
+    .kpi-grid .kpi-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .kpi-grid .kpi-copy strong {
+        font-size: 31px;
+    }
+
+    .dashboard-grid .dashboard-card {
+        padding: 16px;
+    }
+
+    .dashboard-grid .occupation-content {
+        flex-direction: column;
+    }
+
+    .dashboard-grid .service-row {
+        grid-template-columns: 60px minmax(0, 1fr);
+    }
+
+    .dashboard-grid .service-status {
+        grid-column: 2;
+        justify-self: start;
+    }
+
+    .dashboard-grid .dash-chart {
+        grid-template-columns: 26px minmax(0, 1fr);
+        gap: 5px;
+        padding: 14px 7px;
+    }
+
+    .dashboard-grid .dash-y-title {
+        font-size: 10px;
+    }
+
+    .dashboard-grid .dash-chart-body {
+        grid-template-columns: 26px minmax(0, 1fr);
+        min-width: 280px;
+        gap: 6px;
+    }
+
+    .dashboard-grid .dash-bars {
+        gap: 9px;
+        padding: 0 10px;
+    }
+
+    .dashboard-grid .dash-bar-column {
+        flex-basis: 38px;
+        width: 38px;
+    }
+
+    .dashboard-grid .dash-bar-fill {
+        width: 28px;
+    }
+
+    .dashboard-grid .dash-bar-time {
+        font-size: 9px;
+    }
+
+    .dashboard-grid .dash-chart-summary {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 380px) {
+    .kpi-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .kpi-grid .kpi-card {
+        flex-direction: row;
+        align-items: center;
+    }
+}
+
+/* ==========================================================
+   10 - ACCESIBILIDAD
+========================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    .dashboard-heading,
+    .kpi-grid .kpi-card,
+    .dashboard-grid .dashboard-card,
+    .dashboard-grid .dash-bar-fill {
+        animation: none !important;
+        transition: none !important;
+    }
+}
