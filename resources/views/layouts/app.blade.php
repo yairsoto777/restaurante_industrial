@@ -677,7 +677,7 @@
 
                         <a
                             class="nav-link {{ request()->routeIs('orders.*') ? 'active' : '' }}"
-                            href="{{ route('orders.index') }}"
+                            href="{{ route(auth()->user()->hasRole('Recepcion de insumos') && !auth()->user()->hasRole('Jefe de almacen') ? 'receptions.index' : 'orders.index') }}"
                         >
                             <x-icon name="box"/>
                             <b>Pedidos</b>

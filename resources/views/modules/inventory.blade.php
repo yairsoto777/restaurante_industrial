@@ -121,7 +121,7 @@
 
         @if($canManageInventory && $inventoryAvailable)
             <div class="inventory-header-actions" aria-label="Operaciones de inventario">
-                <button class="inventory-button inventory-button-primary" type="button" data-inventory-open="inventory-catalog-dialog">Agregar insumo</button>
+                @if($canRegisterIngredients)<button class="inventory-button inventory-button-primary" type="button" data-inventory-open="inventory-catalog-dialog">Agregar insumo</button>@endif
                 <button class="inventory-button inventory-button-light" type="button" data-inventory-open="inventory-assignment-dialog" @disabled($unassignedIngredients->isEmpty())>Asignar del catálogo</button>
                 @if($operationsAvailable)
                     <button class="inventory-button" type="button" data-inventory-open="inventory-movement-dialog" data-inventory-type="entrada" @disabled($ingredients->isEmpty())>Registrar entrada</button>

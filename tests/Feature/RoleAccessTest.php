@@ -13,6 +13,13 @@ class RoleAccessTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function refreshDatabase(): void
+    {
+        // Esta suite construye su propio esquema; nunca ejecuta migraciones MySQL.
+        $this->assertSame('sqlite', config('database.default'));
+        $this->assertSame(':memory:', config('database.connections.sqlite.database'));
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -125,7 +132,101 @@ class RoleAccessTest extends TestCase
         $this->actingAs($superAdmin)->get(route('kitchen.index'))->assertForbidden();
     }
 
-    private function createUser(string $role, int $roleId, int $siteId): User
+    public function test_reception_orders_are_read_only_and_scoped_to_active_site(): void
+    {
+        $this->createOrderSchema();
+        $user = $this->createUser('Recepcion de insumos', 10, 1);
+        $this->actingAs($user)->withSession(['current_site_id' => 1])->get('/recepciones')
+            ->assertOk()->assertSee('Proveedor Norte')->assertDontSee('Proveedor Sur');
+        $this->get('/recepciones/pedidos/1')->assertOk()->assertSee('Arroz prueba')->assertSee('Sacos sellados');
+        $this->get('/recepciones/pedidos/2')->assertNotFound();
+        $this->get('/pedidos')->assertForbidden();
+        $this->post('/recepciones/pedidos/1')->assertStatus(405);
+        $this->assertDatabaseCount('pedidos', 2);
+    }
+
+    public function test_reception_role_in_another_site_does_not_grant_access(): void
+    {
+        $user = $this->createUser('Recepcion de insumos', 10, 1);
+        Schema::getConnection()->table('roles')->insert(['id_rol' => 11, 'nombre' => 'Mesero']);
+        Schema::getConnection()->table('usuario_sede')->insert(['id_usuario' => $user->id_usuario, 'id_sede' => 2, 'id_rol' => 11]);
+        $this->actingAs($user)->withSession(['current_site_id' => 2])->get('/recepciones')->assertForbidden();
+        $this->get('/recepciones/pedidos/1')->assertForbidden();
+    }
+
+    public function test_reception_order_search_and_filters(): void
+    {
+        $this->createOrderSchema();
+        $this->actingAs($this->createUser('Recepcion de insumos', 10, 1));
+        foreach (['q=1', 'q=Proveedor', 'estado=Programado&fecha_entrega=2026-11-01'] as $query) {
+            $this->get('/recepciones?'.$query)->assertOk()->assertSee('Proveedor Norte')->assertDontSee('Proveedor Sur');
+        }
+        $this->get('/recepciones?q=Inexistente')->assertOk()->assertSee('No hay pedidos con estos criterios');
+        $this->get('/recepciones?fecha_entrega=2026-11-02')->assertOk()->assertDontSee('Proveedor Norte');
+        $this->get('/recepciones?estado=Cancelado')->assertOk()->assertDontSee('Proveedor Norte');
+    }
+
+    public function test_receiving_can_consult_inventory_but_cannot_create_initial_stock(): void
+    {
+        $user = $this->createUser('Recepcion de insumos', 10, 1);
+        $this->actingAs($user)->get('/inventario')->assertOk()
+            ->assertViewHas('canRegisterIngredients', false)
+            ->assertDontSee('id="inventory-catalog-dialog"', false);
+        $this->post('/inventario/catalogo', ['nombre' => 'Entrada prohibida', 'cantidad_inicial' => 50])->assertForbidden();
+        $this->post('/inventario/asignaciones', [])->assertForbidden();
+        $this->post('/inventario/movimientos', ['tipo' => 'entrada'])->assertForbidden();
+    }
+
+    public function test_initial_stock_permission_requires_kitchen_chief_at_active_site(): void
+    {
+        $user = $this->createUser('Jefe de cocina', 12, 1);
+        Schema::getConnection()->table('roles')->insert(['id_rol' => 10, 'nombre' => 'Recepcion de insumos']);
+        Schema::getConnection()->table('usuario_sede')->insert(['id_usuario' => $user->id_usuario, 'id_sede' => 2, 'id_rol' => 10]);
+        $this->actingAs($user)->withSession(['current_site_id' => 1])->get('/inventario')->assertOk()
+            ->assertViewHas('canRegisterIngredients', true);
+        // Sin esquema de inventario, el autorizado llega al control de disponibilidad (503), no al 403.
+        $this->post('/inventario/catalogo', [])->assertStatus(503);
+        $this->withSession(['current_site_id' => 2])->get('/inventario')->assertOk()
+            ->assertViewHas('canRegisterIngredients', false);
+        $this->post('/inventario/catalogo', ['cantidad_inicial' => 50])->assertForbidden();
+    }
+
+    public function test_warehouse_chief_does_not_gain_initial_stock_permission(): void
+    {
+        $this->actingAs($this->createUser('Jefe de almacen', 13, 1))
+            ->get('/inventario')->assertOk()->assertViewHas('canRegisterIngredients', false);
+        $this->post('/inventario/catalogo', [])->assertForbidden();
+    }
+
+    protected function createOrderSchema(): void
+    {
+        $db = Schema::getConnection();
+        $this->assertSame('sqlite', $db->getDriverName());
+        $this->assertSame(':memory:', $db->getDatabaseName());
+        Schema::create('proveedores', function (Blueprint $table) {
+            $table->increments('id_proveedor'); $table->string('nombre');
+        });
+        Schema::create('pedidos', function (Blueprint $table) {
+            $table->increments('id_pedido'); $table->integer('id_sede'); $table->integer('id_proveedor');
+            $table->date('fecha_pedido')->nullable(); $table->date('fecha_entrega')->nullable();
+            $table->string('estado')->nullable(); $table->text('observaciones')->nullable();
+        });
+        Schema::create('insumos', function (Blueprint $table) {
+            $table->increments('id_insumo'); $table->string('nombre');
+        });
+        Schema::create('detalle_pedidos', function (Blueprint $table) {
+            $table->increments('id_detalle_pedido'); $table->integer('id_pedido'); $table->integer('id_insumo');
+            $table->decimal('cantidad', 12, 3)->nullable(); $table->text('especificaciones')->nullable();
+        });
+        $db->table('proveedores')->insert([['id_proveedor' => 1, 'nombre' => 'Proveedor Norte'], ['id_proveedor' => 2, 'nombre' => 'Proveedor Sur']]);
+        foreach ([1, 2] as $id) {
+            $db->table('pedidos')->insert(['id_pedido' => $id, 'id_sede' => $id, 'id_proveedor' => $id, 'fecha_entrega' => '2026-11-01', 'estado' => 'Programado']);
+        }
+        $db->table('insumos')->insert(['id_insumo' => 1, 'nombre' => 'Arroz prueba']);
+        $db->table('detalle_pedidos')->insert(['id_pedido' => 1, 'id_insumo' => 1, 'cantidad' => 12.5, 'especificaciones' => 'Sacos sellados']);
+    }
+
+    protected function createUser(string $role, int $roleId, int $siteId): User
     {
         static $sequence = 0;
         $sequence++;

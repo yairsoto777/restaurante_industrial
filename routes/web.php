@@ -212,8 +212,18 @@ Route::middleware(['auth', 'active'])->group(function () {
 
         Route::get(
             '/recepciones',
-            [OperationalModuleController::class, 'show']
+            [\App\Http\Controllers\ReceptionOrderController::class, 'index']
         )->name('receptions.index');
+
+        Route::get('/recepciones/pedidos/{order}', [\App\Http\Controllers\ReceptionOrderController::class, 'show'])
+            ->whereNumber('order')->name('receptions.orders.show');
+
+        Route::get('/recepciones/pedidos/{order}/nueva', [\App\Http\Controllers\ReceptionCaptureController::class, 'create'])
+            ->whereNumber('order')->name('receptions.create');
+        Route::post('/recepciones/pedidos/{order}/capturas', [\App\Http\Controllers\ReceptionCaptureController::class, 'store'])
+            ->whereNumber('order')->name('receptions.store');
+        Route::get('/recepciones/registradas/{receipt}', [\App\Http\Controllers\ReceptionCaptureController::class, 'show'])
+            ->whereNumber('receipt')->name('receptions.receipts.show');
 
     });
 
@@ -308,7 +318,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     });
 
     Route::middleware(
-        'role:Jefe de cocina,Recepcion de insumos'
+        'role:Jefe de cocina'
     )
         ->post(
             '/inventario/catalogo',

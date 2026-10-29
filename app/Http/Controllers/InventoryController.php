@@ -31,7 +31,7 @@ class InventoryController extends Controller
         $expiryAvailable = $historyAvailable && Schema::hasColumn('lotes', 'fecha_caducidad');
         $operationsAvailable = $inventoryAvailable && $historyAvailable;
         $canManageInventory = $request->user()->hasRole('Jefe de cocina');
-        $canRegisterIngredients = $canManageInventory || $request->user()->hasRole('Recepcion de insumos');
+        $canRegisterIngredients = $this->canRegisterIngredients($request, $site);
 
         $rows = collect();
         $ingredients = collect();
@@ -332,11 +332,8 @@ class InventoryController extends Controller
 
     public function storeIngredient(Request $request, SiteContext $siteContext): RedirectResponse
     {
-        abort_unless(
-            $request->user()->hasRole('Jefe de cocina') || $request->user()->hasRole('Recepcion de insumos'),
-            403,
-        );
         $site = $this->activeSite($request, $siteContext);
+        abort_unless($this->canRegisterIngredients($request, $site), 403);
         abort_unless($this->hasCoreInventorySchema() && $this->hasMovementSchema(), 503, 'El catálogo, las ubicaciones o el historial de inventario no están disponibles.');
 
         $allowsFractions = $this->unitAllowsFractionsForUnit($request->input('id_unidad_base'));
@@ -674,6 +671,14 @@ class InventoryController extends Controller
             : 'Punto de reorden actualizado.';
 
         return redirect()->route('inventory.index')->with('status', $message);
+    }
+
+    private function canRegisterIngredients(Request $request, Site $site): bool
+    {
+        return $request->user()->roles()->get()->contains(
+            fn ($role) => (int) $role->pivot->id_sede === (int) $site->id_sede
+                && \App\Support\EmploymentRoles::matches($role->nombre, 'Jefe de cocina')
+        );
     }
 
     private function activeSite(Request $request, SiteContext $siteContext): Site
