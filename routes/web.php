@@ -237,6 +237,10 @@ Route::middleware(['auth', 'active'])->group(function () {
         'role:administrator,manager,Personal de cocina,Jefe de cocina,Mesero,Capitan de meseros'
     )->group(function () {
 
+        Route::get('/mesero', [App\Http\Controllers\MeseroController::class, 'index'])->middleware('role:Mesero')->name('waiter.index');
+        Route::patch('/mesero/atenciones/{attention}', [App\Http\Controllers\MeseroController::class, 'updateAttention'])->middleware('role:Mesero')->name('waiter.attention.update');
+        Route::post('/mesero/atenciones/{attention}/comanda', [App\Http\Controllers\MeseroController::class, 'storeComanda'])->middleware('role:Mesero')->name('waiter.comanda.store');
+
         Route::get(
             '/servicios',
             [ServiceController::class, 'kitchenIndex']

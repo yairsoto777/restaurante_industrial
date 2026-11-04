@@ -660,6 +660,12 @@
 
                     @if($isService)
 
+                        @if($authenticatedUser->hasRole('Mesero'))
+                            <a class="nav-link {{ request()->routeIs('waiter.*') ? 'active' : '' }}" href="{{ route('waiter.index') }}">
+                                <x-icon name="plates"/><b>Mi operación</b>
+                            </a>
+                        @endif
+
                         <a
                             class="nav-link {{ request()->routeIs('tables.*') ? 'active' : '' }}"
                             href="{{ route('tables.index') }}"
