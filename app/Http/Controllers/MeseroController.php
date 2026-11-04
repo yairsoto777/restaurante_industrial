@@ -9,10 +9,32 @@ use Illuminate\View\View;
 
 class MeseroController extends Controller
 {
+    public function services(Request $request, SiteContext $context): View
+    {
+        $site = $this->site($request, $context);
+        $search = trim((string) $request->query('q', ''));
+        $state = (string) $request->query('estado', '');
+        if (!in_array($state, ['Programado', 'En curso', 'Finalizado', 'Cancelado'], true)) {
+            $state = '';
+        }
+        $base = DB::table('servicios')->where('id_sede', $site->id_sede)->where('estado_aprobacion', 'Aprobado');
+        $total = (clone $base)->count();
+        $today = (clone $base)->whereDate('fecha', now()->toDateString())->count();
+        $active = (clone $base)->where('estado', 'En curso')->count();
+        $services = (clone $base)
+            ->when($search !== '', fn ($query) => $query->where('nombre', 'like', '%'.$search.'%'))
+            ->when($state !== '', fn ($query) => $query->where('estado', $state))
+            ->select('servicios.*')
+            ->selectSub(DB::table('atenciones')->selectRaw('COUNT(*)')->whereColumn('atenciones.id_servicio', 'servicios.id_servicio')
+                ->where('id_usuario_mesero', $request->user()->id_usuario), 'mis_atenciones')
+            ->orderByDesc('fecha')->orderBy('inicio_hora')->paginate(15)->withQueryString();
+        return view('mesero.services', compact('site', 'services', 'search', 'state', 'total', 'today', 'active'));
+    }
+
     private function site(Request $request, SiteContext $context)
     {
         $site = $context->currentFor($request, $request->user());
-        abort_unless($site, 403, 'No tienes una sede asignada.');
+        abort_unless($site && $request->user()->sites()->whereKey($site->id_sede)->exists(), 403, 'No tienes una sede asignada.');
         return $site;
     }
 
@@ -54,8 +76,15 @@ class MeseroController extends Controller
     {
         $site = $this->site($request, $context);
         $query = DB::table('atenciones as a')->join('servicios as s', 's.id_servicio', '=', 'a.id_servicio')->where('a.id_atencion', $attention)->where('a.id_usuario_mesero', $request->user()->id_usuario)->where('s.id_sede', $site->id_sede);
-        abort_unless($query->exists(), 404);
-        DB::table('comandas')->updateOrInsert(['id_atencion' => $attention], ['id_usuario_mesero' => $request->user()->id_usuario, 'fecha_apertura' => now(), 'estado' => 'Pendiente']);
+        $record = $query->first(['a.estado', 's.estado as servicio_estado', 's.estado_aprobacion']);
+        abort_unless($record, 404);
+        abort_if($record->estado === 'Cerrada' || $record->estado_aprobacion !== 'Aprobado' || in_array($record->servicio_estado, ['Finalizado', 'Cancelado']), 422, 'La atención no admite nuevas comandas.');
+        DB::transaction(function () use ($attention, $request) {
+            DB::table('atenciones')->where('id_atencion', $attention)->lockForUpdate()->first();
+            if (!DB::table('comandas')->where('id_atencion', $attention)->exists()) {
+                DB::table('comandas')->insert(['id_atencion' => $attention, 'id_usuario_mesero' => $request->user()->id_usuario, 'fecha_apertura' => now(), 'estado' => 'Pendiente']);
+            }
+        });
         return back()->with('status', 'Comanda abierta y enviada a cocina.');
     }
 }

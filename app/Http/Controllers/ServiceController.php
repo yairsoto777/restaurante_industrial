@@ -66,6 +66,9 @@ class ServiceController extends Controller
 
     public function kitchenIndex(Request $request, SiteContext $siteContext): View
     {
+        if ($request->user()->hasRole('Mesero')) {
+            return app(MeseroController::class)->services($request, $siteContext);
+        }
         $site = $this->operationalSite($request, $siteContext);
         $isKitchenStaff = $request->user()->hasRole('Personal de cocina');
         $listingDate = ($isKitchenStaff ? now('America/Mexico_City') : now())->toDateString();

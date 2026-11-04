@@ -1,4 +1,3 @@
-
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
@@ -10,22 +9,25 @@ export default defineConfig({
                 // ESTILOS GENERALES
                 'resources/css/app.css',
 
-                // LANDING PAGE NUTRILIADO
+                // LANDING PAGE ORIGINAL
                 'resources/css/nutriliado-public.css',
+
+                // PERSONALIZACIÓN DE SEDES
+                //'resources/css/nutriliado-sedes.css',
 
                 // LOGIN
                 'resources/css/nutriliado-login.css',
 
-                // RECUPERACION DE CONTRASENA
+                // RECUPERACIÓN DE CONTRASEÑA
                 'resources/css/nutriliado-forgot.css',
 
-                // CAPITAN DE MESEROS
+                // CAPITÁN DE MESEROS
                 'resources/css/capitan.css',
 
-                // PANEL PRINCIPAL - DASHBOARD
+                // DASHBOARD
                 'resources/css/dashboard_visual.css',
 
-                // JAVASCRIPT GENERAL
+                // JAVASCRIPT
                 'resources/js/app.js',
             ],
             refresh: true,

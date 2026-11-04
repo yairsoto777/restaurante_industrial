@@ -34,6 +34,18 @@ class OperationalModuleController extends Controller
         $site = $siteContext->currentFor($request, $request->user());
         abort_unless($site && ($request->user()->canAdminister() || $request->user()->sites()->whereKey($site->id_sede)->exists()), 403);
 
+        if ($routeName === 'tables.index') {
+            $zones = DB::table('zonas')->where('id_sede', $site->id_sede)->orderBy('nombre')->get();
+            $tables = DB::table('mesas as m')->join('zonas as z', 'z.id_zona', '=', 'm.id_zona')
+                ->where('z.id_sede', $site->id_sede)->select('m.*', 'z.nombre as zona')
+                ->orderBy('z.nombre')->orderBy('m.numero')->get();
+            $assignments = DB::table('zona_meseros as zm')->join('zonas as z', 'z.id_zona', '=', 'zm.id_zona')
+                ->join('usuarios as u', 'u.id_usuario', '=', 'zm.id_usuario_mesero')
+                ->where('z.id_sede', $site->id_sede)->where('zm.activo', 1)
+                ->select('zm.id_zona', 'u.id_usuario', 'u.nombre', 'u.apellido_p')->get();
+            return view('mesero.tables', compact('site', 'zones', 'tables', 'assignments'));
+        }
+
         if ($routeName === 'incidents.index') {
             $incidents = Schema::hasTable('incidencias') ? DB::table('incidencias')->where('id_sede', $site->id_sede)->orderByDesc('fecha')->limit(100)->get() : collect();
             return view('modules.incidents', compact('site', 'incidents'));
