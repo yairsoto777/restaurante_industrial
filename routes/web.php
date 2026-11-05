@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\UnitController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Capitan\CapitanController;
+use App\Http\Controllers\CashController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DishCategoryController;
 use App\Http\Controllers\Manager\EmployeeController;
@@ -558,14 +559,17 @@ Route::middleware(['auth', 'active'])->group(function () {
         )
         ->name('requisitions.index');
 
-    Route::middleware(
-        'role:administrator,manager,Cajero'
-    )
-        ->get(
-            '/caja',
-            [OperationalModuleController::class, 'show']
-        )
-        ->name('cash.index');
+    Route::middleware('role:administrator,manager,Cajero')->prefix('caja')->name('cash.')->group(function () {
+        Route::get('/', [CashController::class, 'index'])->name('index');
+        Route::get('/cuentas', [CashController::class, 'accounts'])->name('accounts.index');
+        Route::get('/cuentas/{account}', [CashController::class, 'showAccount'])->whereNumber('account')->name('accounts.show');
+        Route::post('/cuentas/{account}/pago', [CashController::class, 'storePayment'])->whereNumber('account')->name('payments.store');
+        Route::get('/pagos/{payment}/comprobante', [CashController::class, 'receipt'])->whereNumber('payment')->name('receipt');
+        Route::get('/movimientos', [CashController::class, 'movements'])->name('movements');
+        Route::post('/apertura', [CashController::class, 'open'])->name('registers.open');
+        Route::post('/movimientos', [CashController::class, 'movement'])->name('movements.store');
+        Route::post('/cierre', [CashController::class, 'close'])->name('registers.close');
+    });
 
     /*
     |--------------------------------------------------------------------------

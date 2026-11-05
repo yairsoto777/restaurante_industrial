@@ -31,6 +31,9 @@ export default defineConfig({
                 // DASHBOARD
                 'resources/css/dashboard_visual.css',
 
+                // CAJERO
+                'resources/css/cash.css',
+
                 // JAVASCRIPT
                 'resources/js/app.js',
             ],
