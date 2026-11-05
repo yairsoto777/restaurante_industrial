@@ -90,6 +90,7 @@ class KitchenWorkflowController extends Controller
                 ->orderByDesc('e.fecha_entrega')->limit(40)->get();
             $menuItems = DB::table('menus as m')->join('servicios as s', 's.id_servicio', '=', 'm.id_servicio')
                 ->join('platillos as p', 'p.id_platillo', '=', 'm.id_platillo')->where('s.id_sede', $site->id_sede)
+                ->where('p.id_sede', $site->id_sede)
                 ->where('s.estado_aprobacion', 'Aprobado')->where('m.publicado', 1)->where('m.disponible', 1)
                 ->select(['m.id_menu', 'm.id_servicio', 's.nombre as servicio_nombre', 'p.nombre as platillo_nombre'])
                 ->orderBy('s.fecha')->orderBy('p.nombre')->get();
@@ -216,9 +217,11 @@ class KitchenWorkflowController extends Controller
                 ->where('a.id_atencion', (int) $data['id_atencion'])->where('s.id_sede', $site->id_sede)
                 ->where('s.estado_aprobacion', 'Aprobado')->whereNotIn('s.estado', ['Finalizado', 'Cancelado'])
                 ->lockForUpdate()->first(['a.id_atencion', 'a.id_servicio']);
-            $menu = DB::table('menus')->where('id_menu', (int) $data['id_menu'])
-                ->where('id_servicio', $attention?->id_servicio)->where('publicado', 1)->where('disponible', 1)
-                ->lockForUpdate()->first(['id_menu']);
+            $menu = DB::table('menus as m')->join('platillos as p', 'p.id_platillo', '=', 'm.id_platillo')
+                ->where('m.id_menu', (int) $data['id_menu'])
+                ->where('m.id_servicio', $attention?->id_servicio)->where('p.id_sede', $site->id_sede)
+                ->where('m.publicado', 1)->where('m.disponible', 1)
+                ->lockForUpdate()->first(['m.id_menu as id_menu']);
 
             if (! $attention || ! $menu) {
                 throw ValidationException::withMessages(['id_menu' => 'El menú seleccionado debe estar publicado y disponible para el servicio de esta atención.']);
