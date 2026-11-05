@@ -30,8 +30,10 @@ class InventoryController extends Controller
         $historyAvailable = $this->hasMovementSchema();
         $expiryAvailable = $historyAvailable && Schema::hasColumn('lotes', 'fecha_caducidad');
         $operationsAvailable = $inventoryAvailable && $historyAvailable;
-        $canManageInventory = $request->user()->hasRole('Jefe de cocina');
-        $canRegisterIngredients = $this->canRegisterIngredients($request, $site);
+        // Conserva permisos existentes de Cocina y habilita gestión para Almacén en su sede.
+        $isWarehouseManager = $this->hasSiteRole($request, $site, 'Jefe de almacen');
+        $canManageInventory = $isWarehouseManager || $this->hasSiteRole($request, $site, 'Jefe de cocina');
+        $canRegisterIngredients = $canManageInventory;
 
         $rows = collect();
         $ingredients = collect();
@@ -67,8 +69,8 @@ class InventoryController extends Controller
                     ->get(['id_ubicacion_inv', 'nombre']);
 
                 if (ctype_digit($requestedLocation) && $locations->contains(
-                    fn ($location): bool => (int) $location->id_ubicacion_inv === (int) $requestedLocation,
-                )) {
+                        fn ($location): bool => (int) $location->id_ubicacion_inv === (int) $requestedLocation,
+                    )) {
                     $filterLocation = $requestedLocation;
                 }
             }
@@ -325,6 +327,7 @@ class InventoryController extends Controller
             'operationsAvailable',
             'canManageInventory',
             'canRegisterIngredients',
+            'isWarehouseManager',
             'historyItem',
             'historyRows',
         ));
@@ -410,8 +413,8 @@ class InventoryController extends Controller
 
     public function assignIngredient(Request $request, SiteContext $siteContext): RedirectResponse
     {
-        abort_unless($request->user()->hasRole('Jefe de cocina'), 403);
         $site = $this->activeSite($request, $siteContext);
+        abort_unless($this->canRegisterIngredients($request, $site), 403);
         abort_unless($this->hasCoreInventorySchema() && $this->hasMovementSchema(), 503, 'El catálogo, las ubicaciones o el historial de inventario no están disponibles.');
 
         $allowsFractions = $this->unitAllowsFractionsForIngredient($request->input('id_insumo'));
@@ -480,8 +483,8 @@ class InventoryController extends Controller
 
     public function storeMovement(Request $request, SiteContext $siteContext): RedirectResponse
     {
-        abort_unless($request->user()->hasRole('Jefe de cocina'), 403);
         $site = $this->activeSite($request, $siteContext);
+        abort_unless($this->canRegisterIngredients($request, $site), 403);
         abort_unless($this->hasCoreInventorySchema() && $this->hasMovementSchema(), 503, 'Las tablas necesarias para registrar movimientos no están disponibles.');
 
         $request->validate([
@@ -628,8 +631,8 @@ class InventoryController extends Controller
 
     public function updateReorderPoint(Request $request, int $ingredient, SiteContext $siteContext): RedirectResponse
     {
-        abort_unless($request->user()->hasRole('Jefe de cocina'), 403);
         $site = $this->activeSite($request, $siteContext);
+        abort_unless($this->canRegisterIngredients($request, $site), 403);
         abort_unless($this->hasCoreInventorySchema(), 503, 'Las tablas de inventario no están disponibles.');
 
         $allowsFractions = $this->unitAllowsFractionsForIngredient($ingredient);
@@ -675,9 +678,16 @@ class InventoryController extends Controller
 
     private function canRegisterIngredients(Request $request, Site $site): bool
     {
+        return $this->hasSiteRole($request, $site, 'Jefe de almacen')
+            || $this->hasSiteRole($request, $site, 'Jefe de cocina');
+    }
+
+    /** Comprueba la asignación del rol en la sede activa, no en otra sede. */
+    private function hasSiteRole(Request $request, Site $site, string $roleName): bool
+    {
         return $request->user()->roles()->get()->contains(
-            fn ($role) => (int) $role->pivot->id_sede === (int) $site->id_sede
-                && \App\Support\EmploymentRoles::matches($role->nombre, 'Jefe de cocina')
+            fn ($role): bool => (int) $role->pivot->id_sede === (int) $site->id_sede
+                && \App\Support\EmploymentRoles::matches($role->nombre, $roleName)
         );
     }
 
@@ -959,10 +969,10 @@ class InventoryController extends Controller
                 ->first();
 
             $belongsToSite = $lot && DB::table('inventarios_finales as movimiento')
-                ->join('ubicacion_inventarios as ubicacion', 'ubicacion.id_ubicacion_inv', '=', 'movimiento.id_ubicacion')
-                ->where('movimiento.id_lote', (int) $validated['id_lote'])
-                ->where('ubicacion.id_sede', $siteId)
-                ->exists();
+                    ->join('ubicacion_inventarios as ubicacion', 'ubicacion.id_ubicacion_inv', '=', 'movimiento.id_ubicacion')
+                    ->where('movimiento.id_lote', (int) $validated['id_lote'])
+                    ->where('ubicacion.id_sede', $siteId)
+                    ->exists();
 
             if (! $belongsToSite) {
                 throw ValidationException::withMessages([

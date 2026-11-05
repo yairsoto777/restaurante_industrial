@@ -1,4 +1,3 @@
-
 <?php
 use App\Http\Controllers\Capitan\MesasZonasController;
 use App\Http\Controllers\Admin\CommercialContactController;
@@ -321,17 +320,15 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     });
 
-    Route::middleware(
-        'role:Jefe de cocina'
-    )
-        ->post(
-            '/inventario/catalogo',
-            [InventoryController::class, 'storeIngredient']
-        )
-        ->name('inventory.ingredients.store');
-
-    Route::middleware('role:Jefe de cocina')
+    // Operaciones de inventario: Jefe de cocina y Jefe de almacén.
+    // Los controladores siguen validando el rol y la sede activa.
+    Route::middleware('role:Jefe de cocina,Jefe de almacen')
         ->group(function () {
+
+            Route::post(
+                '/inventario/catalogo',
+                [InventoryController::class, 'storeIngredient']
+            )->name('inventory.ingredients.store');
 
             Route::post(
                 '/inventario/asignaciones',
@@ -506,21 +503,48 @@ Route::middleware(['auth', 'active'])->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    Route::middleware(
-        'role:administrator,manager,Jefe de almacen'
-    )
-        ->get(
-            '/pedidos',
-            [OperationalModuleController::class, 'show']
-        )
-        ->name('orders.index');
+    // PEDIDOS: gestión de compras del Jefe de almacén.
+    // Separa /pedidos de /recepciones y conserva los permisos de consulta previos.
+    Route::middleware('role:administrator,manager,Jefe de almacen')
+        ->group(function () {
+            Route::get('/pedidos', [\App\Http\Controllers\Almacen\WarehouseOrderController::class, 'index'])
+                ->name('orders.index');
+
+            Route::get('/pedidos/{order}', [\App\Http\Controllers\Almacen\WarehouseOrderController::class, 'show'])
+                ->whereNumber('order')
+                ->name('orders.show');
+        });
+
+    // Proveedores: catálogo global administrado por el Jefe de almacén.
+    // Las rutas deben quedar dentro del grupo auth + active.
+    Route::middleware('role:Jefe de almacen')
+        ->prefix('pedidos/proveedores')
+        ->name('orders.suppliers.')
+        ->group(function () {
+            Route::get('/', [\App\Http\Controllers\Almacen\WarehouseSupplierController::class, 'index'])
+                ->name('index');
+            Route::post('/', [\App\Http\Controllers\Almacen\WarehouseSupplierController::class, 'store'])
+                ->name('store');
+            Route::put('/{supplier}', [\App\Http\Controllers\Almacen\WarehouseSupplierController::class, 'update'])
+                ->whereNumber('supplier')->name('update');
+        });
+
+    // Las escrituras de pedidos son exclusivas del Jefe de almacén.
+    Route::middleware('role:Jefe de almacen')
+        ->group(function () {
+            Route::get('/pedidos/nuevo', [\App\Http\Controllers\Almacen\WarehouseOrderController::class, 'create'])
+                ->name('orders.create');
+
+            Route::post('/pedidos', [\App\Http\Controllers\Almacen\WarehouseOrderController::class, 'store'])
+                ->name('orders.store');
+        });
 
     Route::middleware(
         'role:administrator,manager,Jefe de cocina,Jefe de almacen'
     )
         ->get(
             '/requisiciones',
-            [OperationalModuleController::class, 'show']
+            [\App\Http\Controllers\WarehouseRequisitionController::class, 'index']
         )
         ->name('requisitions.index');
 
