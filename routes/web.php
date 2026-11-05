@@ -1,6 +1,6 @@
 
 <?php
-
+use App\Http\Controllers\Capitan\MesasZonasController;
 use App\Http\Controllers\Admin\CommercialContactController;
 use App\Http\Controllers\Admin\SiteController;
 use App\Http\Controllers\Admin\UnitController;
@@ -867,6 +867,24 @@ Route::middleware(['auth', 'active'])->group(function () {
                 CapitanController::class,
                 'index'
             ])->name('index');
+
+            // MESAS Y ZONAS - ADMINISTRACIÓN POR SEDE
+            Route::get('/mesas', [MesasZonasController::class, 'index'])
+                ->name('mesas.index');
+
+            Route::post('/mesas/zonas', [MesasZonasController::class, 'guardarZona'])
+                ->name('mesas.zonas.store');
+
+            Route::put('/mesas/zonas/{zona}', [MesasZonasController::class, 'actualizarZona'])
+                ->whereNumber('zona')
+                ->name('mesas.zonas.update');
+
+            Route::post('/mesas/mesas', [MesasZonasController::class, 'guardarMesa'])
+                ->name('mesas.mesas.store');
+
+            Route::put('/mesas/mesas/{mesa}', [MesasZonasController::class, 'actualizarMesa'])
+                ->whereNumber('mesa')
+                ->name('mesas.mesas.update');
 
             // ASIGNAR MESERO A UNA ZONA
             Route::post('/asignaciones', [

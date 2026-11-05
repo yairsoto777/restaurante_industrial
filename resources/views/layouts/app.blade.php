@@ -433,28 +433,30 @@
                     </a>
 
 
-                    {{-- MESAS Y ZONAS --}}
+                    
+{{-- MESAS Y ZONAS --}}
 
-                    <a
-                        class="nav-link {{ request()->routeIs('capitan.index') && request('modulo') === 'mesas' ? 'active' : '' }}"
-                        href="{{ route('capitan.index', ['modulo' => 'mesas']) }}"
-                    >
-                        <x-icon name="map"/>
-                        <b>Mesas y zonas</b>
-                    </a>
+<a
+    class="nav-link {{ request()->routeIs('capitan.mesas.*') ? 'active' : '' }}"
+    href="{{ route('capitan.mesas.index') }}"
+>
+    <x-icon name="map"/>
+    <b>Mesas y zonas</b>
+</a>
 
 
-                    {{-- ASIGNACIONES --}}
+{{-- ASIGNACIONES --}}
 
-                    <a
-                        class="nav-link {{ request()->routeIs('capitan.index') && request('modulo') === 'asignaciones' ? 'active' : '' }}"
-                        href="{{ route('capitan.index', ['modulo' => 'asignaciones']) }}"
-                    >
-                        <x-icon name="users"/>
-                        <b>Asignación de meseros</b>
-                    </a>
+<a
+    class="nav-link {{ request()->routeIs('capitan.index') && request('modulo') === 'asignaciones' ? 'active' : '' }}"
+    href="{{ route('capitan.index', ['modulo' => 'asignaciones']) }}"
+>
+    <x-icon name="users"/>
+    <b>Asignación de meseros</b>
+</a>
 
-                </div>
+</div>
+
 
 
                 {{-- SUPERVISIÓN DEL CAPITÁN --}}

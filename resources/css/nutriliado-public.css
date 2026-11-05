@@ -708,7 +708,15 @@ body.nutriliado-public .nu-benefits-stat span {
     body.nutriliado-public .nu-benefit-card { min-height: 240px; }
     body.nutriliado-public .nu-benefits-copy h2 { font-size: clamp(36px,9vw,48px) !important; }
 }
+
 @media (prefers-reduced-motion: reduce) {
-    body.nutriliado-public .nu-benefit-card { transition: none; }
-    body.nutriliado-public .nu-benefit-card:hover { transform: none; }
+
+    body.nutriliado-public .nu-benefit-card {
+        transition: none;
+    }
+
+    body.nutriliado-public .nu-benefit-card:hover {
+        transform: none;
+    }
+
 }

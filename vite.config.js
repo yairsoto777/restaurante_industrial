@@ -1,3 +1,4 @@
+
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
@@ -13,7 +14,7 @@ export default defineConfig({
                 'resources/css/nutriliado-public.css',
 
                 // PERSONALIZACIÓN DE SEDES
-                //'resources/css/nutriliado-sedes.css',
+                'resources/css/nutriliado-sedes.css',
 
                 // LOGIN
                 'resources/css/nutriliado-login.css',
@@ -23,6 +24,9 @@ export default defineConfig({
 
                 // CAPITÁN DE MESEROS
                 'resources/css/capitan.css',
+
+                // MESAS Y ZONAS DEL CAPITÁN
+                'resources/css/capitan-mesas.css',
 
                 // DASHBOARD
                 'resources/css/dashboard_visual.css',
