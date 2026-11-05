@@ -1,3 +1,4 @@
+```
 @extends('layouts.app')
 @section('title', $isWarehouseManager ? 'Inventario de almacén' : 'Inventario de cocina')
 @section('content')
@@ -57,7 +58,7 @@
             <div class="inventory-hero-copy">
                 <span class="inventory-eyebrow">{{ $site->nombre }}</span>
                 <h1 id="inventory-title">{{ $isWarehouseManager ? 'Inventario de almacén' : 'Inventario de cocina' }}</h1>
-                <p class="inventory-hero-description">{{ $isWarehouseManager ? 'Registra y organiza insumos de tu sede, consulta existencias y mínimos, y documenta entradas, salidas, mermas y ajustes con trazabilidad.' : ($canManageInventory ? 'Consulta y control de existencias de la sede activa.' : 'Consulta las existencias reales de la sede. Reporta un faltante para que el equipo responsable pueda atenderlo.') }}</p>
+                <p class="inventory-hero-description">{{ $isWarehouseManager ? 'Agrega alimentos, consulta existencias y actualiza las cantidades desde una sola pantalla.' : ($canManageInventory ? 'Consulta y control de existencias de la sede activa.' : 'Consulta las existencias reales de la sede. Reporta un faltante para que el equipo responsable pueda atenderlo.') }}</p>
             </div>
             @if(auth()->user()->hasRole('Personal de cocina'))
                 <a class="inventory-button inventory-button-primary inventory-shortage-action" href="{{ route('incidents.index') }}#registrar-incidencia"><x-icon name="alert" />Reportar faltante o problema</a>
@@ -124,27 +125,25 @@
             <div class="inventory-panel-heading inventory-sheet-toolbar">
                 <div>
                     <span class="inventory-panel-kicker">{{ $site->nombre }}</span>
-                    <h2 id="inventory-list-title">Existencias por insumo</h2>
+                    <h2 id="inventory-list-title">Alimentos registrados</h2>
                 </div>
                 <span class="inventory-count">{{ $registeredCount }} {{ $registeredCount === 1 ? 'insumo' : 'insumos' }}</span>
             </div>
 
             @if($isWarehouseManager)
-                <p class="inventory-data-note">El catálogo define qué productos maneja la sede. Las cantidades disponibles se modifican mediante movimientos registrados, no editando el saldo directamente. El mínimo de reorden permite identificar faltantes; un máximo recomendado requeriría guardar ese dato adicional en la base.</p>
+                <p class="inventory-data-note">Administra los alimentos de la sede. Al cambiar las existencias, el sistema conserva el movimiento para mantener el historial.</p>
                 @if($inventoryAvailable && ! $canManageInventory && ! $canRegisterIngredients)
                     <p class="inventory-unavailable-note" role="alert">Tu usuario tiene el rol Jefe de almacén, pero el controlador no le ha habilitado la gestión de inventario. Revisa los permisos de InventoryController y las rutas de alta y movimientos; esta vista no debe saltarse la autorización del servidor.</p>
                 @endif
             @endif
 
             @if($canManageInventory && $inventoryAvailable)
-                <div class="inventory-header-actions" aria-label="Operaciones de inventario">
-                    @if($canRegisterIngredients)<button class="inventory-button inventory-button-primary" type="button" data-inventory-open="inventory-catalog-dialog">Agregar insumo</button>@endif
-                    <button class="inventory-button inventory-button-light" type="button" data-inventory-open="inventory-assignment-dialog" @disabled($unassignedIngredients->isEmpty())>Asignar del catálogo</button>
-                    @if($operationsAvailable)
-                        <button class="inventory-button" type="button" data-inventory-open="inventory-movement-dialog" data-inventory-type="entrada" @disabled($ingredients->isEmpty())>Registrar entrada</button>
-                        <button class="inventory-button" type="button" data-inventory-open="inventory-movement-dialog" data-inventory-type="salida" @disabled($ingredients->isEmpty())>Salida / consumo</button>
-                        <button class="inventory-button" type="button" data-inventory-open="inventory-movement-dialog" data-inventory-type="merma" @disabled($ingredients->isEmpty())>Registrar merma</button>
-                        <button class="inventory-button inventory-button-light" type="button" data-inventory-open="inventory-movement-dialog" data-inventory-type="ajuste" @disabled($ingredients->isEmpty())>Ajustar cantidad</button>
+                <div class="inventory-header-actions" aria-label="Administración de alimentos">
+                    @if($canRegisterIngredients)
+                        <button class="inventory-button inventory-button-primary" type="button" data-inventory-open="inventory-catalog-dialog">+ Agregar alimento</button>
+                    @endif
+                    @if($unassignedIngredients->isNotEmpty())
+                        <button class="inventory-button inventory-button-light" type="button" data-inventory-open="inventory-assignment-dialog">Agregar existente del catálogo</button>
                     @endif
                 </div>
                 @if($catalogUnits->isEmpty())
@@ -158,7 +157,7 @@
                 @endif
             @elseif($canRegisterIngredients && $inventoryAvailable)
                 <div class="inventory-header-actions" aria-label="Registro de insumos">
-                    <button class="inventory-button inventory-button-primary" type="button" data-inventory-open="inventory-catalog-dialog">Registrar insumo y entrada</button>
+                    <button class="inventory-button inventory-button-primary" type="button" data-inventory-open="inventory-catalog-dialog">+ Agregar alimento</button>
                 </div>
                 @if($catalogUnits->isEmpty())
                     <p class="inventory-unavailable-note">No hay unidades configuradas. El Jefe de cocina debe agregarlas en Inventario → Administrar unidades antes de registrar un insumo.</p>
@@ -168,11 +167,14 @@
             @endif
 
             @if($inventoryAvailable)
+                @if($isWarehouseManager)
+                    <p class="inventory-data-note">Usa <strong>Editar alimento y cantidad</strong> para modificar nombre, existencias y mínimo en un solo formulario. Puedes editar nombre y categoría (si existe esa columna). Retirar elimina solo la asignación a esta sede cuando el saldo es cero y no hay pedidos pendientes.</p>
+                @endif
                 <form class="inventory-filters" method="GET" action="{{ route('inventory.index') }}">
                     <label class="inventory-search">
-                        <span class="inventory-sr-only">Buscar insumo, unidad o ubicación registrada en movimientos</span>
+                        <span class="inventory-sr-only">Buscar alimento</span>
                         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" stroke-width="1.8"/><path d="m16 16 4.2 4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-                        <input type="search" name="q" value="{{ $search }}" placeholder="Buscar producto, unidad o ubicación…">
+                        <input type="search" name="q" value="{{ $search }}" placeholder="Buscar alimento por nombre…">
                     </label>
                     <label class="inventory-filter-field"><span>Estado</span>
                         <select name="estado">
@@ -185,6 +187,16 @@
                             @if($expiryAvailable)<option value="por-caducar" @selected($filterState === 'por-caducar')>Por caducar</option>@endif
                         </select>
                     </label>
+                    @if($categoryAvailable && $categories->isNotEmpty())
+                        <label class="inventory-filter-field"><span>Categoría</span>
+                            <select name="categoria">
+                                <option value="">Todas</option>
+                                @foreach($categories as $category)
+                                    <option value="{{ $category }}" @selected($filterCategory === $category)>{{ $category }}</option>
+                                @endforeach
+                            </select>
+                        </label>
+                    @endif
                     @if($units->isNotEmpty())
                         <label class="inventory-filter-field"><span>Unidad</span>
                             <select name="unidad">
@@ -205,8 +217,8 @@
                             </select>
                         </label>
                     @endif
-                    <button class="inventory-button inventory-filter-submit" type="submit">Filtrar</button>
-                    @if($search !== '' || $filterState !== '' || $filterUnit !== '' || $filterLocation !== '')
+                    <button class="inventory-button inventory-filter-submit" type="submit">Buscar / filtrar</button>
+                    @if($search !== '' || $filterState !== '' || $filterUnit !== '' || $filterLocation !== '' || $filterCategory !== '')
                         <a class="inventory-filter-clear" href="{{ route('inventory.index') }}">Limpiar</a>
                     @endif
                 </form>
@@ -220,7 +232,7 @@
                 <table class="inventory-table inventory-sheet-table">
                     <caption class="inventory-sr-only">Insumos asignados a {{ $site->nombre }} con sus cantidades y estados.</caption>
                     <thead><tr>
-                        <th scope="col">Producto</th>
+                        <th scope="col">Alimento</th>
                         <th scope="col">Unidad</th>
                         <th scope="col">Cantidad</th>
                         @if($historyAvailable)<th scope="col">Ubicación de movimiento</th>@endif
@@ -236,7 +248,7 @@
                         <tr>
                             <td colspan="{{ $inventoryColumnCount }}">
                                 <div class="inventory-table-empty">
-                                    @if($search !== '' || $filterState !== '' || $filterUnit !== '' || $filterLocation !== '')
+                                    @if($search !== '' || $filterState !== '' || $filterUnit !== '' || $filterLocation !== '' || $filterCategory !== '')
                                         <strong>No hay resultados para estos filtros</strong>
                                         <span>Prueba otro término o limpia los filtros para volver a ver la hoja.</span>
                                         <a class="inventory-filter-clear" href="{{ route('inventory.index') }}">Limpiar filtros</a>
@@ -315,15 +327,44 @@
                                 @if($canManageInventory)
                                     <td data-label="Acciones">
                                         <div class="inventory-row-actions">
-                                            <button class="inventory-row-action" type="button"
-                                                    data-inventory-reorder-open
-                                                    data-id="{{ $row->id_insumo }}"
-                                                    data-name="{{ $row->insumo }}"
-                                                    data-minimum="{{ $row->punto_de_reorden === null ? '' : $formatInventoryNumber($row->punto_de_reorden) }}"
-                                                    data-unit-abbreviation="{{ $inventoryUnitAbbreviation($row->unidad_codigo, $row->unidad) }}"
-                                                    data-unit-name="{{ $row->unidad }}"
-                                                    data-allows-fractions="{{ $row->permite_fracciones ? '1' : '0' }}"
-                                                    data-action="{{ route('inventory.reorder.update', ['ingredient' => $row->id_insumo]) }}">Editar mínimo</button>
+                                            @if(! $isWarehouseManager && $operationsAvailable && $ingredients->contains('id_insumo', $row->id_insumo))
+                                                <button class="inventory-row-action" type="button"
+                                                        data-inventory-open="inventory-movement-dialog"
+                                                        data-inventory-type="ajuste"
+                                                        data-inventory-ingredient="{{ $row->id_insumo }}"
+                                                        title="Actualizar la cantidad real y guardar un ajuste en el historial">Editar cantidad</button>
+                                            @endif
+                                            @if(! $isWarehouseManager)
+                                                <button class="inventory-row-action" type="button"
+                                                        data-inventory-reorder-open
+                                                        data-id="{{ $row->id_insumo }}"
+                                                        data-name="{{ $row->insumo }}"
+                                                        data-minimum="{{ $row->punto_de_reorden === null ? '' : $formatInventoryNumber($row->punto_de_reorden) }}"
+                                                        data-unit-abbreviation="{{ $inventoryUnitAbbreviation($row->unidad_codigo, $row->unidad) }}"
+                                                        data-unit-name="{{ $row->unidad }}"
+                                                        data-allows-fractions="{{ $row->permite_fracciones ? '1' : '0' }}"
+                                                        data-action="{{ route('inventory.reorder.update', ['ingredient' => $row->id_insumo]) }}">Editar mínimo</button>
+                                            @endif
+                                            @if($isWarehouseManager)
+                                                <button class="inventory-row-action" type="button"
+                                                        data-inventory-edit-open
+                                                        data-id="{{ $row->id_insumo }}"
+                                                        data-name="{{ $row->insumo }}"
+                                                        data-category="{{ $categoryAvailable ? ($row->categoria ?? '') : '' }}"
+                                                        data-minimum="{{ $row->punto_de_reorden === null ? '' : $formatInventoryNumber($row->punto_de_reorden) }}"
+                                                        data-stock="{{ $row->stock === null ? '' : $formatInventoryNumber($row->stock) }}"
+                                                        data-unit="{{ $inventoryUnitAbbreviation($row->unidad_codigo, $row->unidad) }}"
+                                                        data-allows-fractions="{{ $row->permite_fracciones ? '1' : '0' }}"
+                                                        data-action="{{ route('inventory.ingredients.update', ['ingredient' => $row->id_insumo]) }}">Editar alimento y cantidad</button>
+                                            @endif
+                                            @if($isWarehouseManager)
+                                                <button class="inventory-row-action" type="button"
+                                                        data-inventory-retire-open
+                                                        data-name="{{ $row->insumo }}"
+                                                        data-action="{{ route('inventory.ingredients.update', ['ingredient' => $row->id_insumo]) }}"
+                                                        title="Retirar de esta sede sin borrar pedidos ni historial">Retirar</button>
+                                            @endif
+
                                             <a class="inventory-row-action" href="{{ route('inventory.index', ['historial' => $row->id_insumo]) }}">Historial</a>
                                         </div>
                                     </td>
@@ -339,6 +380,83 @@
             @endif
         </section>
     </div>
+    @if($isWarehouseManager && $canManageInventory && $inventoryAvailable)
+        <dialog class="inventory-dialog inventory-dialog-compact" id="inventory-edit-dialog" aria-labelledby="inventory-edit-title" @if(old('_inventory_form') === 'edit') data-inventory-autoshow @endif>
+            <div class="inventory-dialog-heading">
+                <div><span class="inventory-panel-kicker">Administrar alimento</span><h2 id="inventory-edit-title">Editar alimento</h2></div>
+                <button class="inventory-dialog-x" type="button" data-inventory-close aria-label="Cerrar">×</button>
+            </div>
+            @if(old('_inventory_form') === 'edit' && $errors->any())
+                <div class="inventory-unavailable-note" role="alert" style="margin: 12px 0;">
+                    <strong>No se guardaron los cambios:</strong>
+                    <ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
+                </div>
+            @endif
+            <form method="POST" action="" class="inventory-dialog-form" data-inventory-edit-form>
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="_inventory_form" value="edit">
+                <input type="hidden" name="id_insumo" value="{{ old('id_insumo') }}" data-inventory-edit-id>
+                <label class="inventory-form-field inventory-form-field-full"><span>Nombre del alimento</span>
+                    <input name="nombre" type="text" maxlength="150" required data-inventory-edit-name>
+                </label>
+                @if($categoryAvailable)
+                    <label class="inventory-form-field inventory-form-field-full"><span>Categoría</span>
+                        <input name="categoria" type="text" maxlength="100" list="categorias-disponibles" data-inventory-edit-category>
+                        <datalist id="categorias-disponibles">
+                            @foreach($categories as $category)<option value="{{ $category }}"></option>@endforeach
+                        </datalist>
+                    </label>
+                @else
+                    <p class="inventory-data-note">La tabla insumos aún no cuenta con la columna categoria. Este formulario permite editar el nombre sin modificar la base.</p>
+                @endif
+                <label class="inventory-form-field inventory-form-field-full"><span>Mínimo de reorden <small>(déjalo vacío para quitarlo)</small></span>
+                    <input type="number" name="punto_de_reorden" min="0" max="999999999.999" step="0.001" data-inventory-edit-minimum>
+                </label>
+                <label class="inventory-form-field inventory-form-field-full"><span>Existencia actual <small>(<span data-inventory-edit-unit>unidad</span>)</small></span>
+                    <input type="number" name="cantidad" min="0" max="999999999.999" step="0.001" required data-inventory-edit-stock>
+                    <small>Escribe el saldo final: por ejemplo, 5 si ahora quedan 5 unidades. Se guarda en el inventario.</small>
+                </label>
+                <label class="inventory-form-field inventory-form-field-full"><span>Motivo del cambio de cantidad</span>
+                    <textarea name="motivo" maxlength="1000" rows="2" placeholder="Ej. Conteo físico del almacén" data-inventory-edit-reason></textarea>
+                    <small>Obligatorio si modificas la existencia. El ajuste se conservará en el historial.</small>
+                </label>
+                <label class="inventory-form-field inventory-form-field-full"><span>Ubicación del ajuste</span>
+                    <select name="ubicacion" data-inventory-edit-location>
+                        @foreach($locations as $location)
+                            <option value="{{ $location->id_ubicacion_inv }}">{{ $location->nombre }}</option>
+                        @endforeach
+                        <option value="nueva">Crear nueva ubicación…</option>
+                    </select>
+                </label>
+                <label class="inventory-form-field inventory-form-field-full" data-inventory-edit-new-location-field hidden><span>Nombre de nueva ubicación</span>
+                    <input type="text" name="nueva_ubicacion" maxlength="100" data-inventory-edit-new-location>
+                </label>
+                <div class="inventory-dialog-actions inventory-form-field-full">
+                    <button class="inventory-button" type="button" data-inventory-close>Cancelar</button>
+                    <button class="inventory-button inventory-button-primary" type="submit">Guardar cambios</button>
+                </div>
+            </form>
+        </dialog>
+        <dialog class="inventory-dialog inventory-dialog-compact" id="inventory-retire-dialog" aria-labelledby="inventory-retire-title">
+            <div class="inventory-dialog-heading">
+                <div><span class="inventory-panel-kicker">Retiro seguro</span><h2 id="inventory-retire-title">Retirar alimento</h2></div>
+                <button class="inventory-dialog-x" type="button" data-inventory-close aria-label="Cerrar">×</button>
+            </div>
+            <form method="POST" class="inventory-dialog-form" data-inventory-retire-form>
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="accion" value="retirar">
+                <p class="inventory-form-field-full"><strong data-inventory-retire-name></strong></p>
+                <p class="inventory-data-note inventory-form-field-full">Se retirará únicamente de esta sede. Los pedidos anteriores y el historial se conservarán. Por seguridad, solo se permite si la existencia es cero y no hay pedidos pendientes.</p>
+                <div class="inventory-dialog-actions inventory-form-field-full">
+                    <button type="button" class="inventory-button" data-inventory-close>Cancelar</button>
+                    <button type="submit" class="inventory-button inventory-button-primary">Confirmar retiro</button>
+                </div>
+            </form>
+        </dialog>
+    @endif
+
     @if($canRegisterIngredients && $inventoryAvailable)
         <dialog class="inventory-dialog inventory-dialog-compact" id="inventory-catalog-dialog" aria-labelledby="inventory-catalog-title"
                 @if(old('_inventory_form') === 'catalog' || request()->boolean('abrir_catalogo')) data-inventory-autoshow @endif>
@@ -359,6 +477,15 @@
                 <label class="inventory-form-field inventory-form-field-full"><span>Nombre del insumo</span>
                     <input type="text" name="nombre" maxlength="150" value="{{ old('_inventory_form') === 'catalog' ? old('nombre') : '' }}" required @disabled($catalogUnits->isEmpty() || ! $operationsAvailable)>
                 </label>
+                @if($categoryAvailable)
+                    <label class="inventory-form-field inventory-form-field-full"><span>Categoría</span>
+                        <input type="text" name="categoria" list="categorias-disponibles-alta" maxlength="100"
+                               value="{{ old('_inventory_form') === 'catalog' ? old('categoria') : '' }}" placeholder="Ej. Frutas">
+                        <datalist id="categorias-disponibles-alta">
+                            @foreach($categories as $category)<option value="{{ $category }}"></option>@endforeach
+                        </datalist>
+                    </label>
+                @endif
                 <label class="inventory-form-field inventory-form-field-full"><span>Unidad base</span>
                     <select name="id_unidad_base" required data-inventory-unit-select @disabled($catalogUnits->isEmpty() || ! $operationsAvailable)>
                         <option value="">Selecciona una unidad existente</option>
@@ -407,7 +534,7 @@
                 </div>
                 <div class="inventory-dialog-actions inventory-form-field-full">
                     <button class="inventory-button" type="button" data-inventory-close>Cancelar</button>
-                    <button class="inventory-button inventory-button-primary" type="submit" @disabled($catalogUnits->isEmpty() || ! $operationsAvailable)>Crear, asignar y registrar entrada</button>
+                    <button class="inventory-button inventory-button-primary" type="submit" @disabled($catalogUnits->isEmpty() || ! $operationsAvailable)>Guardar alimento</button>
                 </div>
             </form>
         </dialog>
@@ -476,7 +603,7 @@
                 </div>
                 <div class="inventory-dialog-actions inventory-form-field-full">
                     <button class="inventory-button" type="button" data-inventory-close>Cancelar</button>
-                    <button class="inventory-button inventory-button-primary" type="submit" @disabled($unassignedIngredients->isEmpty() || ! $operationsAvailable)>Asignar y registrar entrada</button>
+                    <button class="inventory-button inventory-button-primary" type="submit" @disabled($unassignedIngredients->isEmpty() || ! $operationsAvailable)>Guardar alimento existente</button>
                 </div>
             </form>
         </dialog>
@@ -486,7 +613,7 @@
         <dialog class="inventory-dialog" id="inventory-movement-dialog" aria-labelledby="inventory-movement-title"
                 @if(old('_inventory_form') === 'movement') data-inventory-autoshow @endif>
             <div class="inventory-dialog-heading">
-                <div><span class="inventory-panel-kicker">{{ $site->nombre }}</span><h2 id="inventory-movement-title">Registrar movimiento</h2></div>
+                <div><span class="inventory-panel-kicker">{{ $site->nombre }}</span><h2 id="inventory-movement-title">Actualizar existencia</h2></div>
                 <button class="inventory-dialog-x" type="button" data-inventory-close aria-label="Cerrar">×</button>
             </div>
             <form method="POST" action="{{ route('inventory.movements.store') }}" class="inventory-dialog-form" data-inventory-movement-form>
@@ -516,7 +643,7 @@
                         <input type="number" name="cantidad" min="0.001" max="999999999.999" step="0.001" value="{{ old('cantidad') }}" required inputmode="decimal" data-inventory-quantity data-inventory-unit-quantity data-positive-quantity>
                         <span class="inventory-quantity-suffix" data-inventory-unit-suffix aria-live="polite">—</span>
                     </div>
-                    <small data-inventory-quantity-hint>La entrada suma existencias. Las salidas, consumos y mermas las descuentan.</small>
+                    <small data-inventory-quantity-hint>Indica la cantidad física actual y el motivo del cambio.</small>
                     <small data-inventory-unit-hint>Selecciona un insumo para ver su unidad base.</small>
                 </label>
                 <label class="inventory-form-field inventory-form-field-full"><span>Motivo / observación <small>(el motivo es obligatorio para ajustes)</small></span>
@@ -567,7 +694,7 @@
                 </label>
                 <div class="inventory-dialog-actions inventory-form-field-full">
                     <button class="inventory-button" type="button" data-inventory-close>Cancelar</button>
-                    <button class="inventory-button inventory-button-primary" type="submit">Guardar movimiento</button>
+                    <button class="inventory-button inventory-button-primary" type="submit">Guardar cambio de existencias</button>
                 </div>
             </form>
         </dialog>
@@ -718,7 +845,7 @@
                     ? 'Captura el conteo físico final. Puede ser cero; indica el motivo del ajuste.'
                     : stockIsUndefined
                         ? 'La existencia actual no está definida. Registra primero un ajuste físico con motivo; después podrás sumar o descontar existencias.'
-                        : 'La entrada suma existencias. Las salidas, consumos y mermas las descuentan.';
+                        : 'Indica la cantidad física actual y el motivo del cambio.';
                 if (quantityInput) quantityInput.min = isAdjustment ? '0' : unit.allowsFractions ? '0.001' : '1';
                 if (unitHint) unitHint.textContent = selectedIngredient?.value
                     ? `Unidad base: ${unit.unitName} (${unit.abbreviation}). Se guarda en esta unidad, sin conversión automática.`
@@ -777,8 +904,101 @@
                 });
             });
 
+            const editDialog = document.getElementById('inventory-edit-dialog');
+            const editForm = editDialog?.querySelector('[data-inventory-edit-form]');
+            const editStockInput = editForm?.querySelector('[data-inventory-edit-stock]');
+            const editReasonInput = editForm?.querySelector('[data-inventory-edit-reason]');
+            let originalEditStock = null;
+            const updateEditReasonRequirement = () => {
+                if (!editStockInput || !editReasonInput) return;
+                const currentValue = editStockInput.value.trim();
+                const hasChanged = currentValue !== '' &&
+                    (originalEditStock === null || Number(currentValue) !== Number(originalEditStock));
+                editReasonInput.required = hasChanged;
+                editReasonInput.setAttribute('aria-required', hasChanged ? 'true' : 'false');
+            };
+            editStockInput?.addEventListener('input', updateEditReasonRequirement);
+            const editLocationSelect = editForm?.querySelector('[data-inventory-edit-location]');
+            const editNewLocationWrap = editForm?.querySelector('[data-inventory-edit-new-location-field]');
+            const editNewLocationInput = editForm?.querySelector('[data-inventory-edit-new-location]');
+            const updateEditLocation = () => {
+                const isNew = editLocationSelect?.value === 'nueva';
+                if (editNewLocationWrap) editNewLocationWrap.hidden = !isNew;
+                if (editNewLocationInput) editNewLocationInput.required = Boolean(isNew);
+            };
+            editLocationSelect?.addEventListener('change', updateEditLocation);
+            updateEditLocation();
+            document.querySelectorAll('[data-inventory-edit-open]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    if (!editForm) return;
+                    editForm.action = button.dataset.action;
+                    const idField = editForm.querySelector('[data-inventory-edit-id]');
+                    if (idField) idField.value = button.dataset.id;
+                    const stock = editForm.querySelector('[data-inventory-edit-stock]');
+                    const reason = editForm.querySelector('[data-inventory-edit-reason]');
+                    const unit = editForm.querySelector('[data-inventory-edit-unit]');
+                    if (stock) {
+                        stock.value = button.dataset.stock ?? '';
+                        stock.step = button.dataset.allowsFractions === '1' ? '0.001' : '1';
+                    }
+                    if (reason) { reason.value = ''; reason.required = false; }
+                    originalEditStock = button.dataset.stock ?? null;
+                    updateEditReasonRequirement();
+                    if (unit) unit.textContent = button.dataset.unit || 'unidad';
+                    const minimum = editForm.querySelector('[data-inventory-edit-minimum]');
+                    if (minimum) {
+                        minimum.value = button.dataset.minimum ?? '';
+                        minimum.step = button.dataset.allowsFractions === '1' ? '0.001' : '1';
+                    }
+                    const name = editForm.querySelector('[data-inventory-edit-name]');
+                    const category = editForm.querySelector('[data-inventory-edit-category]');
+                    if (name) name.value = button.dataset.name || '';
+                    if (category) category.value = button.dataset.category || '';
+                    editDialog?.showModal();
+                });
+            });
+
+            const retireDialog = document.getElementById('inventory-retire-dialog');
+            const retireForm = retireDialog?.querySelector('[data-inventory-retire-form]');
+            document.querySelectorAll('[data-inventory-retire-open]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    if (!retireForm) return;
+                    retireForm.action = button.dataset.action;
+                    retireDialog.querySelector('[data-inventory-retire-name]').textContent = button.dataset.name;
+                    retireDialog.showModal();
+                });
+            });
+
             dialogs.forEach((dialog) => {
                 if (!dialog.hasAttribute('data-inventory-autoshow')) return;
+                if (dialog.id === 'inventory-edit-dialog') {
+                    const savedId = editForm?.querySelector('[data-inventory-edit-id]')?.value;
+                    const trigger = Array.from(document.querySelectorAll('[data-inventory-edit-open]'))
+                        .find(button => button.dataset.id === savedId);
+                    if (!trigger || !editForm) return;
+                    editForm.action = trigger.dataset.action;
+                    const nameInput = editForm.querySelector('[data-inventory-edit-name]');
+                    const minInput = editForm.querySelector('[data-inventory-edit-minimum]');
+                    if (nameInput) nameInput.value = @json(old('nombre', ''));
+                    if (minInput) minInput.value = @json(old('punto_de_reorden', ''));
+                    if (minInput) minInput.step = trigger.dataset.allowsFractions === '1' ? '0.001' : '1';
+                    const stockInput = editForm.querySelector('[data-inventory-edit-stock]');
+                    if (stockInput) {
+                        stockInput.value = @json(old('cantidad', ''));
+                        stockInput.step = trigger.dataset.allowsFractions === '1' ? '0.001' : '1';
+                    }
+                    const reasonInput = editForm.querySelector('[data-inventory-edit-reason]');
+                    if (reasonInput) reasonInput.value = @json(old('motivo', ''));
+                    originalEditStock = trigger.dataset.stock ?? null;
+                    updateEditReasonRequirement();
+                    const unitLabel = editForm.querySelector('[data-inventory-edit-unit]');
+                    if (unitLabel) unitLabel.textContent = trigger.dataset.unit || 'unidad';
+                    if (editLocationSelect) editLocationSelect.value = @json(old('ubicacion', '')) || editLocationSelect.value;
+                    if (editNewLocationInput) editNewLocationInput.value = @json(old('nueva_ubicacion', ''));
+                    updateEditLocation();
+                    const categoryInput = editForm.querySelector('[data-inventory-edit-category]');
+                    if (categoryInput) categoryInput.value = @json(old('categoria', ''));
+                }
                 if (dialog.id === 'inventory-reorder-dialog') {
                     const targetId = reorderId?.value;
                     const trigger = Array.from(document.querySelectorAll('[data-inventory-reorder-open]'))
@@ -794,4 +1014,3 @@
         });
     </script>
 @endsection
-

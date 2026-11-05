@@ -53,6 +53,9 @@ class InventoryController extends Controller
         $search = trim((string) $request->query('q', ''));
         $filterState = (string) $request->query('estado', '');
         $filterUnit = (string) $request->query('unidad', '');
+        $categoryAvailable = Schema::hasTable('insumos') && Schema::hasColumn('insumos', 'categoria');
+        $filterCategory = $categoryAvailable ? trim((string) $request->query('categoria', '')) : '';
+        $categories = collect();
         $requestedLocation = (string) $request->query('ubicacion_filtro', '');
         $filterLocation = '';
         $validStates = ['suficiente', 'bajo', 'agotado', 'sin-minimo', 'sin-dato', 'por-caducar'];
@@ -62,6 +65,16 @@ class InventoryController extends Controller
 
         if ($inventoryAvailable) {
             $catalogCount = DB::table('insumos')->count();
+            if ($categoryAvailable) {
+                $categories = DB::table('insumos as insumo')
+                    ->join('insumo_sedes as existencia', 'existencia.id_insumo', '=', 'insumo.id_insumo')
+                    ->where('existencia.id_sede', $site->id_sede)
+                    ->whereNotNull('insumo.categoria')
+                    ->where('insumo.categoria', '<>', '')
+                    ->distinct()
+                    ->orderBy('insumo.categoria')
+                    ->pluck('insumo.categoria');
+            }
             if ($historyAvailable) {
                 $locations = DB::table('ubicacion_inventarios')
                     ->where('id_sede', $site->id_sede)
@@ -122,6 +135,10 @@ class InventoryController extends Controller
                 'unidad.permite_fracciones',
             ]);
 
+            if ($categoryAvailable) {
+                $inventoryQuery->addSelect('insumo.categoria');
+            }
+
             if ($expiringQuery) {
                 $inventoryQuery->leftJoinSub($expiringQuery, 'caducidad', fn ($join) => $join->on('caducidad.id_insumo', '=', 'existencia.id_insumo'))
                     ->addSelect('caducidad.fecha_caducidad');
@@ -144,6 +161,10 @@ class InventoryController extends Controller
                         $query->orWhere('ubicacion_movimiento.lista', 'like', '%'.$search.'%');
                     }
                 });
+            }
+
+            if ($categoryAvailable && $filterCategory !== '') {
+                $inventoryQuery->where('insumo.categoria', $filterCategory);
             }
 
             if ($filterUnit !== '' && ctype_digit($filterUnit)) {
@@ -317,6 +338,9 @@ class InventoryController extends Controller
             'search',
             'filterState',
             'filterUnit',
+            'categoryAvailable',
+            'filterCategory',
+            'categories',
             'filterLocation',
             'employeeName',
             'inventoryDate',
@@ -342,6 +366,7 @@ class InventoryController extends Controller
         $allowsFractions = $this->unitAllowsFractionsForUnit($request->input('id_unidad_base'));
         $validated = $request->validate(array_merge([
             'nombre' => ['required', 'string', 'max:150'],
+            ... (Schema::hasColumn('insumos', 'categoria') ? ['categoria' => ['nullable', 'string', 'max:100']] : []),
             'id_unidad_base' => ['required', 'integer', 'exists:unidades,id_unidad'],
             'punto_de_reorden' => array_merge(
                 ['nullable'],
@@ -388,10 +413,14 @@ class InventoryController extends Controller
                 ]);
             }
 
-            $ingredientId = (int) DB::table('insumos')->insertGetId([
+            $values = [
                 'nombre' => $name,
                 'id_unidad_base' => (int) $unit->id_unidad,
-            ]);
+            ];
+            if (Schema::hasColumn('insumos', 'categoria')) {
+                $values['categoria'] = trim((string) ($validated['categoria'] ?? '')) ?: null;
+            }
+            $ingredientId = (int) DB::table('insumos')->insertGetId($values);
 
             DB::table('insumo_sedes')->insert([
                 'id_sede' => $site->id_sede,
@@ -408,6 +437,178 @@ class InventoryController extends Controller
         return redirect()->route('inventory.index')->with(
             'status',
             'Insumo creado, asignado a '.$site->nombre.' y registrado con su entrada inicial.',
+        );
+    }
+
+    /**
+     * Edición del catálogo y mínimo local; retiro seguro usando la ruta PUT ya registrada.
+     * El catálogo global y los pedidos históricos nunca se eliminan.
+     */
+    public function updateIngredient(Request $request, int $ingredient, SiteContext $siteContext): RedirectResponse
+    {
+        $site = $this->activeSite($request, $siteContext);
+        abort_unless($this->hasSiteRole($request, $site, 'Jefe de almacen'), 403);
+        abort_unless($this->hasCoreInventorySchema(), 503);
+
+        if ($request->input('accion') === 'retirar') {
+            $request->validate(['accion' => ['required', Rule::in(['retirar'])]]);
+
+            DB::transaction(function () use ($site, $ingredient): void {
+                $assignment = DB::table('insumo_sedes')
+                    ->where('id_sede', $site->id_sede)
+                    ->where('id_insumo', $ingredient)
+                    ->lockForUpdate()
+                    ->first();
+                abort_unless($assignment, 404);
+
+                // No eliminar un saldo no consumido: se perdería del inventario de esta sede.
+                if ($assignment->stock === null || $this->toThousandths($assignment->stock) !== 0) {
+                    throw ValidationException::withMessages([
+                        'retiro' => 'Para retirar este alimento, primero registra el conteo real en cero con «Editar cantidad». No se descartan existencias.',
+                    ]);
+                }
+
+                // Evitar que una compra o recepción pendiente pierda su asignación a la sede.
+                if (Schema::hasTable('pedidos') && Schema::hasTable('detalle_pedidos')) {
+                    $pending = DB::table('detalle_pedidos as detalle')
+                        ->join('pedidos as pedido', 'pedido.id_pedido', '=', 'detalle.id_pedido')
+                        ->where('pedido.id_sede', $site->id_sede)
+                        ->where('detalle.id_insumo', $ingredient)
+                        ->where(function ($query): void {
+                            $query->whereNull('pedido.estado')
+                                ->orWhereNotIn('pedido.estado', ['Cancelado', 'Rechazado', 'Recibido', 'Completado']);
+                        })
+                        ->exists();
+
+                    if ($pending) {
+                        throw ValidationException::withMessages([
+                            'retiro' => 'Este alimento tiene pedidos pendientes. Concluye o cancela esos pedidos antes de retirarlo del inventario.',
+                        ]);
+                    }
+                }
+
+                // Quitar únicamente la relación de la sede, sin borrar insumos, lotes, pedidos o historial.
+                DB::table('insumo_sedes')
+                    ->where('id_insumo_sede', $assignment->id_insumo_sede)
+                    ->delete();
+            }, 3);
+
+            return redirect()->route('inventory.index')->with(
+                'status',
+                'Alimento retirado de esta sede. El catálogo, pedidos e historial se conservaron. Puedes asignarlo de nuevo desde el catálogo.'
+            );
+        }
+
+        // Un solo formulario edita el catálogo, el mínimo local y el conteo físico.
+        $categoryAvailable = Schema::hasColumn('insumos', 'categoria');
+        $allowsFractions = $this->unitAllowsFractionsForIngredient($ingredient);
+        $rules = [
+            'nombre' => ['required', 'string', 'max:150'],
+            'cantidad' => array_merge(['required'], $this->quantityPrecisionRules($allowsFractions), ['min:0', 'max:999999999.999']),
+            'punto_de_reorden' => array_merge(['nullable'], $this->quantityPrecisionRules($allowsFractions), ['min:0', 'max:999999999.999']),
+            'ubicacion' => ['nullable', 'string', 'max:20'],
+            'nueva_ubicacion' => ['nullable', 'string', 'max:100'],
+            'motivo' => ['nullable', 'string', 'max:1000'],
+        ];
+        if ($categoryAvailable) {
+            $rules['categoria'] = ['nullable', 'string', 'max:100'];
+        }
+        $validated = $request->validate($rules);
+
+        $change = DB::transaction(function () use ($ingredient, $site, $request, $validated, $categoryAvailable, $allowsFractions): bool {
+            $assignmentRows = DB::table('insumo_sedes')
+                ->where('id_insumo', $ingredient)
+                ->where('id_sede', $site->id_sede)
+                ->lockForUpdate()->get();
+            abort_if($assignmentRows->isEmpty(), 404);
+            if ($assignmentRows->count() !== 1) {
+                throw ValidationException::withMessages(['nombre' => 'Se encontraron saldos duplicados para este alimento en la sede.']);
+            }
+            $assignment = $assignmentRows->first();
+            $ingredientRow = DB::table('insumos')->where('id_insumo', $ingredient)
+                ->lockForUpdate()->first();
+            abort_unless($ingredientRow, 404);
+
+            if (! $allowsFractions) {
+                $this->assertIntegerQuantity($validated['cantidad'], 'cantidad');
+                $this->assertIntegerQuantity($validated['punto_de_reorden'] ?? null, 'punto_de_reorden');
+            }
+
+            $name = trim($validated['nombre']);
+            $newCategory = $categoryAvailable ? (trim((string) ($validated['categoria'] ?? '')) ?: null) : null;
+            $otherSites = DB::table('insumo_sedes')
+                ->where('id_insumo', $ingredient)
+                ->where('id_sede', '<>', $site->id_sede)->exists();
+            $globalChanges = $name !== $ingredientRow->nombre
+                || ($categoryAvailable && $newCategory !== $ingredientRow->categoria);
+            if ($otherSites && $globalChanges) {
+                throw ValidationException::withMessages([
+                    'nombre' => 'Este alimento también se usa en otras sedes. Puedes cambiar su cantidad y mínimo, pero no su nombre ni categoría global.',
+                ]);
+            }
+
+            if ($globalChanges) {
+                $duplicate = DB::table('insumos')->where('id_insumo', '<>', $ingredient)
+                    ->whereRaw('LOWER(nombre) = LOWER(?)', [$name])->exists();
+                if ($duplicate) {
+                    throw ValidationException::withMessages(['nombre' => 'Ya existe otro alimento con ese nombre.']);
+                }
+                $catalogUpdate = ['nombre' => $name];
+                if ($categoryAvailable) {
+                    $catalogUpdate['categoria'] = $newCategory;
+                }
+                DB::table('insumos')->where('id_insumo', $ingredient)->update($catalogUpdate);
+            }
+
+            $current = $assignment->stock === null ? null : $this->toThousandths($assignment->stock);
+            $target = $this->toThousandths($validated['cantidad']);
+            $stockChanged = $current === null || $current !== $target;
+            $siteUpdate = [
+                'punto_de_reorden' => isset($validated['punto_de_reorden']) && $validated['punto_de_reorden'] !== ''
+                    ? $this->fromThousandths($this->toThousandths($validated['punto_de_reorden']))
+                    : null,
+            ];
+
+            if ($stockChanged) {
+                $reason = trim((string) ($validated['motivo'] ?? ''));
+                if ($reason === '') {
+                    // El ajuste y los cambios del catálogo se revierten juntos si falta motivo.
+                    throw ValidationException::withMessages(['motivo' => 'Es obligatorio indicar un motivo cuando modificas la existencia. No se guardó ningún cambio.']);
+                }
+                if (! $this->hasMovementSchema()) {
+                    throw ValidationException::withMessages(['cantidad' => 'No está disponible el historial para registrar el ajuste de existencias.']);
+                }
+                if (empty($validated['ubicacion'])) {
+                    throw ValidationException::withMessages(['ubicacion' => 'Selecciona la ubicación del ajuste.']);
+                }
+                if ($validated['ubicacion'] === 'nueva' && trim((string) ($validated['nueva_ubicacion'] ?? '')) === '') {
+                    throw ValidationException::withMessages(['nueva_ubicacion' => 'Escribe el nombre de la nueva ubicación.']);
+                }
+                $locationId = $this->resolveLocation($validated, (int) $site->id_sede);
+                $delta = $target - ($current ?? 0);
+                $lotId = $this->resolveMovementLot([], 'ajuste', $ingredient, (int) $site->id_sede, $delta);
+                DB::table('inventarios_finales')->insert([
+                    'id_ubicacion' => $locationId,
+                    'id_lote' => $lotId,
+                    'id_usuario' => (int) $request->user()->id_usuario,
+                    'fecha' => now(),
+                    'tipo' => 'ajuste',
+                    'cantidad_firmada' => $this->fromThousandths($delta),
+                    'referencia' => 'EDICION-ALIMENTO-'.$ingredient,
+                    'observaciones' => ($current === null ? 'Inventario inicial definido. ' : '') . $reason,
+                ]);
+                $siteUpdate['stock'] = $this->fromThousandths($target);
+            }
+
+            DB::table('insumo_sedes')->where('id_insumo_sede', $assignment->id_insumo_sede)
+                ->update($siteUpdate);
+
+            return $stockChanged;
+        }, 3);
+
+        return redirect()->route('inventory.index')->with(
+            'status',
+            $change ? 'Alimento y existencias actualizados. El ajuste quedó registrado en el historial.' : 'Datos del alimento guardados correctamente.'
         );
     }
 

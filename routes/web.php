@@ -1,3 +1,4 @@
+```
 <?php
 use App\Http\Controllers\Capitan\MesasZonasController;
 use App\Http\Controllers\Admin\CommercialContactController;
@@ -329,6 +330,15 @@ Route::middleware(['auth', 'active'])->group(function () {
                 '/inventario/catalogo',
                 [InventoryController::class, 'storeIngredient']
             )->name('inventory.ingredients.store');
+
+            // Editar datos del alimento (nombre y categoría, si existe).
+            // La autorización por sede se valida en InventoryController.
+            Route::put(
+                '/inventario/insumos/{ingredient}',
+                [InventoryController::class, 'updateIngredient']
+            )
+                ->whereNumber('ingredient')
+                ->name('inventory.ingredients.update');
 
             Route::post(
                 '/inventario/asignaciones',

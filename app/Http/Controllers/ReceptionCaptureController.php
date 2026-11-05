@@ -17,8 +17,8 @@ class ReceptionCaptureController extends Controller
     {
         $site = $context->currentFor($request, $request->user());
         abort_unless($site && $request->user()->roles()->get()->contains(fn ($role) =>
-            (int) $role->pivot->id_sede === (int) $site->id_sede
-            && EmploymentRoles::matches($role->nombre, 'Recepcion de insumos')), 403);
+                (int) $role->pivot->id_sede === (int) $site->id_sede
+                && EmploymentRoles::matches($role->nombre, 'Recepcion de insumos')), 403);
         abort_unless(config('receptions.capture_enabled') && Schema::hasColumn('recepciones', 'idempotency_key'), 503,
             'La captura está pendiente de autorización y preparación del esquema.');
         abort_unless(collect(Schema::getIndexes('recepciones'))->contains(
@@ -108,7 +108,7 @@ class ReceptionCaptureController extends Controller
         } catch (\Throwable $e) {
             throw ValidationException::withMessages(['token' => 'El formulario no es válido. Abre una nueva captura.']);
         }
-        abort_unless(($token['user'] ?? null) === $request->user()->id_usuario && ($token['site'] ?? null) === $site->id_sede && ($token['order'] ?? null) === $order, 403);
+        abort_unless((int) ($token['user'] ?? 0) === (int) $request->user()->id_usuario && (int) ($token['site'] ?? 0) === (int) $site->id_sede && (int) ($token['order'] ?? 0) === (int) $order, 403);
         $key = strtolower(trim($token['key'] ?? ''));
         abort_unless(Str::isUuid($key), 422);
         $lines = collect($data['detalles'])->map(function ($line) {
@@ -134,89 +134,109 @@ class ReceptionCaptureController extends Controller
         $rawLines = collect($data['detalles'])->keyBy('id');
         try {
             $id = DB::transaction(function () use ($request, $site, $order, $key, $lines, $observation, $rawLines) {
-            // Serializa todas las capturas del pedido, incluidas las parciales.
-            $lockedOrder = DB::table('pedidos')->where('id_pedido', $order)->where('id_sede', $site->id_sede)->lockForUpdate()->first();
-            abort_unless($lockedOrder, 404);
-            $existing = DB::table('recepciones')->where('idempotency_key', $key)->first();
-            if ($existing) {
-                abort_unless((int) $existing->id_pedido === $order && (int) $existing->id_usuario === (int) $request->user()->id_usuario, 409, 'Colisión de clave de captura. Abre un formulario nuevo.');
-                $previous = $this->savedLines($existing->id_recepcion);
-                abort_unless($previous === $lines && $existing->observaciones === $observation, 409, 'La clave ya se utilizó con otros datos. Consulta la recepción o abre una nueva captura.');
-                return $existing->id_recepcion;
-            }
-            abort_unless(in_array($lockedOrder->estado, config('receptions.order_states'), true), 409);
-            $details = $this->details($order)->keyBy('id_detalle_pedido');
-            $prepared = [];
-            $positive = false;
-            $receivedAt = now();
-            $receivedDate = $receivedAt->copy()->timezone('America/Mexico_City')->toDateString();
-            foreach ($lines as $line) {
-                $detail = $details->get($line['id']);
-                abort_unless($detail, 422, 'El insumo no pertenece al pedido.');
-                $pending = $this->pending($detail);
-                $delivered = $this->quantity($line['entregada']);
-                $accepted = $this->quantity($line['aceptada']);
-                $ingredient = \App\Models\Ingredient::whereKey($detail->id_insumo)->lockForUpdate()->first();
-                $unit = $ingredient ? \App\Models\Unit::whereKey($ingredient->id_unidad_base)->lockForUpdate()->first() : null;
-                if (! $unit || $unit->permite_fracciones === null) {
-                    throw ValidationException::withMessages(['detalles' => 'El insumo requiere una unidad base válida antes de recibir mercancía.']);
+                // Serializa todas las capturas del pedido, incluidas las parciales.
+                $lockedOrder = DB::table('pedidos')->where('id_pedido', $order)->where('id_sede', $site->id_sede)->lockForUpdate()->first();
+                abort_unless($lockedOrder, 404);
+                $existing = DB::table('recepciones')->where('idempotency_key', $key)->first();
+                if ($existing) {
+                    abort_unless((int) $existing->id_pedido === $order && (int) $existing->id_usuario === (int) $request->user()->id_usuario, 409, 'Colisión de clave de captura. Abre un formulario nuevo.');
+                    $previous = $this->savedLines($existing->id_recepcion);
+                    abort_unless($previous === $lines && $existing->observaciones === $observation, 409, 'La clave ya se utilizó con otros datos. Consulta la recepción o abre una nueva captura.');
+                    return $existing->id_recepcion;
                 }
-                if (! $unit->permite_fracciones) {
-                    foreach (['entregada', 'aceptada'] as $field) {
-                        if (! preg_match('/^\d+$/', (string) $rawLines->get($line['id'])[$field])) {
-                            throw ValidationException::withMessages(['detalles' => 'La unidad base no permite fracciones; captura cantidades enteras.']);
+                abort_unless(in_array($lockedOrder->estado, config('receptions.order_states'), true), 409);
+                $details = $this->details($order)->keyBy('id_detalle_pedido');
+                $prepared = [];
+                $positive = false;
+                $receivedAt = now();
+                $receivedDate = $receivedAt->copy()->timezone('America/Mexico_City')->toDateString();
+                foreach ($lines as $line) {
+                    $detail = $details->get($line['id']);
+                    abort_unless($detail, 422, 'El insumo no pertenece al pedido.');
+                    $pending = $this->pending($detail);
+                    $delivered = $this->quantity($line['entregada']);
+                    $accepted = $this->quantity($line['aceptada']);
+                    $ingredient = DB::table('insumos')->where('id_insumo', $detail->id_insumo)->lockForUpdate()->first();
+                    $unit = $ingredient ? DB::table('unidades')->where('id_unidad', $ingredient->id_unidad_base)->first() : null;
+                    if (! $unit || $unit->permite_fracciones === null) {
+                        throw ValidationException::withMessages(['detalles' => 'El insumo requiere una unidad base válida antes de recibir mercancía.']);
+                    }
+                    if (! $unit->permite_fracciones) {
+                        foreach (['entregada', 'aceptada'] as $field) {
+                            if (! preg_match('/^\d+$/', (string) $rawLines->get($line['id'])[$field])) {
+                                throw ValidationException::withMessages(['detalles' => 'La unidad base no permite fracciones; captura cantidades enteras.']);
+                            }
                         }
                     }
+                    if ($accepted > $delivered || $delivered > $pending) {
+                        throw ValidationException::withMessages(['detalles' => 'Aceptada no puede superar entregada; entregada no puede superar pendiente.']);
+                    }
+                    if ($delivered && (! $line['codigo_lote'] || ! $line['caducidad'])) {
+                        throw ValidationException::withMessages(['detalles' => 'Toda mercancía entregada requiere lote y caducidad.']);
+                    }
+                    if ($accepted > 0 && $line['caducidad'] < $receivedDate) {
+                        throw ValidationException::withMessages(['detalles' => 'La mercancía aceptada no puede caducar antes de la fecha de recepción (hora de Ciudad de México).']);
+                    }
+                    if ($delivered > 0) {
+                        $knownLots = DB::table('lotes')->where('id_insumo', $detail->id_insumo)
+                            ->where('id_proveedor', $lockedOrder->id_proveedor)->where('codigo_lote', $line['codigo_lote'])
+                            ->lockForUpdate()->get();
+                        if ($knownLots->contains(fn ($lot) => $lot->fecha_caducidad !== $line['caducidad'])) {
+                            throw ValidationException::withMessages(['detalles' => 'La caducidad no coincide con el lote registrado para este insumo y proveedor.']);
+                        }
+                    }
+                    $missing = max(0, $pending - $delivered);
+                    if (($missing || $accepted < $delivered) && ! $line['incidencia']) {
+                        throw ValidationException::withMessages(['detalles' => 'Describe la incidencia por faltante o rechazo.']);
+                    }
+                    $positive = $positive || $delivered > 0;
+                    $prepared[] = [$line, $detail, $missing];
                 }
-                if ($accepted > $delivered || $delivered > $pending) {
-                    throw ValidationException::withMessages(['detalles' => 'Aceptada no puede superar entregada; entregada no puede superar pendiente.']);
+                if (! $positive) {
+                    throw ValidationException::withMessages(['detalles' => 'Registra al menos una cantidad entregada mayor que cero.']);
                 }
-                if ($delivered && (! $line['codigo_lote'] || ! $line['caducidad'])) {
-                    throw ValidationException::withMessages(['detalles' => 'Toda mercancía entregada requiere lote y caducidad.']);
+                // No adjudicar una recepción nueva a detalles antiguos huérfanos.
+                // Si hay detalles con el identificador recién generado, se revierte todo.
+                $id = DB::table('recepciones')->insertGetId([
+                    'id_pedido' => $order, 'id_proveedor' => $lockedOrder->id_proveedor,
+                    'id_usuario' => $request->user()->id_usuario, 'fecha_recepcion' => $receivedAt,
+                    'estado' => config('receptions.pending'), 'fecha_confirmacion' => null,
+                    'observaciones' => $observation, 'idempotency_key' => $key,
+                ], 'id_recepcion');
+                if (DB::table('recepcion_detalles')->where('id_recepcion', $id)->exists()) {
+                    throw ValidationException::withMessages([
+                        'detalles' => 'Existen detalles históricos huérfanos con el ID de esta recepción. No se guardó nada. Revisa el AUTO_INCREMENT de recepciones antes de continuar.',
+                    ]);
                 }
-                if ($accepted > 0 && $line['caducidad'] < $receivedDate) {
-                    throw ValidationException::withMessages(['detalles' => 'La mercancía aceptada no puede caducar antes de la fecha de recepción (hora de Ciudad de México).']);
-                }
-                if ($delivered > 0) {
-                    $knownLots = DB::table('lotes')->where('id_insumo', $detail->id_insumo)
-                        ->where('id_proveedor', $lockedOrder->id_proveedor)->where('codigo_lote', $line['codigo_lote'])
-                        ->lockForUpdate()->get();
-                    if ($knownLots->contains(fn ($lot) => $lot->fecha_caducidad !== $line['caducidad'])) {
-                        throw ValidationException::withMessages(['detalles' => 'La caducidad no coincide con el lote registrado para este insumo y proveedor.']);
+                foreach ($prepared as [$line, $detail, $missing]) {
+                    $lot = null;
+                    if ($this->quantity($line['entregada']) > 0) {
+                        $lot = DB::table('lotes')
+                            ->where('id_insumo', $detail->id_insumo)
+                            ->where('id_proveedor', $lockedOrder->id_proveedor)
+                            ->where('codigo_lote', $line['codigo_lote'])
+                            ->where('fecha_caducidad', $line['caducidad'])
+                            ->lockForUpdate()->value('id_lote');
+                        if (! $lot) {
+                            $lot = DB::table('lotes')->insertGetId([
+                                'id_insumo' => $detail->id_insumo,
+                                'id_proveedor' => $lockedOrder->id_proveedor,
+                                'codigo_lote' => $line['codigo_lote'],
+                                'fecha_caducidad' => $line['caducidad'],
+                            ], 'id_lote');
+                        }
+                    }
+                    $detailId = DB::table('recepcion_detalles')->insertGetId([
+                        'id_recepcion' => $id, 'id_detalle_pedido' => $detail->id_detalle_pedido, 'id_lote' => $lot,
+                        'caducidad' => $line['caducidad'], 'cantidad_entregada' => $line['entregada'], 'cantidad_aceptada' => $line['aceptada'],
+                        'precio_unitario' => $detail->precio_unitario ?? null, 'resultado_revision' => $line['resultado_revision'],
+                        'observaciones' => json_encode(['version' => 1, 'captura' => $line, 'faltante_entrega' => $this->decimal($missing)], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
+                    ]);
+                    if ($line['incidencia']) {
+                        DB::table('incidencias')->insert(['id_sede' => $site->id_sede, 'id_usuario' => $request->user()->id_usuario, 'id_recepcion_detalle' => $detailId, 'fecha' => now(), 'descripcion' => $line['incidencia'], 'estado' => 'Pendiente']);
                     }
                 }
-                $missing = max(0, $pending - $delivered);
-                if (($missing || $accepted < $delivered) && ! $line['incidencia']) {
-                    throw ValidationException::withMessages(['detalles' => 'Describe la incidencia por faltante o rechazo.']);
-                }
-                $positive = $positive || $delivered > 0;
-                $prepared[] = [$line, $detail, $missing];
-            }
-            if (! $positive) {
-                throw ValidationException::withMessages(['detalles' => 'Registra al menos una cantidad entregada mayor que cero.']);
-            }
-            $id = DB::table('recepciones')->insertGetId([
-                'id_pedido' => $order, 'id_proveedor' => $lockedOrder->id_proveedor,
-                'id_usuario' => $request->user()->id_usuario, 'fecha_recepcion' => $receivedAt,
-                'estado' => config('receptions.pending'), 'fecha_confirmacion' => null,
-                'observaciones' => $observation, 'idempotency_key' => $key,
-            ]);
-            foreach ($prepared as [$line, $detail, $missing]) {
-                $lot = null;
-                if ($this->quantity($line['entregada']) > 0) {
-                    $lot = DB::table('lotes')->insertGetId(['id_insumo' => $detail->id_insumo, 'id_proveedor' => $lockedOrder->id_proveedor, 'codigo_lote' => $line['codigo_lote'], 'fecha_caducidad' => $line['caducidad']]);
-                }
-                $detailId = DB::table('recepcion_detalles')->insertGetId([
-                    'id_recepcion' => $id, 'id_detalle_pedido' => $detail->id_detalle_pedido, 'id_lote' => $lot,
-                    'caducidad' => $line['caducidad'], 'cantidad_entregada' => $line['entregada'], 'cantidad_aceptada' => $line['aceptada'],
-                    'precio_unitario' => $detail->precio_unitario ?? null, 'resultado_revision' => $line['resultado_revision'],
-                    'observaciones' => json_encode(['version' => 1, 'captura' => $line, 'faltante_entrega' => $this->decimal($missing)], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
-                ]);
-                if ($line['incidencia']) {
-                    DB::table('incidencias')->insert(['id_sede' => $site->id_sede, 'id_usuario' => $request->user()->id_usuario, 'id_recepcion_detalle' => $detailId, 'fecha' => now(), 'descripcion' => $line['incidencia'], 'estado' => 'Pendiente']);
-                }
-            }
-            return $id;
+                return $id;
             }, 3);
         } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
             // Defensa final ante una colisión entre pedidos, una vez revertida la transacción.
@@ -226,6 +246,42 @@ class ReceptionCaptureController extends Controller
             throw $e;
         }
         return redirect()->route('receptions.receipts.show', $id)->with('status', 'Recepción guardada pendiente de revisión. No se modificó el inventario.');
+    }
+
+    /** Nueva captura corregida: no altera el comprobante anterior ni su historial. */
+    public function correct(Request $request, int $receipt, SiteContext $context)
+    {
+        $site = $this->site($request, $context);
+        $original = DB::table('recepciones as r')
+            ->join('pedidos as p', 'p.id_pedido', '=', 'r.id_pedido')
+            ->where('p.id_sede', $site->id_sede)
+            ->where('r.id_recepcion', $receipt)
+            ->where('r.id_usuario', $request->user()->id_usuario)
+            ->select('r.*')->first();
+        abort_unless($original, 404);
+        abort_unless(in_array($original->estado, (array) config('receptions.released_states', []), true), 409,
+            'Solo se puede volver a capturar una recepción devuelta o cancelada.');
+        $order = $this->order((int) $original->id_pedido, (int) $site->id_sede);
+        abort_unless(in_array($order->estado, (array) config('receptions.order_states', []), true), 409);
+
+        $details = $this->details($order->id_pedido);
+        foreach ($details as $detail) {
+            $detail->pendiente = $this->decimal($this->pending($detail));
+        }
+        $provider = DB::table('proveedores')->where('id_proveedor', $order->id_proveedor)->value('nombre');
+        $token = Crypt::encryptString(json_encode([
+            'key' => (string) Str::uuid(), 'user' => $request->user()->id_usuario,
+            'site' => $site->id_sede, 'order' => $order->id_pedido,
+        ]));
+        $prefill = DB::table('recepcion_detalles')
+            ->where('id_recepcion', $original->id_recepcion)
+            ->get(['id_detalle_pedido', 'observaciones'])
+            ->mapWithKeys(function ($detail) {
+                $metadata = json_decode((string) $detail->observaciones, true);
+                return [(int) $detail->id_detalle_pedido => (array) ($metadata['captura'] ?? [])];
+            })->all();
+        $originalReceipt = $original;
+        return view('receptions.create', compact('site', 'order', 'details', 'provider', 'token', 'prefill', 'originalReceipt'));
     }
 
     private function savedLines(int $receipt): array
@@ -241,8 +297,8 @@ class ReceptionCaptureController extends Controller
             ->where('p.id_sede', $site->id_sede)->where('r.id_recepcion', $receipt)->select('r.*')->first();
         abort_unless($receipt, 404);
         $details = DB::table('recepcion_detalles as d')->leftJoin('detalle_pedidos as p', 'p.id_detalle_pedido', '=', 'd.id_detalle_pedido')
-            ->leftJoin('insumos as i', 'i.id_insumo', '=', 'p.id_insumo')->leftJoin('lotes as l', 'l.id_lote', '=', 'd.id_lote')
-            ->where('d.id_recepcion', $receipt->id_recepcion)->select('d.*', 'i.nombre as insumo_nombre', 'l.codigo_lote')->get();
+            ->leftJoin('insumos as i', 'i.id_insumo', '=', 'p.id_insumo')->leftJoin('unidades as u', 'u.id_unidad', '=', 'i.id_unidad_base')->leftJoin('lotes as l', 'l.id_lote', '=', 'd.id_lote')
+            ->where('d.id_recepcion', $receipt->id_recepcion)->select('d.*', 'i.nombre as insumo_nombre', 'l.codigo_lote', 'u.codigo as unidad')->get();
         return view('receptions.receipt', compact('site', 'receipt', 'details'));
     }
 }
