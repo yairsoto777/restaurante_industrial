@@ -2,8 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CashSession;
+use App\Models\User;
+use App\Support\CashAmount;
+use App\Support\CashOpeningSafety;
+use App\Support\EmploymentRoles;
 use App\Support\SiteContext;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,32 +20,51 @@ use Illuminate\View\View;
 
 class CashController extends Controller
 {
+    public function __construct(private CashOpeningSafety $openingSafety) {}
+
     public function index(Request $request, SiteContext $siteContext): View
     {
         $site = $this->site($request, $siteContext);
-        $this->syncAccounts($site->id_sede);
-        $register = $this->openRegister($site->id_sede);
-        $accountsQuery = $this->accountsQuery($site->id_sede);
-        $pendingCount = (clone $accountsQuery)->where('c.estado', 'abierta')->count();
-        $paidCount = (clone $accountsQuery)->whereIn('c.estado', ['pagada', 'cobrada'])->count();
-        $revenue = $this->paymentTotals($register?->id_corte_caja);
-        $recentPayments = $this->paymentsQuery($site->id_sede)->orderByDesc('p.fecha_pago')->limit(8)->get();
-        $recentMovements = Schema::hasTable('movimientos_caja') && $register
-            ? DB::table('movimientos_caja as m')->leftJoin('usuarios as u', 'u.id_usuario', '=', 'm.id_usuario')
-                ->where('m.id_corte_caja', $register->id_corte_caja)->orderByDesc('m.fecha')->limit(5)
-                ->get(['m.*', 'u.nombre as usuario_nombre', 'u.apellido_p as usuario_apellido'])
-            : collect();
+        return $this->dashboardView($request, $site, $siteContext);
+    }
 
-        return view('cash.index', compact(
-            'site', 'register', 'pendingCount', 'paidCount', 'revenue',
-            'recentPayments', 'recentMovements',
-        ));
+
+    public function show(Request $request, CashSession $cashSession, SiteContext $siteContext): View
+    {
+        $site = $this->site($request, $siteContext);
+        abort_unless((int) $cashSession->id_sede === (int) $site->id_sede, 404);
+        $isSupervisor = $request->user()->canAdminister() || $request->user()->isManager();
+        abort_unless($isSupervisor || (int) $cashSession->id_usuario_cajero === (int) $request->user()->id_usuario, 404);
+
+        return $this->dashboardView($request, $site, $siteContext, $cashSession);
+    }
+
+    public function editFund(Request $request, CashSession $cashSession, SiteContext $siteContext): View|RedirectResponse
+    {
+        return $this->openingForm($request, $cashSession, $siteContext, false);
+    }
+
+    public function confirmCancellation(Request $request, CashSession $cashSession, SiteContext $siteContext): View|RedirectResponse
+    {
+        return $this->openingForm($request, $cashSession, $siteContext, true);
+    }
+
+    public function updateFund(Request $request, CashSession $cashSession, SiteContext $siteContext): RedirectResponse
+    {
+        return $this->changeOpening($request, $cashSession, $siteContext, false);
+    }
+
+    public function cancelOpening(Request $request, CashSession $cashSession, SiteContext $siteContext): RedirectResponse
+    {
+        return $this->changeOpening($request, $cashSession, $siteContext, true);
     }
 
     public function accounts(Request $request, SiteContext $siteContext): View
     {
         $site = $this->site($request, $siteContext);
-        $this->syncAccounts($site->id_sede);
+        if (Schema::hasTable('comandas') && Schema::hasTable('comanda_detalles') && Schema::hasTable('menus') && Schema::hasTable('platillos')) {
+            $this->syncAccounts($site->id_sede);
+        }
         $filters = $request->validate([
             'q' => ['nullable', 'string', 'max:100'],
             'estado' => ['nullable', 'in:abierta,pagada,cobrada,cancelada'],
@@ -217,21 +242,41 @@ class CashController extends Controller
     public function open(Request $request, SiteContext $siteContext): RedirectResponse
     {
         $site = $this->site($request, $siteContext);
-        $data = $request->validate(['fondo_inicial' => ['required', 'numeric', 'decimal:0,2', 'min:0', 'max:9999999999.99']]);
-        DB::transaction(function () use ($data, $site, $request): void {
+        $data = $request->validate([
+            'fondo_inicial' => ['required', 'string', 'regex:/\A(?:0|[1-9]\d{0,9})(?:\.\d{1,2})?\z/'],
+            'id_sede' => ['prohibited'], 'id_usuario_cajero' => ['prohibited'], 'estado' => ['prohibited'],
+            'fecha_apertura' => ['prohibited'],
+        ]);
+        $amount = CashAmount::decimal(CashAmount::cents($data['fondo_inicial']));
+        DB::transaction(function () use ($data, $amount, $site, $request): void {
             // Serializa las aperturas por sede. Sin bloquear la fila de la sede,
             // dos solicitudes simultáneas podrían pasar ambas la comprobación.
             DB::table('sedes')->where('id_sede', $site->id_sede)->lockForUpdate()->first();
             if ($this->lockOpenRegister($site->id_sede)) {
-                throw ValidationException::withMessages(['caja' => 'Ya existe una caja abierta para esta sede.']);
+                $message = 'Ya existe una caja abierta para esta sede.';
+                throw ValidationException::withMessages(['caja' => $message, 'apertura' => $message]);
             }
-            DB::table('cortes_caja')->insert([
+            $id = DB::table('cortes_caja')->insertGetId([
                 'id_sede' => $site->id_sede,
                 'id_usuario_cajero' => $request->user()->id_usuario,
                 'fecha_apertura' => now(),
-                'fondo_inicial' => $data['fondo_inicial'],
+                'fondo_inicial' => $amount,
+                'efectivo_esperado' => $amount,
                 'estado' => 'abierto',
             ]);
+            if (Schema::hasTable('bitacora')) {
+                DB::table('bitacora')->insert([
+                    'id_usuario' => $request->user()->id_usuario,
+                    'id_sede' => $site->id_sede,
+                    'accion' => 'abrir_caja',
+                    'tabla_afectada' => 'cortes_caja',
+                    'id_registro' => $id,
+                    'datos_anteriores' => null,
+                    'datos_nuevos' => json_encode(['fondo_inicial' => $amount, 'estado' => 'abierto'], JSON_THROW_ON_ERROR),
+                    'descripcion' => 'Apertura de caja por el cajero responsable.',
+                    'fecha' => now(),
+                ]);
+            }
         }, 3);
 
         return back()->with('status', 'Caja abierta correctamente.');
@@ -302,9 +347,161 @@ class CashController extends Controller
     private function site(Request $request, SiteContext $siteContext): object
     {
         $site = $siteContext->currentFor($request, $request->user());
-        abort_unless($site && ($request->user()->canAdminister() || $request->user()->sites()->whereKey($site->id_sede)->exists()), 403);
+        $siteRoles = $site ? $request->user()->roles()->get()->filter(fn ($role): bool => (int) ($role->pivot->id_sede ?? 0) === (int) $site->id_sede) : collect();
+        $hasOperationalRole = $siteRoles->contains(fn ($role): bool => EmploymentRoles::matches($role->nombre ?? '', 'Cajero') || EmploymentRoles::isManager($role->nombre ?? ''));
+        abort_unless($site && ($request->user()->canAdminister() || $hasOperationalRole), 403);
 
         return $site;
+    }
+
+
+    private function dashboardView(Request $request, object $site, SiteContext $siteContext, ?CashSession $cashSession = null): View
+    {
+        if (Schema::hasTable('comandas') && Schema::hasTable('comanda_detalles') && Schema::hasTable('menus') && Schema::hasTable('platillos')) {
+            $this->syncAccounts($site->id_sede);
+        }
+        $register = $this->openRegister($site->id_sede);
+        $hasAccountRelations = collect(['cuentas', 'atenciones', 'servicios', 'mesas', 'zonas', 'grupos'])
+            ->every(fn (string $table): bool => Schema::hasTable($table));
+        $accountsQuery = $hasAccountRelations ? $this->accountsQuery($site->id_sede) : null;
+        $pendingCount = $accountsQuery ? (clone $accountsQuery)->where('c.estado', 'abierta')->count() : 0;
+        $paidCount = $accountsQuery ? (clone $accountsQuery)->whereIn('c.estado', ['pagada', 'cobrada'])->count() : 0;
+        $revenue = $this->paymentTotals($register?->id_corte_caja);
+        $hasPaymentRelations = collect(['pagos', 'cuentas', 'atenciones', 'servicios', 'usuarios'])
+            ->every(fn (string $table): bool => Schema::hasTable($table));
+        $hasPaymentColumns = Schema::hasTable('cuentas') && Schema::hasColumn('cuentas', 'total');
+        $recentPayments = $hasPaymentRelations && $hasPaymentColumns
+            ? $this->paymentsQuery($site->id_sede)->orderByDesc('p.fecha_pago')->limit(8)->get()
+            : collect();
+        $recentMovements = Schema::hasTable('movimientos_caja') && $register
+            ? DB::table('movimientos_caja as m')->leftJoin('usuarios as u', 'u.id_usuario', '=', 'm.id_usuario')
+                ->where('m.id_corte_caja', $register->id_corte_caja)->orderByDesc('m.fecha')->limit(5)
+                ->get(['m.*', 'u.nombre as usuario_nombre', 'u.apellido_p as usuario_apellido'])
+            : collect();
+        $cashSession = $cashSession ?: ($register ? CashSession::find($register->id_corte_caja) : null);
+        $canCorrect = false;
+        $correctionBlock = null;
+        $auditEntries = collect();
+        $history = CashSession::where('id_sede', $site->id_sede)->orderByDesc('id_corte_caja')->limit(10)->get();
+        $confirmedCount = Schema::hasTable('pagos') && $register
+            ? DB::table('pagos')->where('id_corte_caja', $register->id_corte_caja)->whereRaw("LOWER(COALESCE(estado, '')) = 'confirmado'")->count()
+            : 0;
+        $summary = [
+            'total' => $this->fromCents($revenue['total']),
+            'expected' => $register ? $this->fromCents($this->toCents($register->fondo_inicial) + $revenue['efectivo']) : '0.00',
+            'count' => $confirmedCount,
+            'inconsistent' => false,
+        ];
+        $sessions = $history;
+        $canOpen = $request->user()->hasRole('Cajero');
+        $canSupervise = $request->user()->canAdminister() || $request->user()->isManager();
+        $payments = $recentPayments;
+        if ($cashSession) {
+            $isOwner = (int) $cashSession->id_usuario_cajero === (int) $request->user()->id_usuario;
+            $correctionBlock = $isOwner ? $this->openingSafety->blockReason($cashSession) : 'Solo el cajero responsable puede corregir esta apertura.';
+            $canCorrect = $isOwner && $correctionBlock === null;
+            if (Schema::hasTable('bitacora')) {
+                $auditEntries = DB::table('bitacora')->where('tabla_afectada', 'cortes_caja')
+                    ->where('id_registro', $cashSession->id_corte_caja)->where('id_sede', $site->id_sede)
+                    ->whereIn('accion', ['abrir_caja', 'modificar_fondo_caja', 'anular_apertura_caja'])
+                    ->orderByDesc('id_bitacora')->limit(10)->get();
+            }
+        }
+
+        return view('cash.index', compact(
+            'site', 'register', 'pendingCount', 'paidCount', 'revenue',
+            'recentPayments', 'recentMovements', 'cashSession', 'canCorrect',
+            'correctionBlock', 'auditEntries', 'history', 'summary', 'sessions',
+            'canOpen', 'canSupervise', 'payments'
+        ));
+    }
+
+    private function ownedOpening(Request $request, CashSession $session, SiteContext $siteContext): object
+    {
+        $site = $this->site($request, $siteContext);
+        $hasCashierAssignment = $request->user()->roles()->get()->contains(function ($role) use ($site): bool {
+            return (int) ($role->pivot->id_sede ?? 0) === (int) $site->id_sede
+                && EmploymentRoles::matches($role->nombre ?? '', 'Cajero');
+        });
+        abort_unless($hasCashierAssignment, 403);
+        abort_unless((int) $session->id_sede === (int) $site->id_sede
+            && (int) $session->id_usuario_cajero === (int) $request->user()->id_usuario, 404);
+
+        return $site;
+    }
+
+    private function openingForm(Request $request, CashSession $cashSession, SiteContext $siteContext, bool $cancel): View|RedirectResponse
+    {
+        $site = $this->ownedOpening($request, $cashSession, $siteContext);
+        if ($reason = $this->openingSafety->blockReason($cashSession)) {
+            return redirect()->route('cash.sessions.show', $cashSession)->withErrors(['correccion' => $reason]);
+        }
+        $revision = $this->openingSafety->revision($cashSession);
+
+        return view('cash.opening-action', compact('site', 'cashSession', 'cancel', 'revision'));
+    }
+
+    private function changeOpening(Request $request, CashSession $cashSession, SiteContext $siteContext, bool $cancel): RedirectResponse
+    {
+        $site = $this->ownedOpening($request, $cashSession, $siteContext);
+        $rules = [
+            'motivo' => ['required', 'string', 'min:5', 'max:1000'],
+            'revision' => ['required', 'string', 'regex:/\A[a-f0-9]{64}\z/'],
+            'id_sede' => ['prohibited'], 'id_usuario_cajero' => ['prohibited'],
+            'estado' => ['prohibited'], 'fecha_cierre' => ['prohibited'],
+            'fondo_anterior' => ['prohibited'], 'efectivo_esperado' => ['prohibited'],
+        ];
+        $rules[$cancel ? 'confirmacion' : 'fondo_inicial'] = $cancel
+            ? ['required', 'accepted']
+            : ['required', 'string', 'regex:/\A(?:0|[1-9]\d{0,9})(?:\.\d{1,2})?\z/'];
+        $data = $request->validate($rules);
+
+        try {
+            DB::transaction(function () use ($request, $siteContext, $cashSession, $site, $data, $cancel): void {
+                User::query()->whereKey($request->user()->id_usuario)->lockForUpdate()->firstOrFail();
+                $locked = CashSession::query()->whereKey($cashSession->id_corte_caja)->lockForUpdate()->firstOrFail();
+                $activeSite = $this->ownedOpening($request, $locked, $siteContext);
+                abort_unless((int) $activeSite->id_sede === (int) $site->id_sede, 403);
+                if ($reason = $this->openingSafety->blockReason($locked, true)) {
+                    throw ValidationException::withMessages(['correccion' => $reason]);
+                }
+                if (! hash_equals($this->openingSafety->revision($locked), $data['revision'])) {
+                    throw ValidationException::withMessages(['correccion' => 'El turno cambió desde que abriste el formulario. Recarga el detalle.']);
+                }
+
+                $before = $this->openingSafety->snapshot($locked);
+                if ($cancel) {
+                    $locked->estado = CashSession::CANCELLED;
+                    $locked->fecha_cierre = now();
+                } else {
+                    $amount = CashAmount::decimal(CashAmount::cents($data['fondo_inicial']));
+                    if ($amount === $locked->fondo_inicial) {
+                        throw ValidationException::withMessages(['fondo_inicial' => 'El nuevo fondo debe ser distinto del actual.']);
+                    }
+                    $locked->fondo_inicial = $amount;
+                    $locked->efectivo_esperado = $amount;
+                }
+                $locked->save();
+                $after = $this->openingSafety->snapshot($locked);
+                $after['motivo'] = $data['motivo'];
+                DB::table('bitacora')->insert([
+                    'id_usuario' => $request->user()->id_usuario, 'id_sede' => $site->id_sede,
+                    'accion' => $cancel ? 'anular_apertura_caja' : 'modificar_fondo_caja',
+                    'tabla_afectada' => 'cortes_caja', 'id_registro' => $locked->id_corte_caja,
+                    'datos_anteriores' => json_encode($before, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
+                    'datos_nuevos' => json_encode($after, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
+                    'descripcion' => ($cancel ? 'Anulación de apertura sin movimientos. ' : 'Corrección de fondo sin movimientos. ').'Motivo: '.$data['motivo'],
+                    'fecha' => now(),
+                ]);
+            }, 3);
+        } catch (QueryException $exception) {
+            report($exception);
+            throw ValidationException::withMessages(['correccion' => 'No fue posible confirmar la operación y su auditoría.']);
+        }
+
+        return redirect()->route('cash.sessions.show', $cashSession)->with('status', $cancel
+            ? 'Apertura anulada y conservada para auditoría. Ya puedes abrir un nuevo turno.'
+            : 'Fondo inicial corregido y motivo registrado.');
     }
 
     private function accountsQuery(int $siteId): Builder

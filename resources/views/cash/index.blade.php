@@ -89,4 +89,53 @@
         <section class="cash-panel"><div class="cash-panel-head"><div><span class="section-kicker">Auditoría del turno</span><h2>Últimos movimientos de caja</h2></div></div><div class="cash-table-wrap"><table class="cash-table"><thead><tr><th>Tipo</th><th>Concepto</th><th>Importe</th><th>Registró</th><th>Fecha</th></tr></thead><tbody>@foreach($recentMovements as $movement)<tr><td><span class="cash-pill {{ $movement->tipo === 'entrada' ? 'entrada' : 'salida' }}">{{ ucfirst($movement->tipo) }}</span></td><td>{{ $movement->concepto }}</td><td>${{ number_format((float) $movement->monto, 2) }}</td><td>{{ trim(($movement->usuario_nombre ?? '').' '.($movement->usuario_apellido ?? '')) ?: 'Sin nombre' }}</td><td>{{ CarbonCarbon::parse($movement->fecha)->format('d/m/Y H:i') }}</td></tr>@endforeach</tbody></table></div></section>
     @endif
 </div>
+
+@if(isset($cashSession) && $cashSession)
+    <section class="cash-panel" aria-labelledby="opening-audit-title">
+        <div class="cash-panel__header">
+            <div>
+                <p class="cash-eyebrow">Turno seleccionado</p>
+                <h2 id="opening-audit-title">Apertura #{{ $cashSession->id_corte_caja }}</h2>
+            </div>
+            <div class="cash-actions">
+                @if($canCorrect ?? false)
+                    <a class="btn btn-primary" href="{{ route('cash.fund.edit', $cashSession) }}">Modificar fondo inicial</a>
+                    <a class="btn btn-secondary" href="{{ route('cash.cancel.confirm', $cashSession) }}">Anular apertura</a>
+                @elseif($correctionBlock ?? null)
+                    <span class="cash-muted">{{ $correctionBlock }}</span>
+                @endif
+            </div>
+        </div>
+        <p>Fondo inicial: <strong>\${{ number_format((float) $cashSession->fondo_inicial, 2) }}</strong> ·
+            Estado: <strong>{{ $cashSession->estado }}</strong></p>
+        @if($cashSession->observaciones)
+            <p style="grid-column:1 / -1"><strong>Observaciones de apertura</strong></p>
+            <p>{{ $cashSession->observaciones }}</p>
+        @endif
+        @if($cashSession->estado === 'abierto')
+            <p class="cash-muted">Error al capturar el fondo: si el importe fue incorrecto, puedes modificarlo mientras no existan movimientos.</p>
+        @elseif($cashSession->estado === 'anulado')
+            <p class="cash-muted">Apertura registrada por error. No constituye un corte financiero.</p>
+        @endif
+        @if(($auditEntries ?? collect())->isNotEmpty())
+            <h3>Auditoría de apertura</h3>
+            <ul class="cash-list">
+                @foreach($auditEntries as $entry)
+                    <li>{{ $entry->accion }} · {{ $entry->fecha }} · {{ $entry->descripcion ?? '' }}</li>
+                @endforeach
+            </ul>
+        @endif
+    </section>
+@endif
+@if(isset($history) && $history->isNotEmpty())
+    <section class="cash-panel" aria-labelledby="cash-history-title">
+        <h2 id="cash-history-title">Historial de aperturas</h2>
+        <ul class="cash-list">
+            @foreach($history as $turno)
+                <li>Turno #{{ $turno->id_corte_caja }} · {{ $turno->estado }} · <a href="{{ route('cash.sessions.show', $turno) }}">Consultar</a></li>
+            @endforeach
+        </ul>
+    </section>
+@endif
+
 @endsection

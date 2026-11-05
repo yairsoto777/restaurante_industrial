@@ -1,4 +1,3 @@
-```
 <?php
 use App\Http\Controllers\Capitan\MesasZonasController;
 use App\Http\Controllers\Admin\CommercialContactController;
@@ -29,7 +28,7 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| PÁGINAS PÚBLICAS
+| PÃGINAS PÃšBLICAS
 |--------------------------------------------------------------------------
 */
 
@@ -55,7 +54,7 @@ Route::post(
 
 /*
 |--------------------------------------------------------------------------
-| AUTENTICACIÓN
+| AUTENTICACIÃ“N
 |--------------------------------------------------------------------------
 */
 
@@ -104,10 +103,9 @@ Route::middleware('guest')->group(function () {
         ->name('password.reset.store');
 
 });
-
 /*
 |--------------------------------------------------------------------------
-| CIERRE DE SESIÓN Y CAMBIO DE CONTRASEÑA
+| CIERRE DE SESIÃ“N Y CAMBIO DE CONTRASEÃ‘A
 |--------------------------------------------------------------------------
 */
 
@@ -151,7 +149,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | SELECCIÓN DE SEDE
+    | SELECCIÃ“N DE SEDE
     |--------------------------------------------------------------------------
     */
 
@@ -167,7 +165,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | USUARIO COMÚN
+    | USUARIO COMÃšN
     |--------------------------------------------------------------------------
     */
 
@@ -256,7 +254,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | ADMINISTRACIÓN DE SERVICIOS - JEFE DE COCINA
+    | ADMINISTRACIÃ“N DE SERVICIOS - JEFE DE COCINA
     |--------------------------------------------------------------------------
     */
 
@@ -322,7 +320,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     });
 
-    // Operaciones de inventario: Jefe de cocina y Jefe de almacén.
+    // Operaciones de inventario: Jefe de cocina y Jefe de almacÃ©n.
     // Los controladores siguen validando el rol y la sede activa.
     Route::middleware('role:Jefe de cocina,Jefe de almacen')
         ->group(function () {
@@ -332,8 +330,8 @@ Route::middleware(['auth', 'active'])->group(function () {
                 [InventoryController::class, 'storeIngredient']
             )->name('inventory.ingredients.store');
 
-            // Editar datos del alimento (nombre y categoría, si existe).
-            // La autorización por sede se valida en InventoryController.
+            // Editar datos del alimento (nombre y categorÃ­a, si existe).
+            // La autorizaciÃ³n por sede se valida en InventoryController.
             Route::put(
                 '/inventario/insumos/{ingredient}',
                 [InventoryController::class, 'updateIngredient']
@@ -404,7 +402,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | MENÚS Y PLATILLOS
+    | MENÃšS Y PLATILLOS
     |--------------------------------------------------------------------------
     */
 
@@ -514,7 +512,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    // PEDIDOS: gestión de compras del Jefe de almacén.
+    // PEDIDOS: gestiÃ³n de compras del Jefe de almacÃ©n.
     // Separa /pedidos de /recepciones y conserva los permisos de consulta previos.
     Route::middleware('role:administrator,manager,Jefe de almacen')
         ->group(function () {
@@ -526,7 +524,7 @@ Route::middleware(['auth', 'active'])->group(function () {
                 ->name('orders.show');
         });
 
-    // Proveedores: catálogo global administrado por el Jefe de almacén.
+    // Proveedores: catÃ¡logo global administrado por el Jefe de almacÃ©n.
     // Las rutas deben quedar dentro del grupo auth + active.
     Route::middleware('role:Jefe de almacen')
         ->prefix('pedidos/proveedores')
@@ -540,7 +538,7 @@ Route::middleware(['auth', 'active'])->group(function () {
                 ->whereNumber('supplier')->name('update');
         });
 
-    // Las escrituras de pedidos son exclusivas del Jefe de almacén.
+    // Las escrituras de pedidos son exclusivas del Jefe de almacÃ©n.
     Route::middleware('role:Jefe de almacen')
         ->group(function () {
             Route::get('/pedidos/nuevo', [\App\Http\Controllers\Almacen\WarehouseOrderController::class, 'create'])
@@ -569,6 +567,12 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('/apertura', [CashController::class, 'open'])->name('registers.open');
         Route::post('/movimientos', [CashController::class, 'movement'])->name('movements.store');
         Route::post('/cierre', [CashController::class, 'close'])->name('registers.close');
+        Route::post('/aperturas', [CashController::class, 'open'])->name('open');
+        Route::get('/turnos/{cashSession}', [CashController::class, 'show'])->name('sessions.show');
+        Route::get('/turnos/{cashSession}/fondo/editar', [CashController::class, 'editFund'])->name('fund.edit');
+        Route::post('/turnos/{cashSession}/fondo', [CashController::class, 'updateFund'])->name('fund.update');
+        Route::get('/turnos/{cashSession}/anular', [CashController::class, 'confirmCancellation'])->name('cancel.confirm');
+        Route::post('/turnos/{cashSession}/anular', [CashController::class, 'cancelOpening'])->name('cancel');
     });
 
     /*
@@ -602,7 +606,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | ADMINISTRACIÓN - USUARIOS Y SEDES
+    | ADMINISTRACIÃ“N - USUARIOS Y SEDES
     |--------------------------------------------------------------------------
     */
 
@@ -645,7 +649,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | ADMINISTRACIÓN - CATÁLOGO DE UNIDADES
+    | ADMINISTRACIÃ“N - CATÃLOGO DE UNIDADES
     |--------------------------------------------------------------------------
     */
 
@@ -684,7 +688,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | ADMINISTRACIÓN - MODIFICACIÓN DE SEDES
+    | ADMINISTRACIÃ“N - MODIFICACIÃ“N DE SEDES
     |--------------------------------------------------------------------------
     */
 
@@ -883,12 +887,12 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | CAPITÁN DE MESEROS - ROL 7
+    | CAPITÃN DE MESEROS - ROL 7
     |--------------------------------------------------------------------------
     |
-    | Panel de operación de piso.
-    | Supervisión de servicios y mesas.
-    | Asignación y retiro de meseros.
+    | Panel de operaciÃ³n de piso.
+    | SupervisiÃ³n de servicios y mesas.
+    | AsignaciÃ³n y retiro de meseros.
     | Control de atenciones y comidas.
     | Incidencias y reportes.
     |
@@ -906,7 +910,7 @@ Route::middleware(['auth', 'active'])->group(function () {
                 'index'
             ])->name('index');
 
-            // MESAS Y ZONAS - ADMINISTRACIÓN POR SEDE
+            // MESAS Y ZONAS - ADMINISTRACIÃ“N POR SEDE
             Route::get('/mesas', [MesasZonasController::class, 'index'])
                 ->name('mesas.index');
 
@@ -930,7 +934,7 @@ Route::middleware(['auth', 'active'])->group(function () {
                 'asignar'
             ])->name('asignaciones.store');
 
-            // RETIRAR ASIGNACIÓN
+            // RETIRAR ASIGNACIÃ“N
             Route::patch(
                 '/asignaciones/{asignacion}/retirar',
                 [
