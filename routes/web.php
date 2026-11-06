@@ -240,6 +240,7 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/mesero', [App\Http\Controllers\MeseroController::class, 'index'])->middleware('role:Mesero')->name('waiter.index');
         Route::patch('/mesero/atenciones/{attention}', [App\Http\Controllers\MeseroController::class, 'updateAttention'])->middleware('role:Mesero')->name('waiter.attention.update');
         Route::post('/mesero/atenciones/{attention}/comanda', [App\Http\Controllers\MeseroController::class, 'storeComanda'])->middleware('role:Mesero')->name('waiter.comanda.store');
+        Route::post('/mesero/atenciones/{attention}/comanda/platillos', [App\Http\Controllers\MeseroController::class, 'storeComandaItem'])->middleware('role:Mesero')->name('waiter.comanda.item.store');
 
         Route::get(
             '/servicios',
@@ -560,12 +561,10 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     Route::middleware(
         'role:administrator,manager,Cajero'
-    )
-        ->get(
-            '/caja',
-            [OperationalModuleController::class, 'show']
-        )
-        ->name('cash.index');
+    )->group(function () {
+        Route::get('/caja', [App\Http\Controllers\CashierController::class, 'index'])->name('cash.index');
+        Route::post('/caja/atenciones/{attention}/cobrar', [App\Http\Controllers\CashierController::class, 'charge'])->whereNumber('attention')->middleware('role:Cajero')->name('cash.charge');
+    });
 
     /*
     |--------------------------------------------------------------------------
@@ -807,7 +806,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
             Route::resource('empleados', EmployeeController::class)
                 ->parameters(['empleados' => 'employee'])
-                ->except(['show', 'destroy'])
+                ->except(['show'])
                 ->names('employees');
 
             Route::get(

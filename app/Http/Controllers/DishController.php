@@ -37,7 +37,7 @@ class DishController extends Controller
             'site' => $site,
             'dish' => new Dish(),
             'categories' => Category::query()->orderBy('nombre')->get(),
-            'ingredients' => $this->ingredientOptions(),
+            'ingredients' => $this->ingredientOptions((int) $site->id_sede),
         ]);
     }
 
@@ -45,7 +45,7 @@ class DishController extends Controller
     {
         $site = $this->writeSite($request, $siteContext);
         $data = $this->validated($request);
-        $details = $this->recipe($request);
+        $details = $this->recipe($request, (int) $site->id_sede);
 
         $dish = DB::transaction(function () use ($data, $details, $site): Dish {
             $dish = Dish::query()->create([...$data, 'id_sede' => $site->id_sede]);
@@ -78,7 +78,7 @@ class DishController extends Controller
             'site' => $dish->site,
             'dish' => $dish->load('recipeDetails'),
             'categories' => Category::query()->orderBy('nombre')->get(),
-            'ingredients' => $this->ingredientOptions(),
+            'ingredients' => $this->ingredientOptions((int) $dish->id_sede),
         ]);
     }
 
@@ -87,7 +87,7 @@ class DishController extends Controller
         $this->authorizeDish($request, $dish, $siteContext);
         abort_unless($this->canWrite($request), 403);
         $data = $this->validated($request);
-        $details = $this->recipe($request);
+        $details = $this->recipe($request, (int) $dish->id_sede);
 
         DB::transaction(function () use ($dish, $data, $details): void {
             $dish->update($data);
@@ -109,7 +109,7 @@ class DishController extends Controller
         ]);
     }
 
-    private function recipe(Request $request): array
+    private function recipe(Request $request, int $siteId): array
     {
         $data = $request->validate([
             'recipe' => ['nullable', 'array', 'max:100'],
@@ -120,8 +120,13 @@ class DishController extends Controller
         $ids = collect($items)->pluck('id_insumo')->map(fn ($id): int => (int) $id)->unique()->values();
 
         if ($ids->isNotEmpty()) {
-            $withUnits = DB::table('insumos as insumo')->join('unidades as unidad', 'unidad.id_unidad', '=', 'insumo.id_unidad_base')
-                ->whereIn('insumo.id_insumo', $ids)->count();
+            $withUnits = DB::table('insumos as insumo')
+                ->join('insumo_sedes as existencia', function ($join) use ($siteId): void {
+                    $join->on('existencia.id_insumo', '=', 'insumo.id_insumo')
+                        ->where('existencia.id_sede', $siteId);
+                })
+                ->join('unidades as unidad', 'unidad.id_unidad', '=', 'insumo.id_unidad_base')
+                ->whereIn('insumo.id_insumo', $ids)->distinct()->count('insumo.id_insumo');
             if ($withUnits !== $ids->count()) {
                 throw ValidationException::withMessages(['recipe' => 'Cada insumo de la receta debe tener una unidad base válida.']);
             }
@@ -134,9 +139,14 @@ class DishController extends Controller
         ])->all();
     }
 
-    private function ingredientOptions()
+    private function ingredientOptions(int $siteId)
     {
-        return Ingredient::query()->join('unidades as unidad', 'unidad.id_unidad', '=', 'insumos.id_unidad_base')
+        return Ingredient::query()
+            ->join('insumo_sedes as existencia', function ($join) use ($siteId): void {
+                $join->on('existencia.id_insumo', '=', 'insumos.id_insumo')
+                    ->where('existencia.id_sede', $siteId);
+            })
+            ->join('unidades as unidad', 'unidad.id_unidad', '=', 'insumos.id_unidad_base')
             ->with('unit')->orderBy('insumos.nombre')->select('insumos.*')->get();
     }
 

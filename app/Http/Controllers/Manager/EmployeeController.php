@@ -180,6 +180,38 @@ class EmployeeController extends Controller
             ->with('status', 'Empleado actualizado correctamente.');
     }
 
+    public function destroy(
+        Request $request,
+        Employee $employee,
+        SiteContext $siteContext,
+    ): RedirectResponse {
+        $currentSite = $this->currentManagedSite($request, $siteContext);
+
+        DB::transaction(function () use ($request, $employee, $currentSite): void {
+            $lockedEmployee = Employee::query()
+                ->whereKey($employee->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+            [$user] = $this->authorizedEmployee(
+                $request->user(),
+                $lockedEmployee,
+                $currentSite,
+                true,
+            );
+
+            DB::table('solicitudes_empleo')
+                ->where('id_usuario', $user->getKey())
+                ->orWhere('id_usuario_responde', $user->getKey())
+                ->delete();
+            DB::table('usuario_sede')->where('id_usuario', $user->getKey())->delete();
+            $lockedEmployee->delete();
+            $user->delete();
+        }, 3);
+
+        return redirect()->route('manager.employees.index')
+            ->with('status', 'Empleado eliminado correctamente.');
+    }
+
     private function validated(Request $request, ?User $user = null): array
     {
         if (! $request->filled('id_puesto') && $request->filled('puesto')) {

@@ -87,4 +87,18 @@ class MeseroController extends Controller
         });
         return back()->with('status', 'Comanda abierta y enviada a cocina.');
     }
+
+    public function storeComandaItem(Request $request, SiteContext $context, int $attention)
+    {
+        $site = $this->site($request, $context);
+        $data = $request->validate(['id_menu' => ['required', 'integer'], 'cantidad' => ['required', 'integer', 'min:1', 'max:100']]);
+        $menu = DB::table('menus as m')->join('servicios as s', 's.id_servicio', '=', 'm.id_servicio')->where('m.id_menu', $data['id_menu'])
+            ->where('s.id_sede', $site->id_sede)->where('m.publicado', 1)->where('m.disponible', 1)->whereNotNull('m.precio_venta')->first(['m.id_menu']);
+        abort_unless($menu, 404);
+        $comanda = DB::table('comandas as c')->join('atenciones as a', 'a.id_atencion', '=', 'c.id_atencion')
+            ->where('c.id_atencion', $attention)->where('a.id_usuario_mesero', $request->user()->id_usuario)->first(['c.id_comanda']);
+        abort_unless($comanda, 404);
+        DB::table('comanda_detalles')->insert(['id_comanda' => $comanda->id_comanda, 'id_menu' => $menu->id_menu, 'cantidad' => $data['cantidad'], 'estado' => 'pendiente']);
+        return back()->with('status', 'Platillo agregado a la comanda.');
+    }
 }
