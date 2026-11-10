@@ -150,16 +150,39 @@ class ServiceController extends Controller
     {
         $site = $this->operationalSite($request, $siteContext);
         $isKitchenStaff = $request->user()->hasRole('Personal de cocina');
-        $today = ($isKitchenStaff ? now('America/Mexico_City') : now())->toDateString();
-        $active = Service::query()->where('id_sede', $site->id_sede)->where('estado_aprobacion', 'Aprobado')->whereDate('fecha', $today)
+        $date = $request->query('fecha', now('America/Mexico_City')->toDateString());
+        $filters = $request->validate(['fecha' => ['nullable', 'date'], 'zona' => ['nullable', 'integer'], 'mesero' => ['nullable', 'integer'], 'atencion' => ['nullable', 'string', 'max:40'], 'comanda' => ['nullable', 'string', 'max:40'], 'mesa' => ['nullable', 'string', 'max:30']]);
+        $date = $filters['fecha'] ?? $date;
+        abort_unless(preg_match('/^\d{4}-\d{2}-\d{2}$/', $date), 422, 'La fecha no es válida.');
+        $active = Service::query()->where('id_sede', $site->id_sede)->where('estado_aprobacion', 'Aprobado')->whereDate('fecha', $date)
             ->whereIn('estado', ['En curso', 'en curso'])->orderBy('inicio_hora')->first();
-        $todayQuery = Service::query()->where('id_sede', $site->id_sede)->where('estado_aprobacion', 'Aprobado')->whereDate('fecha', $today);
+        $todayQuery = Service::query()->where('id_sede', $site->id_sede)->where('estado_aprobacion', 'Aprobado')->whereDate('fecha', $date);
         if ($isKitchenStaff) {
             $todayQuery->where(fn ($query) => $query->whereNull('estado')->orWhere('estado', '<>', 'Cancelado'));
         }
         $todayServices = $todayQuery->orderBy('inicio_hora')->get();
 
-        return view('kitchen.services.live', compact('site', 'active', 'todayServices'));
+        $tables = collect();
+        $zones = DB::table('zonas')->where('id_sede', $site->id_sede)->orderBy('nombre')->get(['id_zona', 'nombre']);
+        $waiters = DB::table('zona_meseros as zm')->join('usuarios as u', 'u.id_usuario', '=', 'zm.id_usuario_mesero')->join('zonas as z', 'z.id_zona', '=', 'zm.id_zona')->where('z.id_sede', $site->id_sede)->where('zm.activo', 1)->select('u.id_usuario', 'u.nombre', 'u.apellido_p')->distinct()->orderBy('u.nombre')->get();
+        $waiters = $waiters->map(function ($waiter) { $waiter->atenciones = 0; $waiter->mesas = collect(); return $waiter; });
+        $openOrders = 0;
+        $pendingPayments = 0;
+        if ($active) {
+            $tableQuery = DB::table('atenciones as a')->join('mesas as m', 'm.id_mesa', '=', 'a.id_mesa')->join('zonas as z', 'z.id_zona', '=', 'm.id_zona')
+                ->leftJoin('comandas as c', 'c.id_atencion', '=', 'a.id_atencion')->leftJoin('usuarios as u', 'u.id_usuario', '=', 'a.id_usuario_mesero')
+                ->where('a.id_servicio', $active->id_servicio);
+            if (!empty($filters['zona'])) $tableQuery->where('z.id_zona', $filters['zona']);
+            if (!empty($filters['mesero'])) $tableQuery->where('a.id_usuario_mesero', $filters['mesero']);
+            if (!empty($filters['atencion'])) $tableQuery->where('a.estado', $filters['atencion']);
+            if (!empty($filters['comanda'])) $tableQuery->where('c.estado', $filters['comanda']);
+            if (!empty($filters['mesa'])) $tableQuery->where('m.numero', 'like', '%'.$filters['mesa'].'%');
+            $tables = $tableQuery->select('a.id_atencion', 'a.estado as atencion_estado', 'a.comensales', 'm.numero', 'z.nombre as zona', 'c.estado as comanda_estado', DB::raw("CONCAT(u.nombre, ' ', COALESCE(u.apellido_p, '')) as mesero"))->orderBy('z.nombre')->orderBy('m.numero')->get();
+            $openOrders = $tables->whereNotIn('comanda_estado', ['Pagada'])->whereNotIn('atencion_estado', ['Cerrada', 'Cancelada'])->count();
+            $pendingPayments = $tables->where('atencion_estado', 'Pendiente de pago')->count();
+            $waiters = $waiters->map(function ($waiter) use ($tables) { $rows = $tables->where('mesero', trim($waiter->nombre.' '.$waiter->apellido_p)); $waiter->atenciones = $rows->whereNotIn('atencion_estado', ['Cerrada', 'Cancelada'])->count(); $waiter->mesas = $rows->pluck('numero')->values(); return $waiter; });
+        }
+        return view('kitchen.services.live', compact('site', 'active', 'todayServices', 'date', 'tables', 'waiters', 'openOrders', 'pendingPayments', 'zones', 'filters'));
     }
 
     public function approve(Request $request, Service $service, SiteContext $siteContext): RedirectResponse
@@ -231,7 +254,8 @@ class ServiceController extends Controller
         abort_unless($request->user()->isAdministrator()
             || $request->user()->isManager()
             || $request->user()->hasRole('Personal de cocina')
-            || $request->user()->hasRole('Jefe de cocina'), 403);
+            || $request->user()->hasRole('Jefe de cocina')
+            || $request->user()->hasRole('Capitan de meseros'), 403);
         $site = $siteContext->currentFor($request, $request->user());
         abort_unless($site && $request->user()->sites()->whereKey($site->id_sede)->exists(), 403);
 

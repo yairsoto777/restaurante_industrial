@@ -42,7 +42,9 @@ class CashierController extends Controller
                 'metodo' => $data['metodo'], 'importe' => $account->total, 'recibido' => $received,
                 'cambio' => max(0, round($received - $account->total, 2)), 'estado' => 'pagado', 'created_at' => now(), 'updated_at' => now(),
             ]);
+            DB::table('cuentas')->where('id_atencion', $attention)->update(['estado' => 'pagada', 'fecha_cierre' => now()]);
             DB::table('atenciones')->where('id_atencion', $attention)->update(['estado' => 'Cerrada', 'fin_hora' => now()->format('H:i:s')]);
+            DB::table('comandas')->where('id_atencion', $attention)->update(['estado' => 'Pagada']);
         });
         return back()->with('status', 'Cobro registrado correctamente.');
     }
@@ -86,6 +88,6 @@ class CashierController extends Controller
     private function site(Request $request, SiteContext $context) { $site = $context->currentFor($request, $request->user()); abort_unless($site && $context->userCanAccess($request->user(), $site->id_sede), 403); return $site; }
     private function activeShift(int $site, int $user) { return DB::table('caja_turnos')->where('id_sede', $site)->where('estado', 'abierto')->first(); }
     private function accounts(int $site)
-    { return DB::table('atenciones as a')->join('servicios as s', 's.id_servicio', '=', 'a.id_servicio')->join('mesas as m', 'm.id_mesa', '=', 'a.id_mesa')->join('comandas as c', 'c.id_atencion', '=', 'a.id_atencion')->join('comanda_detalles as d', 'd.id_comanda', '=', 'c.id_comanda')->join('menus as menu', 'menu.id_menu', '=', 'd.id_menu')->join('platillos as p', 'p.id_platillo', '=', 'menu.id_platillo')->where('s.id_sede', $site)->where(function ($q) { $q->whereNull('a.estado')->orWhereNotIn('a.estado', ['Cerrada', 'Cancelada']); })->whereNotExists(fn ($q) => $q->select(DB::raw(1))->from('caja_pagos as pago')->whereColumn('pago.id_atencion', 'a.id_atencion')->where('pago.estado', 'pagado'))->select('a.id_atencion','m.numero as mesa','s.nombre as servicio')->selectRaw('SUM(d.cantidad * COALESCE(menu.precio_venta, 0)) as total')->selectRaw("GROUP_CONCAT(CONCAT(d.cantidad, ' x ', p.nombre) SEPARATOR ', ') as items")->groupBy('a.id_atencion','m.numero','s.nombre')->orderBy('m.numero'); }
+    { return DB::table('atenciones as a')->join('servicios as s', 's.id_servicio', '=', 'a.id_servicio')->join('mesas as m', 'm.id_mesa', '=', 'a.id_mesa')->join('comandas as c', 'c.id_atencion', '=', 'a.id_atencion')->join('comanda_detalles as d', 'd.id_comanda', '=', 'c.id_comanda')->join('menus as menu', 'menu.id_menu', '=', 'd.id_menu')->join('platillos as p', 'p.id_platillo', '=', 'menu.id_platillo')->where('s.id_sede', $site)->where('a.estado', 'Pendiente de pago')->whereIn('c.estado', ['Pendiente de pago', 'Cerrada'])->whereNotExists(fn ($q) => $q->select(DB::raw(1))->from('caja_pagos as pago')->whereColumn('pago.id_atencion', 'a.id_atencion')->where('pago.estado', 'pagado'))->select('a.id_atencion','m.numero as mesa','s.nombre as servicio')->selectRaw('SUM(d.cantidad * d.precio_unitario) as total')->selectRaw("GROUP_CONCAT(CONCAT(d.cantidad, ' x ', p.nombre) SEPARATOR ', ') as items")->groupBy('a.id_atencion','m.numero','s.nombre')->orderBy('m.numero'); }
     private function payments(int $site) { return DB::table('caja_pagos as p')->leftJoin('usuarios as u', 'u.id_usuario', '=', 'p.id_usuario')->where('p.id_sede', $site)->select('p.*', DB::raw("CONCAT(u.nombre, ' ', COALESCE(u.apellido_p, '')) as cajero"))->latest('p.created_at'); }
 }

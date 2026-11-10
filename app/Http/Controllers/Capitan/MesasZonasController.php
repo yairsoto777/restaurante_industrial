@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Schema;
 
 class MesasZonasController extends Controller
 {
@@ -80,7 +81,31 @@ class MesasZonasController extends Controller
             ->select('m.*', 'z.nombre as zona_nombre')
             ->get();
 
-        return view('capitan.mesas.index', compact('sede', 'zonas', 'mesas'));
+        $distribucion = $zonas->map(function ($zona) use ($mesas) {
+            $mesasZona = $mesas->where('id_zona', $zona->id_zona);
+            $zona->mesas_count = $mesasZona->count();
+            $zona->capacidad_total = $mesasZona->sum('capacidad');
+            return $zona;
+        });
+        $totalMesas = $mesas->count();
+        $mesasDisponibles = $mesas->filter(fn ($mesa) => mb_strtolower((string) $mesa->estado_fisico) === 'disponible')->count();
+        $mesasNoDisponibles = $totalMesas - $mesasDisponibles;
+
+        $mesasProgramadas = Schema::hasColumn('sedes', 'mesas_programadas') ? $sede->mesas_programadas : null;
+        return view('capitan.mesas.index', compact('sede', 'zonas', 'mesas', 'distribucion', 'totalMesas', 'mesasDisponibles', 'mesasNoDisponibles', 'mesasProgramadas'));
+    }
+
+    public function programarTotal(Request $request): RedirectResponse
+    {
+        $sedeId = $this->sede($request);
+        abort_unless(Schema::hasColumn('sedes', 'mesas_programadas'), 503, 'Ejecuta las migraciones pendientes.');
+        $totalActual = DB::table('mesas')->join('zonas', 'zonas.id_zona', '=', 'mesas.id_zona')->where('zonas.id_sede', $sedeId)->count();
+        $datos = $request->validate(['mesas_programadas' => ['required', 'integer', 'min:1', 'max:100000']]);
+        if ((int) $datos['mesas_programadas'] < $totalActual) {
+            return back()->withErrors(['mesas_programadas' => "El total no puede ser menor que las {$totalActual} mesas ya asignadas a zonas."])->withInput();
+        }
+        DB::table('sedes')->where('id_sede', $sedeId)->update(['mesas_programadas' => $datos['mesas_programadas']]);
+        return back()->with('success', 'Total de mesas programado correctamente.');
     }
 
     public function guardarZona(Request $request): RedirectResponse
@@ -133,28 +158,43 @@ class MesasZonasController extends Controller
         $sedeId = $this->sede($request);
         $datos = $request->validate([
             'id_zona' => ['required', 'integer'],
-            'numero' => ['required', 'integer', 'min:1', 'max:9999'],
+            'numero' => ['nullable', 'integer', 'min:1', 'max:9999'],
             'capacidad' => ['required', 'integer', 'min:1', 'max:100'],
-            'estado_fisico' => ['required', Rule::in(['Disponible', 'Mantenimiento', 'Fuera de servicio'])],
+            'estado_fisico' => ['nullable', Rule::in(['Disponible', 'Mantenimiento', 'Fuera de servicio'])],
+            'cantidad' => ['nullable', 'integer', 'min:1', 'max:200'],
+            'observaciones' => ['nullable', 'string', 'max:500'],
         ]);
         $this->zonaPropia((int) $datos['id_zona'], $sedeId);
+
+        if (Schema::hasColumn('sedes', 'mesas_programadas')) {
+            $limite = DB::table('sedes')->where('id_sede', $sedeId)->value('mesas_programadas');
+            if ($limite !== null && DB::table('mesas')->join('zonas', 'zonas.id_zona', '=', 'mesas.id_zona')->where('zonas.id_sede', $sedeId)->count() + (int) ($datos['cantidad'] ?? 1) > $limite) {
+                return back()->withErrors(['cantidad' => "La asignación supera el total programado de {$limite} mesas."])->withInput();
+            }
+        }
 
         // Lock the parent zone to serialize new table-number registrations there.
         $creada = DB::transaction(function () use ($datos, $sedeId) {
             DB::table('zonas')->where('id_zona', $datos['id_zona'])->where('id_sede', $sedeId)->lockForUpdate()->first();
-            $existe = DB::table('mesas')->where('id_zona', $datos['id_zona'])->where('numero', $datos['numero'])->exists();
-            if ($existe) {
-                return false;
+            $cantidad = (int) ($datos['cantidad'] ?? 1);
+            unset($datos['cantidad']);
+            $numero = (int) ($datos['numero'] ?? (DB::table('mesas')->where('id_zona', $datos['id_zona'])->max('numero') ?? 0) + 1);
+            $datos['estado_fisico'] = $datos['estado_fisico'] ?? 'Disponible';
+            for ($indice = 0; $indice < $cantidad; $indice++) {
+                while (DB::table('mesas')->where('id_zona', $datos['id_zona'])->where('numero', $numero)->exists()) {
+                    $numero++;
+                }
+                DB::table('mesas')->insert(array_merge($datos, ['numero' => $numero]));
+                $numero++;
             }
-            DB::table('mesas')->insert($datos);
-            return true;
+            return $cantidad;
         });
 
         if (! $creada) {
             return back()->withErrors(['numero' => 'Ya hay una mesa con ese número dentro de la zona.'])->withInput();
         }
 
-        return redirect()->route('capitan.mesas.index')->with('success', 'Mesa registrada correctamente.');
+        return redirect()->route('capitan.mesas.index')->with('success', $creada === 1 ? 'Mesa registrada correctamente.' : "Se registraron {$creada} mesas en la zona.");
     }
 
     public function actualizarMesa(Request $request, int $mesa): RedirectResponse
@@ -166,6 +206,7 @@ class MesasZonasController extends Controller
             'numero' => ['required', 'integer', 'min:1', 'max:9999'],
             'capacidad' => ['required', 'integer', 'min:1', 'max:100'],
             'estado_fisico' => ['required', Rule::in(['Disponible', 'Mantenimiento', 'Fuera de servicio'])],
+            'observaciones' => ['nullable', 'string', 'max:500'],
         ]);
         $this->zonaPropia((int) $datos['id_zona'], $sedeId);
 

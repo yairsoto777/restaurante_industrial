@@ -237,9 +237,12 @@ Route::middleware(['auth', 'active'])->group(function () {
     )->group(function () {
 
         Route::get('/mesero', [App\Http\Controllers\MeseroController::class, 'index'])->middleware('role:Mesero')->name('waiter.index');
+        Route::post('/mesero/atenciones', [App\Http\Controllers\MeseroController::class, 'storeAttention'])->middleware('role:Mesero')->name('waiter.attention.store');
+        Route::post('/mesero/mesas', [App\Http\Controllers\MeseroController::class, 'storeTable'])->middleware('role:Mesero')->name('waiter.table.store');
         Route::patch('/mesero/atenciones/{attention}', [App\Http\Controllers\MeseroController::class, 'updateAttention'])->middleware('role:Mesero')->name('waiter.attention.update');
         Route::post('/mesero/atenciones/{attention}/comanda', [App\Http\Controllers\MeseroController::class, 'storeComanda'])->middleware('role:Mesero')->name('waiter.comanda.store');
         Route::post('/mesero/atenciones/{attention}/comanda/platillos', [App\Http\Controllers\MeseroController::class, 'storeComandaItem'])->middleware('role:Mesero')->name('waiter.comanda.item.store');
+        Route::post('/mesero/atenciones/{attention}/comanda/cerrar', [App\Http\Controllers\MeseroController::class, 'closeComanda'])->middleware('role:Mesero')->name('waiter.comanda.close');
 
         Route::get(
             '/servicios',
@@ -897,6 +900,9 @@ Route::middleware(['auth', 'active'])->group(function () {
             // MESAS Y ZONAS - ADMINISTRACIÓN POR SEDE
             Route::get('/mesas', [MesasZonasController::class, 'index'])
                 ->name('mesas.index');
+
+            Route::post('/mesas/programar-total', [MesasZonasController::class, 'programarTotal'])
+                ->name('mesas.programar-total');
 
             Route::post('/mesas/zonas', [MesasZonasController::class, 'guardarZona'])
                 ->name('mesas.zonas.store');

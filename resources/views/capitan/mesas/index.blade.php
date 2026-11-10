@@ -30,9 +30,19 @@
         </div>
     @endif
 
+    <section class="cz-panel" aria-labelledby="cz-distribution-title" style="margin-top:19px">
+        <div class="cz-panelhead"><div><span>CONTROL CENTRALIZADO</span><h2 id="cz-distribution-title">DISTRIBUCIÓN GENERAL DEL COMEDOR</h2><small>Total programado: {{ $mesasProgramadas ?? 'Sin definir' }} · Asignado: {{ $totalMesas }}</small></div><div style="display:flex;align-items:center;gap:12px"><span class="cz-count">{{ $mesasProgramadas ? max(0, $mesasProgramadas - $totalMesas) : '—' }} disponibles para repartir</span><button type="button" class="cz-btn cz-btn-light" data-open="total">Programar total</button></div></div>
+        <div class="cz-distribution-grid">
+            @forelse($distribucion as $zona)
+                @php $porcentaje = $totalMesas > 0 ? round(($zona->mesas_count / $totalMesas) * 100) : 0; @endphp
+                <div class="cz-zone"><div class="cz-zone-icon">{{ sprintf('%02d', $loop->iteration) }}</div><div class="cz-zone-copy"><strong>{{ $zona->nombre }}</strong><small>{{ $zona->mesas_count }} {{ $zona->mesas_count === 1 ? 'mesa' : 'mesas' }} · {{ $zona->capacidad_total }} personas · {{ $porcentaje }}% del total</small></div><button type="button" class="cz-btn cz-btn-light" data-open="mesa" data-zone="{{ $zona->id_zona }}">Asignar mesas a la zona</button></div>
+            @empty<div class="cz-empty">Crea una zona para comenzar la distribución del comedor.</div>@endforelse
+        </div>
+    </section>
+
     @php
-        $numDisponibles = $mesas->filter(fn ($m) => mb_strtolower((string) $m->estado_fisico) === 'disponible')->count();
-        $numMantenimiento = $mesas->filter(fn ($m) => mb_strtolower((string) $m->estado_fisico) !== 'disponible')->count();
+        $numDisponibles = $mesasDisponibles;
+        $numMantenimiento = $mesasNoDisponibles;
     @endphp
     <section class="cz-stats" aria-label="Indicadores de mesas y zonas">
         <div class="cz-stat"><span>Zonas registradas</span><strong>{{ $zonas->count() }}</strong><small>Áreas de la sede</small></div>
@@ -111,12 +121,22 @@
                 <option value="">Selecciona una zona</option>
                 @foreach($zonas as $zona)<option value="{{ $zona->id_zona }}">{{ $zona->nombre }}</option>@endforeach
             </select></label>
-            <div class="cz-form-grid"><label>Número de mesa<input type="number" name="numero" id="cz-table-number" min="1" max="9999" required></label>
-                <label>Capacidad<input type="number" name="capacidad" id="cz-table-capacity" min="1" max="100" required></label></div>
-            <label>Estado físico <select name="estado_fisico" id="cz-table-status" required>
-                <option value="Disponible">Disponible</option><option value="Mantenimiento">Mantenimiento</option><option value="Fuera de servicio">Fuera de servicio</option>
-            </select></label>
+            <label>Observaciones opcionales <textarea name="observaciones" id="cz-table-notes" maxlength="500" rows="3"></textarea></label>
+            <div class="cz-form-grid"><label>Mesas en esta zona<input type="number" name="cantidad" id="cz-table-quantity" min="1" max="200" value="1" required></label>
+                <label>Sillas por mesa<input type="number" name="capacidad" id="cz-table-capacity" min="1" max="100" required></label></div>
+            <input type="hidden" name="estado_fisico" id="cz-table-status" value="Disponible">
+            <input type="hidden" name="numero" id="cz-table-number" value="">
             <div class="cz-dialog-actions"><button type="button" class="cz-btn cz-btn-light" data-close>Cancelar</button><button type="submit" class="cz-btn cz-btn-primary">Guardar mesa</button></div>
+        </form>
+    </div>
+</div>
+
+<div class="cz-modal" id="cz-total-modal" hidden>
+    <div class="cz-shade" data-close></div><div class="cz-dialog" role="dialog" aria-modal="true">
+        <form method="POST" action="{{ route('capitan.mesas.programar-total') }}">@csrf
+            <div class="cz-dialog-head"><div><span>CONTROL DEL COMEDOR</span><h2>Programar mesas totales</h2></div><button type="button" data-close aria-label="Cerrar">×</button></div>
+            <label>Total de mesas de la sede<input type="number" name="mesas_programadas" min="1" max="100000" value="{{ $mesasProgramadas }}" required><small>Este total limita la suma de mesas asignadas entre todas las zonas.</small></label>
+            <div class="cz-dialog-actions"><button type="button" class="cz-btn cz-btn-light" data-close>Cancelar</button><button type="submit" class="cz-btn cz-btn-primary">Guardar total</button></div>
         </form>
     </div>
 </div>
@@ -127,22 +147,26 @@
 (() => {
     const zoneModal = document.getElementById('cz-zona-modal');
     const tableModal = document.getElementById('cz-mesa-modal');
+    const totalModal = document.getElementById('cz-total-modal');
     const zoneForm = document.getElementById('cz-zone-form');
     const tableForm = document.getElementById('cz-table-form');
     const zoneBase = @json(route('capitan.mesas.zonas.store'));
     const tableBase = @json(route('capitan.mesas.mesas.store'));
     const open = modal => { modal.hidden = false; document.body.style.overflow = 'hidden'; modal.querySelector('input:not([type=hidden]), select')?.focus(); };
-    const close = () => { zoneModal.hidden = true; tableModal.hidden = true; document.body.style.overflow = ''; };
+    const close = () => { zoneModal.hidden = true; tableModal.hidden = true; totalModal.hidden = true; document.body.style.overflow = ''; };
     document.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', close));
     document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
     document.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => {
-        if (button.dataset.open === 'zona') {
+        if (button.dataset.open === 'total') {
+            open(totalModal);
+        } else if (button.dataset.open === 'zona') {
             zoneForm.reset(); zoneForm.action = zoneBase;
             document.getElementById('cz-zone-method').disabled = true;
             document.getElementById('cz-zone-title').textContent = 'Nueva zona';
             open(zoneModal);
         } else {
             tableForm.reset(); tableForm.action = tableBase;
+            if (button.dataset.zone) document.getElementById('cz-table-zone').value = button.dataset.zone;
             document.getElementById('cz-table-method').disabled = true;
             document.getElementById('cz-table-title').textContent = 'Nueva mesa';
             open(tableModal);
