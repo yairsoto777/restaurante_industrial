@@ -23,7 +23,6 @@ class OperationalModuleController extends Controller
             'dishes.index' => ['Platillos', 'Administra el catálogo general de platillos.'],
             'incidents.index' => ['Incidencias', 'Consulta y da seguimiento a incidencias operativas.'],
             'orders.index' => ['Pedidos', 'Consulta y administra pedidos de la sede.'],
-            'requisitions.index' => ['Requisiciones', 'Registra y da seguimiento a requisiciones internas.'],
             'cash.index' => ['Caja', 'Gestiona cobros, aperturas y cierres de caja.'],
             'kitchen.index' => ['Operación de cocina', 'Coordina la preparación y entrega de alimentos.'],
             'reports.index' => ['Reportes', 'Analiza indicadores y resultados por sede.'],
@@ -59,6 +58,23 @@ class OperationalModuleController extends Controller
                     ->select('g.*', 's.nombre as servicio_nombre', 's.fecha as servicio_fecha')->orderBy('s.fecha')->orderBy('g.inicio_hora')->get();
             }
             return view('modules.groups', compact('site', 'groups'));
+        }
+
+        if ($routeName === 'reports.index') {
+            $orders = Schema::hasTable('pedidos')
+                ? DB::table('pedidos')->where('id_sede', $site->id_sede)->get(['id_pedido', 'estado', 'fecha_pedido'])
+                : collect();
+            $incidents = Schema::hasTable('incidencias')
+                ? DB::table('incidencias')->where('id_sede', $site->id_sede)->get(['estado'])
+                : collect();
+
+            return view('modules.reports', [
+                'site' => $site,
+                'orders' => $orders,
+                'incidents' => $incidents,
+                'ordersByState' => $orders->groupBy(fn ($order) => $order->estado ?: 'Sin estado')->map->count(),
+                'openIncidents' => $incidents->filter(fn ($incident) => ($incident->estado ?? '') !== 'Cerrada')->count(),
+            ]);
         }
 
         return view('modules.placeholder', [

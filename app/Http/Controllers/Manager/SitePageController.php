@@ -116,6 +116,8 @@ class SitePageController extends Controller
 
         $content = array_replace_recursive($defaults, $content);
 
+        $content = $this->normalizeMediaContent($content);
+
         $content['theme'] = $this->validatedTheme(
             $content['theme'] ?? []
         );
@@ -157,10 +159,30 @@ class SitePageController extends Controller
         $site = $this->site($request, $context);
         $page = $this->page($site);
 
-        abort_unless($page->draft, 422, 'Primero guarda tu borrador.');
+        abort_unless(
+            is_array($page->draft) && $page->draft !== [],
+            422,
+            'Primero guarda tu borrador.'
+        );
+
+        $draft = $this->normalizeMediaContent($page->draft);
+        $paths = $this->pathsIn($draft);
+
+        if ($paths) {
+            $existing = SiteMedia::where('id_sede', $site->id_sede)
+                ->whereIn('path', $paths)
+                ->pluck('path')
+                ->all();
+
+            abort_if(
+                array_diff($paths, $existing),
+                422,
+                'El borrador contiene archivos multimedia inválidos.'
+            );
+        }
 
         $page->update([
-            'published' => $page->draft,
+            'published' => $draft,
             'status' => 'published',
             'published_at' => now(),
         ]);
@@ -208,27 +230,46 @@ class SitePageController extends Controller
         ]);
 
         $uploaded = [];
+        $storedPaths = [];
+        $createdMedia = [];
 
-        foreach ($validated['files'] as $file) {
-            $path = $file->store(
-                'site-pages/' . $site->id_sede . '/media',
-                'public'
-            );
+        try {
+            foreach ($validated['files'] as $file) {
+                $path = $file->store('site-pages/' . $site->id_sede . '/media', 'public');
 
-            abort_unless($path, 500, 'No se pudo guardar el archivo.');
+                if (!$path || !Storage::disk('public')->exists($path)) {
+                    throw new \RuntimeException('El archivo no se guardó correctamente en el disco público.');
+                }
 
-            $media = SiteMedia::create([
-                'id_sede' => $site->id_sede,
-                'path' => $path,
-                'name' => $file->getClientOriginalName(),
-                'mime' => $file->getMimeType(),
-                'size' => $file->getSize(),
+                $storedPaths[] = $path;
+
+                $media = SiteMedia::create([
+                    'id_sede' => $site->id_sede,
+                    'path' => $path,
+                    'name' => $file->getClientOriginalName(),
+                    'mime' => $file->getMimeType(),
+                    'size' => $file->getSize(),
+                ]);
+                $createdMedia[] = $media;
+                $uploaded[] = $this->mediaResponse($media);
+            }
+        } catch (\Throwable $e) {
+            foreach ($createdMedia as $media) {
+                $media->delete();
+            }
+            Storage::disk('public')->delete($storedPaths);
+            \Illuminate\Support\Facades\Log::error('Fallo de carga multimedia en editor de sede', [
+                'site_id' => $site->id_sede,
+                'error' => $e->getMessage(),
             ]);
 
-            $uploaded[] = $this->mediaResponse($media);
+            return response()->json([
+                'ok' => false,
+                'message' => 'No se pudo almacenar el archivo multimedia. Revisa el registro de Laravel.',
+            ], 500);
         }
 
-        return response()->json($uploaded, 201);
+        return response()->json(['media' => $uploaded], 201);
     }
 
     public function deleteMedia(
@@ -273,6 +314,7 @@ class SitePageController extends Controller
     private function mediaResponse(SiteMedia $media): array
     {
         $mime = (string) $media->mime;
+        $path = ltrim((string) $media->path, '/');
 
         $type = str_starts_with($mime, 'video/')
             ? 'video'
@@ -280,9 +322,9 @@ class SitePageController extends Controller
 
         return [
             'id' => $media->id,
-            'name' => $media->name,
-            'path' => $media->path,
-            'url' => $media->url,
+            'name' => Str::ascii((string) $media->name),
+            'path' => $path,
+            'url' => '/storage/' . $path,
             'mime' => $mime,
             'type' => $type,
             'size' => $media->size,
@@ -392,6 +434,31 @@ class SitePageController extends Controller
         return $content;
     }
 
+    private function normalizeMediaContent(array $content): array
+    {
+        foreach ($content as $key => $value) {
+            if (is_array($value) && array_key_exists('path', $value)) {
+                $path = $value['path'];
+
+                if (is_string($path) && $path !== '') {
+                    $content[$key] = [
+                        'path' => $path,
+                        'type' => $value['type'] ?? 'image',
+                        'mime' => $value['mime'] ?? null,
+                    ];
+                }
+
+                continue;
+            }
+
+            if (is_array($value)) {
+                $content[$key] = $this->normalizeMediaContent($value);
+            }
+        }
+
+        return $content;
+    }
+
     private function pathsIn(array $content): array
     {
         $paths = [];
@@ -437,7 +504,7 @@ class SitePageController extends Controller
             'hero_decoration' => 'OPERACIONES ALIMENTARIAS — NUTRILIADO',
             'hero_scroll' => 'DESCUBRE MÁS',
 
-            'vision_eyebrow' => '01 / NUESTRA VISIÓN',
+            'vision_eyebrow' => 'NUESTRA VISIÓN',
             'vision_title' => 'Tu comedor empieza con',
             'vision_title_emphasis' => 'información conectada.',
             'vision_paragraphs' => [
@@ -453,7 +520,7 @@ class SitePageController extends Controller
             'vision_image_alt' => 'Equipo de cocina profesional preparando alimentos',
             'vision_caption' => 'VISIÓN OPERATIVA / NUTRILIADO',
 
-            'solutions_eyebrow' => '02 / SOLUCIONES',
+            'solutions_eyebrow' => 'SOLUCIONES',
             'solutions_title' => 'Todo conectado.',
             'solutions_title_emphasis' => 'Todo bajo control.',
             'solutions_description' => 'Seis áreas de trabajo para enlazar la administración con los procesos que ocurren todos los días.',
@@ -497,7 +564,7 @@ class SitePageController extends Controller
                 ],
             ],
 
-            'experience_eyebrow' => '03 / EXPERIENCIA',
+            'experience_eyebrow' => 'EXPERIENCIA',
             'experience_title' => 'Diseñado para el',
             'experience_title_emphasis' => 'ritmo real del servicio.',
             'experience_description' => 'Una plataforma para unir al personal administrativo con la operación diaria del comedor industrial.',
@@ -522,7 +589,7 @@ class SitePageController extends Controller
             'experience_image_alt' => 'Equipo de cocina organizado',
             'experience_caption' => 'UNA EXPERIENCIA CONECTADA',
 
-            'benefits_eyebrow' => '04 / BENEFICIOS',
+            'benefits_eyebrow' => 'BENEFICIOS',
             'benefits_title' => 'Más control.',
             'benefits_title_emphasis' => 'Mejores decisiones.',
             'benefits_description' => 'Organiza tu operación alimentaria con información más clara y procesos mejor coordinados.',
@@ -545,7 +612,7 @@ class SitePageController extends Controller
                 ['Mejora continua', 'Seguimiento y datos para tomar decisiones'],
             ],
 
-            'contact_eyebrow' => '05 / CONTACTO',
+            'contact_eyebrow' => 'CONTACTO',
             'contact_title' => 'Hablemos de lo que',
             'contact_title_emphasis' => 'tu empresa necesita.',
             'contact_description' => 'Déjanos tus datos y cuéntanos cómo podemos ayudarte.',

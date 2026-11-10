@@ -27,6 +27,7 @@ class WarehouseOrderController extends Controller
 
         abort_unless(
             $role || $user->isAdministrator() ||
+            ($user->isManagerAtSite((int) $site->id_sede)) ||
             ($user->canAdminister() && $user->sites()->whereKey($site->id_sede)->exists()),
             403
         );

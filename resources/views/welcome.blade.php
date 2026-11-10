@@ -41,7 +41,7 @@
             <figcaption>VISIÓN OPERATIVA / NUTRILIADO</figcaption>
         </figure>
         <div class="nu-vision-content">
-            <span class="nu-eyebrow">{{ $content['vision_eyebrow'] ?? '01 / NUESTRA VISIÓN' }}</span>
+            <span class="nu-eyebrow">{{ $content['vision_eyebrow'] ?? 'NUESTRA VISIÓN' }}</span>
             <h2>{{ $content['vision_title'] ?? 'Tu comedor empieza con' }} <em>{{ $content['vision_title_emphasis'] ?? 'información conectada.' }}</em></h2>
             @foreach($content['vision_paragraphs'] ?? ['NUTRILIADO reúne las tareas que sostienen una operación alimentaria en un entorno claro y práctico, sin perder la coordinación de cada sede.','Menos información dispersa y más tiempo para lo que realmente importa: brindar un servicio de calidad.'] as $paragraph)<p>{{ $paragraph }}</p>@endforeach
             <ul class="nu-vision-list">
@@ -55,7 +55,7 @@
     <div class="public-container">
         <div class="nu-section-heading">
             <div>
-                <span class="nu-eyebrow">{{ $content['solutions_eyebrow'] ?? '02 / SOLUCIONES' }}</span>
+                <span class="nu-eyebrow">{{ $content['solutions_eyebrow'] ?? 'SOLUCIONES' }}</span>
                 <h2>{{ $content['solutions_title'] ?? 'Todo conectado.' }}<br><em>{{ $content['solutions_title_emphasis'] ?? 'Todo bajo control.' }}</em></h2>
             </div>
             <p>{{ $content['solutions_description'] ?? 'Seis áreas de trabajo para enlazar la administración con los procesos que ocurren todos los días.' }}</p>
@@ -79,7 +79,6 @@
                         <img src="{{ $solutionImage }}" alt="{{ $solution[1] }}" loading="lazy">
                     </div>
                     <div class="nu-solution-body">
-                        <span class="nu-solution-number">{{ $solution[0] }}</span>
                         <h3>{{ $solution[1] }}</h3>
                         <p>{{ $solution[2] }}</p>
                     </div>
@@ -92,10 +91,10 @@
 <section class="nu-section nu-experience" id="experiencia">
     <div class="public-container nu-experience-grid">
         <div>
-            <span class="nu-eyebrow">{{ $content['experience_eyebrow'] ?? '03 / EXPERIENCIA' }}</span>
+            <span class="nu-eyebrow">{{ $content['experience_eyebrow'] ?? 'EXPERIENCIA' }}</span>
             <h2>{{ $content['experience_title'] ?? 'Diseñado para el' }} <em>{{ $content['experience_title_emphasis'] ?? 'ritmo real del servicio.' }}</em></h2>
             <p>{{ $content['experience_description'] ?? 'Una plataforma para unir al personal administrativo con la operación diaria del restaurante o comedor industrial.' }}</p>
-            <div class="nu-timeline">@foreach($content['experience_steps'] ?? [['01','Accede y selecciona','Inicio de sesión seguro y elección de sede.'],['02','Organiza la operación','Coordina equipos, inventarios y servicios.'],['03','Revisa y mejora','Información centralizada para tomar mejores decisiones.']] as $step)<div><span>{{ $step[0] }}</span><strong>{{ $step[1] }}</strong><p>{{ $step[2] }}</p></div>@endforeach</div>
+            <div class="nu-timeline">@foreach($content['experience_steps'] ?? [['01','Accede y selecciona','Inicio de sesión seguro y elección de sede.'],['02','Organiza la operación','Coordina equipos, inventarios y servicios.'],['03','Revisa y mejora','Información centralizada para tomar mejores decisiones.']] as $step)<div><strong>{{ $step[1] }}</strong><p>{{ $step[2] }}</p></div>@endforeach</div>
         </div>
         <figure class="nu-experience-image">
             <img src="{{ $experiencePhoto }}" alt="{{ $content['experience_image_alt'] ?? 'Restaurante con área de servicio organizada' }}" loading="lazy">
@@ -109,7 +108,7 @@
     <div class="public-container">
         <div class="nu-benefits-head">
             <div class="nu-benefits-copy">
-                <span class="nu-eyebrow">{{ $content['benefits_eyebrow'] ?? '04 / BENEFICIOS' }}</span>
+                <span class="nu-eyebrow">{{ $content['benefits_eyebrow'] ?? 'BENEFICIOS' }}</span>
                 <h2 id="nu-benefits-title">{{ $content['benefits_title'] ?? 'Más control.' }} <em>{{ $content['benefits_title_emphasis'] ?? 'Mejores decisiones.' }}</em></h2>
                 <p>{{ $content['benefits_description'] ?? 'Organiza tu operación alimentaria con información más clara, procesos mejor coordinados y visibilidad por sede.' }}</p>
             </div>
@@ -136,7 +135,6 @@
             @foreach($benefits as $benefit)
                 <article class="nu-benefit-card">
                     <div class="nu-benefit-top">
-                        <span class="nu-benefit-number">{{ $benefit[0] }}</span>
                         <span class="nu-benefit-icon" aria-hidden="true">✦</span>
                     </div>
                     <h3>{{ $benefit[1] }}</h3>
@@ -153,7 +151,7 @@
 <section class="nu-section nu-contact" id="contacto">
     <div class="public-container nu-contact-grid">
         <div class="nu-contact-aside">
-            <span class="nu-eyebrow">{{ $content['contact_eyebrow'] ?? '05 / CONTACTO' }}</span>
+            <span class="nu-eyebrow">{{ $content['contact_eyebrow'] ?? 'CONTACTO' }}</span>
             <h2>{{ $content['contact_title'] ?? 'Hablemos de lo que' }} <em>{{ $content['contact_title_emphasis'] ?? 'tu empresa necesita.' }}</em></h2>
             <p>{{ $content['contact_description'] ?? 'Déjanos tus datos y cuéntanos cómo podemos ayudarte con tu comedor industrial o restaurante.' }}</p>
             <div class="nu-contact-features">

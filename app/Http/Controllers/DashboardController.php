@@ -55,7 +55,6 @@ class DashboardController extends Controller
             : 0;
         $openIncidents = $siteId ? $this->openIncidentCount((int) $siteId) : 0;
         $pendingOrders = $siteId ? $this->statusCount('pedidos', (int) $siteId, ['pendiente', 'pendientes', 'nuevo', 'enviado']) : 0;
-        $pendingRequisitions = $siteId ? $this->statusCount('requisiciones', (int) $siteId, ['pendiente', 'pendientes', 'nuevo']) : 0;
         $employeeCount = $siteId ? $this->employeeCount((int) $siteId) : 0;
         $lowStock = $siteId ? $this->lowStockCount((int) $siteId) : 0;
 
@@ -110,7 +109,6 @@ class DashboardController extends Controller
                 ['label' => 'Platos servidos', 'value' => $platesServed, 'detail' => 'Entregados hoy', 'icon' => 'plates', 'tone' => 'green'],
                 ['label' => 'Incidencias abiertas', 'value' => $openIncidents, 'detail' => $incidentsToday.' registradas hoy', 'icon' => 'alert', 'tone' => 'orange'],
                 ['label' => 'Pedidos pendientes', 'value' => $pendingOrders, 'detail' => 'Por atender', 'icon' => 'box', 'tone' => 'orange'],
-                ['label' => 'Requisiciones pendientes', 'value' => $pendingRequisitions, 'detail' => 'Por revisar', 'icon' => 'layers', 'tone' => 'blue'],
                 ['label' => 'Empleados registrados', 'value' => $employeeCount, 'detail' => 'En esta sede', 'icon' => 'users', 'tone' => 'cyan'],
                 ['label' => 'Insumos con existencias bajas', 'value' => $lowStock, 'detail' => 'Requieren atención', 'icon' => 'warehouse', 'tone' => 'orange'],
             ],

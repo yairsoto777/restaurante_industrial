@@ -816,14 +816,6 @@
                     </a>
 
                     <a
-                        class="nav-link {{ request()->routeIs('requisitions.*') ? 'active' : '' }}"
-                        href="{{ route('requisitions.index') }}"
-                    >
-                        <x-icon name="layers"/>
-                        <b>Requisiciones</b>
-                    </a>
-
-                    <a
                         class="nav-link {{ request()->routeIs('cash.*') ? 'active' : '' }}"
                         href="{{ route('cash.index') }}"
                     >

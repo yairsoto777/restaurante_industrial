@@ -48,27 +48,48 @@
     function addMedia(parent,label,key){
         const wrap=elem('label');wrap.append(document.createTextNode(label));
         const input=elem('input',{type:'file',accept:'image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm'});
-        const message=elem('small',{},'JPG, PNG, WebP, GIF, MP4 o WebM. El servidor también debe validar los archivos.');
+        const current=get(key);
+        const message=elem('small',{},current?.path
+            ? `Archivo actual: ${String(current.path).split('/').pop()} (guardado en el borrador si ya presionaste Guardar)`
+            : 'JPG, PNG, WebP, GIF, MP4 o WebM. El servidor también debe validar los archivos.');
+        input.addEventListener('click',()=>{input.value='';});
         input.addEventListener('change',async()=>{
             const file=input.files?.[0];if(!file)return;
             const body=new FormData();body.append('files[]',file);
             mark('Subiendo archivo…');
             try{
-                const res=await fetch(root.dataset.uploadUrl,{method:'POST',headers:{'X-CSRF-TOKEN':root.dataset.csrf,'Accept':'application/json'},body});
-                if(!res.ok){
-                    let detail=`Error HTTP ${res.status}`;
-                    try{const error=await res.json();const messages=Object.values(error.errors||{}).flat();if(messages.length)detail=messages.join(' ');else if(error.message)detail=error.message;}catch{}
-                    throw Error(detail);
+                const res=await fetch(root.dataset.uploadUrl,{method:'POST',credentials:'same-origin',headers:{'X-CSRF-TOKEN':root.dataset.csrf,'X-Requested-With':'XMLHttpRequest','Accept':'application/json'},body});
+                // Leer una sola vez la respuesta; los errores HTTP y JSON tienen el mismo diagnóstico.
+                const responseText=await res.text();
+                let out;
+                try {
+                    out=JSON.parse(responseText);
+                } catch {
+                    // No mostrar la respuesta completa: podría contener información sensible.
+                    console.error('Respuesta no JSON de media.upload', {
+                        status:res.status,
+                        contentType:res.headers.get('content-type'),
+                        responsePreview:responseText.slice(0,500)
+                    });
+                    const kind=responseText.trimStart().startsWith('<')?'HTML':'texto no JSON';
+                    throw Error(`La ruta de subida devolvió ${kind} (HTTP ${res.status}). Abre F12 > Red > petición POST /operacion/mi-pagina-web/media > Respuesta y revisa storage/logs/laravel.log`);
                 }
-                const out=await res.json();
-                const media=Array.isArray(out)
-                    ? out[0]
-                    : (out.media??out.data??out);
+                if(!res.ok || out?.ok===false){
+                    const messages=Object.values(out?.errors||{}).flat();
+                    throw Error(messages.length?messages.join(' '):(out?.message||`Error HTTP ${res.status}`));
+                }
+                const media=Array.isArray(out?.media) ? out.media[0] : null;
+                if(!media || typeof media!=='object')
+                    throw Error('La respuesta JSON no contiene media[0]. Revisa el método uploadMedia.');
                 const path=media.path??media.file_path;
-                if(!path)throw Error('El servidor no devolvió la ruta del archivo (path)');
-                put(key,{path,type:file.type.startsWith('video/')?'video':'image',mime:file.type});
+                if(typeof path!=='string'||!path)
+                    throw Error('La respuesta no contiene una ruta multimedia válida (path)');
+                const mime=media.mime||file.type||'application/octet-stream';
+                const type=media.type||(mime.startsWith('video/')?'video':mime==='image/gif'?'gif':'image');
+                put(key,{path:String(path),url:media.url||null,type,mime});
                 message.textContent=`Archivo cargado: ${file.name}`;
-            }catch(err){mark('Error al subir archivo');message.textContent=`No se pudo cargar: ${err.message}. Verifica el contrato de la ruta media.upload.`;}
+            }catch(err){mark('Error al subir archivo');message.textContent=`No se pudo cargar: ${err.message}`;}
+            finally{input.value='';}
         });
         wrap.append(input,message);parent.append(wrap);
     }
@@ -109,7 +130,19 @@
         if(e.querySelector('span[aria-hidden]')){const text=Array.from(e.childNodes).find(n=>n.nodeType===3);if(text)text.textContent=value+' ';return;}
         e.textContent=String(value);
     }
-    function mediaURL(m){if(!m)return null;const path=typeof m==='string'?m:m.path;if(!path)return null;if(/^https?:\/\//.test(path))return path;if(path.startsWith('/'))return path;return `/storage/${path.replace(/^public\//,'')}`;}
+    function mediaURL(m){
+        if(!m)return null;
+        const value=typeof m==='string'?{path:m}:m;
+        const candidate=value.url||value.path;
+        if(typeof candidate!=='string'||!candidate)return null;
+        if(/^https?:\/\//i.test(candidate))return candidate;
+        // Evita duplicar /storage/ cuando Laravel ya entrega una URL pública.
+        if(candidate.startsWith('/storage/'))return candidate;
+        if(candidate.startsWith('/'))return candidate;
+        const path=candidate.replace(/^public\//,'').replace(/^storage\//,'').replace(/^\/+/, '');
+        const appBase=window.location.pathname.split('/operacion/')[0].replace(/\/$/,'');
+        return `${appBase}/storage/${path}`;
+    }
     function updatePreview(){let doc;try{doc=iframe.contentDocument;}catch{return;}if(!doc||!doc.body)return;
         map.forEach(([key,sel])=>setText(doc,sel,get(key)));
         const textLists=[['hero_points','#inicio .nu-hero-points span'],['vision_paragraphs','#vision .nu-vision-content > p'],['vision_list','#vision .nu-vision-list li'],['contact_features','#contacto .nu-contact-features span']];
@@ -118,13 +151,39 @@
         rows.forEach(([key,selector,children])=>{const vals=get(key);if(!Array.isArray(vals))return;doc.querySelectorAll(selector).forEach((row,i)=>{if(!Array.isArray(vals[i]))return;children.forEach((sel,j)=>{const item=row.querySelector(sel),v=vals[i][j];if(!item||v==null)return;if(sel==='img'){const url=mediaURL(v);if(url)item.src=url;}else item.textContent=String(v);});});});
         const images=[['vision_image','#vision img'],['experience_image','#experiencia img']];images.forEach(([key,sel])=>{const url=mediaURL(get(key)),im=doc.querySelector(sel);if(url&&im)im.src=url;});
         for(const [key,sel] of [['vision_image_alt','#vision img'],['experience_image_alt','#experiencia img']]){if(get(key)!=null){const im=doc.querySelector(sel);if(im)im.alt=get(key);}}
-        const hero=get('hero_image'),heroUrl=mediaURL(hero),video=doc.querySelector('#inicio video'),heroVisual=doc.querySelector('#inicio .nu-hero-visual');
-        if(video&&heroUrl){const isVid=(typeof hero==='object' && hero?.type==='video')||/\.(mp4|webm)(\?|$)/i.test(heroUrl);
-            video.style.display=isVid?'':'none';let img=heroVisual.querySelector('.nu-preview-media');if(img)img.remove();
-            if(isVid){const src=video.querySelector('source');if(src){src.src=heroUrl;src.type=hero.mime||'video/mp4';}video.load();video.play().catch(()=>{});}
-            else {img=elem('img',{class:'nu-preview-media',src:heroUrl,alt:''});img.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover';heroVisual.append(img);}
+        const hero=get('hero_image'),heroUrl=mediaURL(hero);
+        const heroVisual=doc.querySelector('#inicio .nu-hero-visual');
+        if(heroVisual&&heroUrl){
+            const isVid=(typeof hero==='object' && hero?.type==='video')||/\.(mp4|webm)(\?|$)/i.test(heroUrl);
+            let visual=heroVisual.querySelector('.nu-hero-video');
+            const expectedTag=isVid?'VIDEO':'IMG';
+            if(!visual||visual.tagName!==expectedTag){
+                const replacement=doc.createElement(isVid?'video':'img');
+                replacement.className='nu-hero-video';
+                if(isVid){
+                    replacement.autoplay=true;replacement.muted=true;
+                    replacement.loop=true;replacement.playsInline=true;
+                    replacement.preload='metadata';
+                }else{
+                    replacement.alt='';
+                    replacement.style.cssText='width:100%;height:100%;object-fit:cover;';
+                }
+                if(visual)visual.replaceWith(replacement);
+                else heroVisual.prepend(replacement);
+                visual=replacement;
+            }
+            if(isVid){
+                const source=visual.querySelector('source')||doc.createElement('source');
+                if(!source.parentNode)visual.append(source);
+                if(source.getAttribute('src')!==heroUrl){
+                    source.src=heroUrl;
+                    source.type=hero?.mime||'video/mp4';
+                    visual.load();
+                    visual.play().catch(()=>{});
+                }
+            }else if(visual.getAttribute('src')!==heroUrl)visual.src=heroUrl;
         }
-        const poster=mediaURL(get('hero_poster'));if(video&&poster)video.poster=poster;
+        const poster=mediaURL(get('hero_poster'));const heroVideo=doc.querySelector('#inicio video');if(heroVideo&&poster)heroVideo.poster=poster;
         const theme=get('theme')||{};
         // El CSS es compartido por la vista previa y la página publicada.
         // No depende de ninguna clase especial del body.
@@ -158,7 +217,7 @@
     function putSilently(k,v){const parts=k.split('.');let obj=data;for(let i=0;i<parts.length-1;i++)obj=obj[parts[i]]??={};obj[parts.at(-1)]=v;}
     iframe.addEventListener('load',()=>{seedFromPage();updatePreview();});
     $('#save-page').addEventListener('click',async()=>{
-        mark('Guardando…');try{const res=await fetch(root.dataset.saveUrl,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':root.dataset.csrf},body:JSON.stringify({content:data})});if(!res.ok){const detail=await res.text();throw Error(`${res.status} ${detail.slice(0,160)}`);}changed=false;mark('Borrador guardado');}catch(e){mark('Error al guardar');alert('Error: '+e.message);}
+        mark('Guardando…');try{const res=await fetch(root.dataset.saveUrl,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':root.dataset.csrf},body:JSON.stringify({content:data})});if(!res.ok){let detail=`Error HTTP ${res.status}`;try{const error=await res.json();const messages=Object.values(error.errors||{}).flat();detail=messages.length?messages.join(' '):(error.message||detail);}catch{}throw Error(detail);}changed=false;mark('Borrador guardado');}catch(e){mark('Error al guardar');alert('Error: '+e.message);}
     });
     $('#publish-form')?.addEventListener('submit',e=>{if(changed&&!confirm('Hay cambios sin guardar. ¿Publicar el último borrador guardado?'))e.preventDefault();});
     window.addEventListener('beforeunload',e=>{if(changed){e.preventDefault();e.returnValue='';}});

@@ -1,4 +1,3 @@
-```
 <?php
 use App\Http\Controllers\Capitan\MesasZonasController;
 use App\Http\Controllers\Admin\CommercialContactController;
@@ -510,7 +509,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | PEDIDOS, REQUISICIONES Y CAJA
+    | PEDIDOS Y CAJA
     |--------------------------------------------------------------------------
     */
 
@@ -551,19 +550,13 @@ Route::middleware(['auth', 'active'])->group(function () {
         });
 
     Route::middleware(
-        'role:administrator,manager,Jefe de cocina,Jefe de almacen'
-    )
-        ->get(
-            '/requisiciones',
-            [\App\Http\Controllers\WarehouseRequisitionController::class, 'index']
-        )
-        ->name('requisitions.index');
-
-    Route::middleware(
         'role:administrator,manager,Cajero'
     )->group(function () {
         Route::get('/caja', [App\Http\Controllers\CashierController::class, 'index'])->name('cash.index');
-        Route::post('/caja/atenciones/{attention}/cobrar', [App\Http\Controllers\CashierController::class, 'charge'])->whereNumber('attention')->middleware('role:Cajero')->name('cash.charge');
+        Route::post('/caja/abrir', [App\Http\Controllers\CashierController::class, 'open'])->name('cash.open');
+        Route::post('/caja/cerrar', [App\Http\Controllers\CashierController::class, 'close'])->name('cash.close');
+        Route::post('/caja/atenciones/{attention}/cobrar', [App\Http\Controllers\CashierController::class, 'charge'])->whereNumber('attention')->name('cash.charge');
+        Route::get('/caja/pagos/{payment}/ticket', [App\Http\Controllers\CashierController::class, 'ticket'])->whereNumber('payment')->name('cash.ticket');
     });
 
     /*
