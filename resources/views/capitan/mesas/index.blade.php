@@ -81,11 +81,11 @@
                 <tbody id="cz-tablebody">
                     @forelse($mesas as $mesa)
                         <tr data-search="{{ mb_strtolower('mesa '.$mesa->numero.' '.$mesa->zona_nombre) }}" data-zone="{{ $mesa->id_zona }}">
-                            <td><span class="cz-mesatag">{{ str_pad((string)$mesa->numero, 2, '0', STR_PAD_LEFT) }}</span><strong>Mesa {{ $mesa->numero }}</strong></td>
+                            <td><span class="cz-mesatag">{{ str_pad((string)$mesa->numero, 2, '0', STR_PAD_LEFT) }}</span><strong>Mesa {{ $mesa->numero }}</strong>@if($mesa->observaciones)<small>{{ $mesa->observaciones }}</small>@endif</td>
                             <td>{{ $mesa->zona_nombre }}</td>
                             <td>{{ $mesa->capacidad }} personas</td>
                             <td><span class="cz-status {{ mb_strtolower((string) $mesa->estado_fisico) === 'disponible' ? 'good' : 'warn' }}">{{ $mesa->estado_fisico ?: 'Sin estado' }}</span></td>
-                            <td><button type="button" class="cz-link" data-edit-table="{{ $mesa->id_mesa }}" data-zone="{{ $mesa->id_zona }}" data-number="{{ $mesa->numero }}" data-capacity="{{ $mesa->capacidad }}" data-status="{{ $mesa->estado_fisico }}">Editar</button></td>
+                            <td><button type="button" class="cz-link" data-edit-table="{{ $mesa->id_mesa }}" data-zone="{{ $mesa->id_zona }}" data-number="{{ $mesa->numero }}" data-capacity="{{ $mesa->capacidad }}" data-status="{{ $mesa->estado_fisico }}" data-observations="{{ $mesa->observaciones }}">Editar</button></td>
                         </tr>
                     @empty
                         <tr><td colspan="5" class="cz-empty">Aún no hay mesas registradas.</td></tr>
@@ -121,7 +121,7 @@
                 <option value="">Selecciona una zona</option>
                 @foreach($zonas as $zona)<option value="{{ $zona->id_zona }}">{{ $zona->nombre }}</option>@endforeach
             </select></label>
-            <label>Observaciones opcionales <textarea name="observaciones" id="cz-table-notes" maxlength="500" rows="3"></textarea></label>
+        <label>Observaciones opcionales <textarea name="observaciones" id="cz-table-notes" maxlength="500" rows="3"></textarea></label>
             <div class="cz-form-grid"><label>Mesas en esta zona<input type="number" name="cantidad" id="cz-table-quantity" min="1" max="200" value="1" required></label>
                 <label>Sillas por mesa<input type="number" name="capacidad" id="cz-table-capacity" min="1" max="100" required></label></div>
             <input type="hidden" name="estado_fisico" id="cz-table-status" value="Disponible">
@@ -188,6 +188,7 @@
         document.getElementById('cz-table-number').value = button.dataset.number;
         document.getElementById('cz-table-capacity').value = button.dataset.capacity;
         document.getElementById('cz-table-status').value = button.dataset.status;
+        document.getElementById('cz-table-notes').value = button.dataset.observations || '';
         document.getElementById('cz-table-title').textContent = 'Editar mesa';
         open(tableModal);
     }));

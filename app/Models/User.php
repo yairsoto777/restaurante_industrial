@@ -180,6 +180,11 @@ class User extends Authenticatable implements CanResetPassword
         return $this->hasMany(EmploymentApplication::class, 'id_usuario_responde', 'id_usuario');
     }
 
+    public function atencionesComoMesero(): HasMany
+    {
+        return $this->hasMany(Atencion::class, 'id_usuario_mesero', 'id_usuario');
+    }
+
     private function roleNames(): Collection
     {
         return $this->relationLoaded('roles')

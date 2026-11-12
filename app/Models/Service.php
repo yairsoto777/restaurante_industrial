@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Service extends Model
@@ -10,6 +11,11 @@ class Service extends Model
     protected $table = 'servicios';
 
     protected $primaryKey = 'id_servicio';
+
+    public function atenciones(): HasMany
+    {
+        return $this->hasMany(Atencion::class, 'id_servicio', 'id_servicio');
+    }
 
     public $timestamps = false;
 

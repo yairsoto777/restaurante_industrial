@@ -239,10 +239,9 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/mesero', [App\Http\Controllers\MeseroController::class, 'index'])->middleware('role:Mesero')->name('waiter.index');
         Route::post('/mesero/atenciones', [App\Http\Controllers\MeseroController::class, 'storeAttention'])->middleware('role:Mesero')->name('waiter.attention.store');
         Route::post('/mesero/mesas', [App\Http\Controllers\MeseroController::class, 'storeTable'])->middleware('role:Mesero')->name('waiter.table.store');
-        Route::patch('/mesero/atenciones/{attention}', [App\Http\Controllers\MeseroController::class, 'updateAttention'])->middleware('role:Mesero')->name('waiter.attention.update');
-        Route::post('/mesero/atenciones/{attention}/comanda', [App\Http\Controllers\MeseroController::class, 'storeComanda'])->middleware('role:Mesero')->name('waiter.comanda.store');
-        Route::post('/mesero/atenciones/{attention}/comanda/platillos', [App\Http\Controllers\MeseroController::class, 'storeComandaItem'])->middleware('role:Mesero')->name('waiter.comanda.item.store');
-        Route::post('/mesero/atenciones/{attention}/comanda/cerrar', [App\Http\Controllers\MeseroController::class, 'closeComanda'])->middleware('role:Mesero')->name('waiter.comanda.close');
+        Route::post('/mesero/atenciones/{attention}/servicio-ofrecido', [App\Http\Controllers\MeseroController::class, 'storeOfferedService'])->middleware('role:Mesero')->name('waiter.offered-service.store');
+        Route::put('/mesero/atenciones/{attention}/servicio-ofrecido', [App\Http\Controllers\MeseroController::class, 'updateOfferedService'])->middleware('role:Mesero')->name('waiter.offered-service.update');
+        Route::patch('/mesero/atenciones/{attention}/servicio-ofrecido/finalizar', [App\Http\Controllers\MeseroController::class, 'finalizeOfferedService'])->middleware('role:Mesero')->name('waiter.offered-service.finalize');
 
         Route::get(
             '/servicios',
@@ -556,6 +555,7 @@ Route::middleware(['auth', 'active'])->group(function () {
         'role:administrator,manager,Cajero'
     )->group(function () {
         Route::get('/caja', [App\Http\Controllers\CashierController::class, 'index'])->name('cash.index');
+        Route::get('/caja/historial', [App\Http\Controllers\CashierController::class, 'history'])->name('cash.history');
         Route::post('/caja/abrir', [App\Http\Controllers\CashierController::class, 'open'])->name('cash.open');
         Route::post('/caja/cerrar', [App\Http\Controllers\CashierController::class, 'close'])->name('cash.close');
         Route::post('/caja/atenciones/{attention}/cobrar', [App\Http\Controllers\CashierController::class, 'charge'])->whereNumber('attention')->name('cash.charge');

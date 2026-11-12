@@ -55,14 +55,15 @@ class MeseroController extends Controller
 
         $attentions = DB::table('atenciones as a')->join('servicios as s', 's.id_servicio', '=', 'a.id_servicio')
             ->join('mesas as m', 'm.id_mesa', '=', 'a.id_mesa')->join('zonas as z', 'z.id_zona', '=', 'm.id_zona')
-            ->leftJoin('comandas as c', 'c.id_atencion', '=', 'a.id_atencion')
+            ->leftJoin('servicios_ofrecidos as ofrecido', 'ofrecido.id_atencion', '=', 'a.id_atencion')
             ->where('a.id_usuario_mesero', $userId)->where('s.id_sede', $site->id_sede)
-            ->select('a.*', 's.nombre as servicio', 's.fecha', 'm.numero as mesa', 'z.nombre as zona', 'c.id_comanda', 'c.estado as comanda_estado')
+            ->select('a.*', 's.nombre as servicio_programado', 's.fecha', 'm.numero as mesa', 'z.nombre as zona',
+                'ofrecido.id_servicio_ofrecido', 'ofrecido.descripcion as servicio_ofrecido', 'ofrecido.comensales as comensales_ofrecidos',
+                'ofrecido.precio_unitario', 'ofrecido.total as total_ofrecido', 'ofrecido.estado as estado_ofrecido')
             ->orderByDesc('s.fecha')->orderBy('m.numero')->get();
 
         $services = DB::table('servicios')->where('id_sede', $site->id_sede)->where('estado_aprobacion', 'Aprobado')->whereIn('estado', ['Programado', 'En curso'])->orderByDesc('fecha')->orderBy('inicio_hora')->get();
-        $menus = DB::table('menus as m')->join('servicios as s', 's.id_servicio', '=', 'm.id_servicio')->join('platillos as p', 'p.id_platillo', '=', 'm.id_platillo')->where('s.id_sede', $site->id_sede)->where('m.publicado', 1)->where('m.disponible', 1)->whereNotNull('m.precio_venta')->select('m.*', 'p.nombre as platillo', 's.nombre as servicio')->get();
-        return view('mesero.index', compact('site', 'zones', 'tables', 'attentions', 'services', 'menus'));
+        return view('mesero.index', compact('site', 'zones', 'tables', 'attentions', 'services'));
     }
 
     public function storeAttention(Request $request, SiteContext $context)
@@ -100,71 +101,117 @@ class MeseroController extends Controller
         return back()->with('status', 'Mesa creada correctamente.');
     }
 
-    public function updateAttention(Request $request, SiteContext $context, int $attention)
+    public function storeOfferedService(Request $request, SiteContext $context, int $attention)
     {
         $site = $this->site($request, $context);
-        $data = $request->validate(['estado' => ['required', 'in:En atención,Cerrada']]);
-        $record = DB::table('atenciones as a')->join('servicios as s', 's.id_servicio', '=', 'a.id_servicio')
-            ->where('a.id_atencion', $attention)->where('a.id_usuario_mesero', $request->user()->id_usuario)->where('s.id_sede', $site->id_sede)->first(['a.id_atencion']);
-        abort_unless($record, 404);
-        DB::table('atenciones')->where('id_atencion', $attention)->update(['estado' => $data['estado'], 'inicio_hora' => $data['estado'] === 'En atención' ? now()->format('H:i:s') : DB::raw('inicio_hora'), 'fin_hora' => $data['estado'] === 'Cerrada' ? now()->format('H:i:s') : null]);
-        return back()->with('status', 'Estado de la atención actualizado.');
+        $data = $request->validate([
+            'descripcion' => ['required', 'string', 'min:2', 'max:160'],
+            'comensales' => ['required', 'integer', 'min:1', 'max:1000'],
+            'precio_unitario' => ['required', 'numeric', 'decimal:0,2', 'min:0.01', 'max:9999999999.99'],
+        ]);
+
+        DB::transaction(function () use ($data, $site, $request, $attention): void {
+            $record = DB::table('atenciones as a')->join('servicios as s', 's.id_servicio', '=', 'a.id_servicio')
+                ->join('mesas as m', 'm.id_mesa', '=', 'a.id_mesa')->join('zonas as z', 'z.id_zona', '=', 'm.id_zona')
+                ->where('a.id_atencion', $attention)->where('a.id_usuario_mesero', $request->user()->id_usuario)
+                ->where('s.id_sede', $site->id_sede)->lockForUpdate()
+                ->first(['a.estado', 'm.capacidad', 's.estado as servicio_estado', 's.estado_aprobacion']);
+            abort_unless($record, 404);
+            abort_unless($record->estado === 'En atención' && $record->estado_aprobacion === 'Aprobado'
+                && in_array($record->servicio_estado, ['Programado', 'En curso'], true), 422,
+                'La atenciÃ³n o el servicio programado ya no admite registrar un servicio ofrecido.');
+            abort_if((int) $data['comensales'] > (int) $record->capacidad, 422, 'Los comensales superan la capacidad de la mesa.');
+            abort_if(DB::table('servicios_ofrecidos')->where('id_atencion', $attention)->exists(), 422,
+                'Esta atenciÃ³n ya tiene un servicio ofrecido registrado.');
+            abort_if(DB::table('cuentas')->where('id_atencion', $attention)->exists(), 422,
+                'Esta atenciÃ³n ya tiene una cuenta.');
+
+            $unitCents = (int) round((float) $data['precio_unitario'] * 100);
+            $totalCents = $unitCents * (int) $data['comensales'];
+            abort_if($totalCents > 999999999999, 422, 'El total supera el máximo permitido para una cuenta.');
+            $total = $this->moneyFromCents($totalCents);
+            DB::table('atenciones')->where('id_atencion', $attention)->update(['comensales' => $data['comensales']]);
+            DB::table('servicios_ofrecidos')->insert([
+                'id_atencion' => $attention, 'descripcion' => trim($data['descripcion']),
+                'comensales' => $data['comensales'], 'precio_unitario' => $this->moneyFromCents($unitCents),
+                'total' => $total, 'estado' => 'Registrado', 'created_at' => now(), 'updated_at' => now(),
+            ]);
+        }, 3);
+
+        return back()->with('status', 'Servicio ofrecido registrado. Puedes finalizarlo para enviarlo a Caja.');
     }
 
-    public function storeComanda(Request $request, SiteContext $context, int $attention)
+    public function updateOfferedService(Request $request, SiteContext $context, int $attention)
     {
         $site = $this->site($request, $context);
-        $query = DB::table('atenciones as a')->join('servicios as s', 's.id_servicio', '=', 'a.id_servicio')->where('a.id_atencion', $attention)->where('a.id_usuario_mesero', $request->user()->id_usuario)->where('s.id_sede', $site->id_sede);
-        $record = $query->first(['a.estado', 's.estado as servicio_estado', 's.estado_aprobacion']);
-        abort_unless($record, 404);
-        abort_if($record->estado === 'Cerrada' || $record->estado_aprobacion !== 'Aprobado' || in_array($record->servicio_estado, ['Finalizado', 'Cancelado']), 422, 'La atención no admite nuevas comandas.');
-        DB::transaction(function () use ($attention, $request) {
-            DB::table('atenciones')->where('id_atencion', $attention)->lockForUpdate()->first();
-            if (!DB::table('comandas')->where('id_atencion', $attention)->exists()) {
-                DB::table('comandas')->insert(['id_atencion' => $attention, 'id_usuario_mesero' => $request->user()->id_usuario, 'fecha_apertura' => now(), 'estado' => 'Pendiente']);
-            }
-        });
-        return back()->with('status', 'Comanda abierta y enviada a cocina.');
+        $data = $request->validate([
+            'descripcion' => ['required', 'string', 'min:2', 'max:160'],
+            'comensales' => ['required', 'integer', 'min:1', 'max:1000'],
+            'precio_unitario' => ['required', 'numeric', 'decimal:0,2', 'min:0.01', 'max:9999999999.99'],
+        ]);
+
+        DB::transaction(function () use ($data, $site, $request, $attention): void {
+            $record = DB::table('atenciones as a')->join('servicios as s', 's.id_servicio', '=', 'a.id_servicio')
+                ->join('mesas as m', 'm.id_mesa', '=', 'a.id_mesa')->join('zonas as z', 'z.id_zona', '=', 'm.id_zona')
+                ->where('a.id_atencion', $attention)->where('a.id_usuario_mesero', $request->user()->id_usuario)
+                ->where('s.id_sede', $site->id_sede)->lockForUpdate()
+                ->first(['a.estado', 'm.capacidad', 's.estado as servicio_estado', 's.estado_aprobacion']);
+            abort_unless($record, 404);
+            abort_unless($record->estado === 'En atención' && $record->estado_aprobacion === 'Aprobado'
+                && in_array($record->servicio_estado, ['Programado', 'En curso'], true), 422);
+            abort_if((int) $data['comensales'] > (int) $record->capacidad, 422, 'Los comensales superan la capacidad de la mesa.');
+            $offered = DB::table('servicios_ofrecidos')->where('id_atencion', $attention)->lockForUpdate()->first();
+            abort_unless($offered && $offered->estado === 'Registrado', 422, 'Solo puedes editar un servicio ofrecido que siga registrado.');
+            $unitCents = (int) round((float) $data['precio_unitario'] * 100);
+            $totalCents = $unitCents * (int) $data['comensales'];
+            abort_if($totalCents > 999999999999, 422, 'El total supera el máximo permitido para una cuenta.');
+            DB::table('servicios_ofrecidos')->where('id_atencion', $attention)->update([
+                'descripcion' => trim($data['descripcion']), 'comensales' => $data['comensales'],
+                'precio_unitario' => $this->moneyFromCents($unitCents),
+                'total' => $this->moneyFromCents($totalCents), 'updated_at' => now(),
+            ]);
+            DB::table('atenciones')->where('id_atencion', $attention)->update(['comensales' => $data['comensales']]);
+        }, 3);
+
+        return back()->with('status', 'Servicio ofrecido actualizado.');
     }
 
-    public function storeComandaItem(Request $request, SiteContext $context, int $attention)
-    {
-        $site = $this->site($request, $context);
-        $data = $request->validate(['id_menu' => ['required', 'integer'], 'numero_comensal' => ['required', 'integer', 'min:1'], 'cantidad' => ['required', 'integer', 'min:1', 'max:100'], 'observaciones' => ['nullable', 'string', 'max:500']]);
-        $attentionRecord = DB::table('atenciones')->where('id_atencion', $attention)->first(['id_servicio', 'comensales', 'estado']);
-        abort_unless($attentionRecord, 404);
-        abort_if(in_array($attentionRecord->estado, ['Cerrada', 'Cancelada', 'Pendiente de pago'], true), 422, 'La atención ya no admite cambios.');
-        $menu = DB::table('menus as m')->join('servicios as s', 's.id_servicio', '=', 'm.id_servicio')->where('m.id_menu', $data['id_menu'])->where('m.id_servicio', $attentionRecord->id_servicio)
-            ->where('s.id_sede', $site->id_sede)->where('m.publicado', 1)->where('m.disponible', 1)->whereNotNull('m.precio_venta')->first(['m.id_menu']);
-        abort_unless($menu, 404);
-        $comanda = DB::table('comandas as c')->join('atenciones as a', 'a.id_atencion', '=', 'c.id_atencion')
-            ->where('c.id_atencion', $attention)->where('a.id_usuario_mesero', $request->user()->id_usuario)->first(['c.id_comanda']);
-        abort_unless($comanda, 404);
-        abort_if($data['numero_comensal'] > (int) $attentionRecord->comensales, 422, 'El comensal no es válido.');
-        DB::transaction(function () use ($data, $comanda, $attention): void {
-            $price = DB::table('menus')->where('id_menu', $data['id_menu'])->value('precio_venta');
-            DB::table('comanda_detalles')->insert(['id_comanda' => $comanda->id_comanda, 'id_menu' => $data['id_menu'], 'cantidad' => $data['cantidad'], 'numero_comensal' => $data['numero_comensal'], 'precio_unitario' => $price, 'estado' => 'pendiente', 'observaciones' => $data['observaciones'] ?? null]);
-        });
-        return back()->with('status', 'Platillo agregado a la comanda.');
-    }
-
-    public function closeComanda(Request $request, SiteContext $context, int $attention)
+    public function finalizeOfferedService(Request $request, SiteContext $context, int $attention)
     {
         $site = $this->site($request, $context);
         DB::transaction(function () use ($request, $site, $attention): void {
-            $record = DB::table('atenciones as a')->join('servicios as s', 's.id_servicio', '=', 'a.id_servicio')->join('comandas as c', 'c.id_atencion', '=', 'a.id_atencion')
-                ->where('a.id_atencion', $attention)->where('a.id_usuario_mesero', $request->user()->id_usuario)->where('s.id_sede', $site->id_sede)->lockForUpdate()
-                ->first(['a.estado as atencion_estado', 'c.id_comanda', 'c.estado as comanda_estado']);
+            $record = DB::table('atenciones as a')->join('servicios as s', 's.id_servicio', '=', 'a.id_servicio')
+                ->join('mesas as m', 'm.id_mesa', '=', 'a.id_mesa')->join('zonas as z', 'z.id_zona', '=', 'm.id_zona')
+                ->where('a.id_atencion', $attention)->where('a.id_usuario_mesero', $request->user()->id_usuario)
+                ->where('s.id_sede', $site->id_sede)->lockForUpdate()
+                ->first(['a.estado as atencion_estado', 's.estado_aprobacion']);
             abort_unless($record, 404);
-            abort_if(in_array($record->atencion_estado, ['Cerrada', 'Cancelada'], true), 422, 'La atención ya está cerrada.');
-            abort_if(in_array($record->comanda_estado, ['Cerrada', 'Pendiente de pago'], true), 422, 'La comanda ya fue enviada a caja.');
-            $total = (float) DB::table('comanda_detalles')->where('id_comanda', $record->id_comanda)->whereNotIn('estado', ['cancelado', 'Cancelado'])->sum(DB::raw('cantidad * precio_unitario'));
-            abort_if($total <= 0, 422, 'No puedes cerrar una comanda sin productos.');
+            abort_unless($record->atencion_estado === 'En atención' && $record->estado_aprobacion === 'Aprobado', 422,
+                'La atenciÃ³n no estÃ¡ disponible para finalizar.');
+            $offered = DB::table('servicios_ofrecidos')->where('id_atencion', $attention)->lockForUpdate()->first();
+            abort_unless($offered, 422, 'Registra primero el servicio ofrecido y su precio.');
+            abort_unless($offered->estado === 'Registrado', 422, 'El servicio ofrecido ya fue finalizado o cobrado.');
+            abort_if(DB::table('cuentas')->where('id_atencion', $attention)->exists(), 409,
+                'Ya existe una cuenta para esta atenciÃ³n; no se crearÃ¡ otra.');
+
             $now = now();
-            DB::table('comandas')->where('id_comanda', $record->id_comanda)->update(['estado' => 'Pendiente de pago', 'fecha_cierre' => $now]);
+            DB::table('cuentas')->insert([
+                'id_atencion' => $attention, 'subtotal' => $offered->total, 'total' => $offered->total,
+                'estado' => 'pendiente', 'fecha_apertura' => $now,
+            ]);
+            DB::table('servicios_ofrecidos')->where('id_servicio_ofrecido', $offered->id_servicio_ofrecido)->update([
+                'estado' => 'Pendiente de cobro', 'finalizado_en' => $now, 'updated_at' => $now,
+            ]);
             DB::table('atenciones')->where('id_atencion', $attention)->update(['estado' => 'Pendiente de pago']);
-            DB::table('cuentas')->updateOrInsert(['id_atencion' => $attention], ['subtotal' => $total, 'total' => $total, 'estado' => 'pendiente', 'fecha_apertura' => $now]);
-        });
-        return back()->with('status', 'Comanda cerrada y enviada a caja.');
+        }, 3);
+
+        return back()->with('status', 'Servicio ofrecido finalizado y enviado a Caja.');
     }
+
+    private function moneyFromCents(int $cents): string
+    {
+        return intdiv($cents, 100).'.'.str_pad((string) ($cents % 100), 2, '0', STR_PAD_LEFT);
+    }
+
+
 }
