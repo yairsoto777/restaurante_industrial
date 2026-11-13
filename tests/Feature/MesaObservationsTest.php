@@ -38,6 +38,7 @@ class MesaObservationsTest extends TestCase
                 'capacidad' => 4,
                 'estado_fisico' => 'Disponible',
                 'observaciones' => 'bien',
+                'id_servicio' => 1,
             ])->assertRedirect();
 
         $this->assertDatabaseHas('mesas', [
@@ -58,6 +59,7 @@ class MesaObservationsTest extends TestCase
                 'numero' => 13,
                 'capacidad' => 2,
                 'estado_fisico' => 'Disponible',
+                'id_servicio' => 1,
             ])->assertRedirect();
 
         $this->assertDatabaseHas('mesas', [
@@ -65,6 +67,20 @@ class MesaObservationsTest extends TestCase
             'numero' => 13,
             'observaciones' => null,
         ]);
+    }
+
+    public function test_waiter_reuses_historical_table_number_instead_of_creating_duplicate(): void
+    {
+        $waiter = $this->createUser('Mesero', 6);
+        $this->assignToZone($waiter);
+        Schema::getConnection()->table('mesas')->insert(['id_mesa' => 99, 'id_zona' => 10, 'numero' => 3, 'capacidad' => 2, 'estado_fisico' => 'Disponible']);
+
+        $this->actingAs($waiter)->withSession(['current_site_id' => 1])
+            ->post(route('waiter.table.store'), ['id_zona' => 10, 'id_servicio' => 1, 'numero' => 3, 'capacidad' => 6, 'estado_fisico' => 'Disponible'])
+            ->assertRedirect();
+
+        $this->assertSame(1, Schema::getConnection()->table('mesas')->where('id_zona', 10)->where('numero', 3)->count());
+        $this->assertDatabaseHas('mesas', ['id_mesa' => 99, 'capacidad' => 6]);
     }
 
     public function test_captain_can_update_table_observations(): void
@@ -128,8 +144,10 @@ class MesaObservationsTest extends TestCase
         Schema::getConnection()->table('zona_meseros')->insert([
             'id_zona' => 10,
             'id_usuario_mesero' => $waiter->id_usuario,
+            'id_servicio' => 1,
             'activo' => 1,
         ]);
+        Schema::getConnection()->table('servicios')->insert(['id_servicio' => 1, 'id_sede' => 1, 'nombre' => 'Comida', 'fecha' => now()->toDateString(), 'inicio_hora' => '12:00', 'fin_hora' => '14:00', 'estado' => 'En curso', 'estado_aprobacion' => 'Aprobado']);
     }
 
     private function createSchema(): void
@@ -165,7 +183,11 @@ class MesaObservationsTest extends TestCase
         Schema::create('zona_meseros', function (Blueprint $table): void {
             $table->integer('id_zona');
             $table->integer('id_usuario_mesero');
+            $table->integer('id_servicio')->nullable();
             $table->boolean('activo');
+        });
+        Schema::create('servicios', function (Blueprint $table): void {
+            $table->increments('id_servicio'); $table->integer('id_sede'); $table->string('nombre'); $table->date('fecha'); $table->time('inicio_hora'); $table->time('fin_hora'); $table->string('estado'); $table->string('estado_aprobacion');
         });
         Schema::create('mesas', function (Blueprint $table): void {
             $table->increments('id_mesa');

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Support\SiteContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class MeseroController extends Controller
@@ -45,12 +46,12 @@ class MeseroController extends Controller
 
         $zones = DB::table('zona_meseros as zm')
             ->join('zonas as z', 'z.id_zona', '=', 'zm.id_zona')
-            ->where('zm.id_usuario_mesero', $userId)->where('zm.activo', 1)
-            ->where('z.id_sede', $site->id_sede)->select('z.id_zona', 'z.nombre')->get();
+            ->where('zm.id_usuario_mesero', $userId)->where('zm.activo', 1)->whereIn('zm.id_servicio', DB::table('servicios')->select('id_servicio')->where('id_sede', $site->id_sede)->where('estado_aprobacion', 'Aprobado')->where('estado', 'En curso'))
+            ->where('z.id_sede', $site->id_sede)->select('z.id_zona', 'z.nombre')->distinct()->get();
 
         $tables = DB::table('mesas as m')->join('zonas as z', 'z.id_zona', '=', 'm.id_zona')
             ->whereIn('m.id_zona', $zones->pluck('id_zona'))->select('m.*', 'z.nombre as zona')
-            ->selectSub(DB::table('atenciones as active')->join('servicios as active_service', 'active_service.id_servicio', '=', 'active.id_servicio')->select('active.id_atencion')->whereColumn('active.id_mesa', 'm.id_mesa')->whereNotIn('active.estado', ['Cerrada', 'Cancelada'])->where('active_service.id_sede', $site->id_sede)->limit(1), 'active_attention_id')
+            ->selectSub(DB::table('atenciones as active')->join('servicios as active_service', 'active_service.id_servicio', '=', 'active.id_servicio')->select('active.id_atencion')->whereColumn('active.id_mesa', 'm.id_mesa')->whereNotIn('active.estado', ['Cerrada', 'Cancelada'])->where('active_service.id_sede', $site->id_sede)->where('active_service.estado', 'En curso')->where('active_service.estado_aprobacion', 'Aprobado')->limit(1), 'active_attention_id')
             ->orderBy('z.nombre')->orderBy('m.numero')->get();
 
         $attentions = DB::table('atenciones as a')->join('servicios as s', 's.id_servicio', '=', 'a.id_servicio')
@@ -62,7 +63,7 @@ class MeseroController extends Controller
                 'ofrecido.precio_unitario', 'ofrecido.total as total_ofrecido', 'ofrecido.estado as estado_ofrecido')
             ->orderByDesc('s.fecha')->orderBy('m.numero')->get();
 
-        $services = DB::table('servicios')->where('id_sede', $site->id_sede)->where('estado_aprobacion', 'Aprobado')->whereIn('estado', ['Programado', 'En curso'])->orderByDesc('fecha')->orderBy('inicio_hora')->get();
+        $services = DB::table('servicios')->where('id_sede', $site->id_sede)->where('estado_aprobacion', 'Aprobado')->where('estado', 'En curso')->orderByDesc('fecha')->orderBy('inicio_hora')->get();
         return view('mesero.index', compact('site', 'zones', 'tables', 'attentions', 'services'));
     }
 
@@ -71,10 +72,17 @@ class MeseroController extends Controller
         $site = $this->site($request, $context);
         $data = $request->validate(['id_mesa' => ['required', 'integer'], 'id_servicio' => ['required', 'integer'], 'comensales' => ['required', 'integer', 'min:1'], 'observaciones' => ['nullable', 'string', 'max:1000']]);
         DB::transaction(function () use ($data, $site, $request): void {
-            $table = DB::table('mesas as m')->join('zonas as z', 'z.id_zona', '=', 'm.id_zona')->where('m.id_mesa', $data['id_mesa'])->where('z.id_sede', $site->id_sede)->whereExists(fn ($q) => $q->from('zona_meseros as zm')->whereColumn('zm.id_zona', 'z.id_zona')->where('zm.id_usuario_mesero', $request->user()->id_usuario)->where('zm.activo', 1))->lockForUpdate()->first(['m.id_mesa', 'm.capacidad']);
+            $service = DB::table('servicios')->where('id_servicio', $data['id_servicio'])->where('id_sede', $site->id_sede)->where('estado_aprobacion', 'Aprobado')->where('estado', 'En curso')->lockForUpdate()->first();
+            abort_unless($service, 403, 'El servicio no está activo en esta sede.');
+            $table = DB::table('mesas as m')->join('zonas as z', 'z.id_zona', '=', 'm.id_zona')->where('m.id_mesa', $data['id_mesa'])->where('z.id_sede', $site->id_sede)->whereExists(fn ($q) => $q->from('zona_meseros as zm')->whereColumn('zm.id_zona', 'z.id_zona')->where('zm.id_usuario_mesero', $request->user()->id_usuario)->where('zm.id_servicio', $service->id_servicio)->where('zm.activo', 1))->lockForUpdate()->first(['m.id_mesa', 'm.capacidad']);
             abort_unless($table, 403, 'La mesa no está asignada a tu zona.');
             abort_if($table->capacidad && $data['comensales'] > $table->capacidad, 422, 'El número de comensales supera la capacidad de la mesa.');
-            $service = DB::table('servicios')->where('id_servicio', $data['id_servicio'])->where('id_sede', $site->id_sede)->where('estado_aprobacion', 'Aprobado')->whereIn('estado', ['Programado', 'En curso'])->first();
+            if ($table->capacidad && $data['comensales'] > $table->capacidad) {
+                throw ValidationException::withMessages(['comensales' => 'El número de comensales supera la capacidad de la mesa.']);
+            }
+            if (DB::table('atenciones as a')->join('servicios as s', 's.id_servicio', '=', 'a.id_servicio')->where('a.id_mesa', $table->id_mesa)->where('s.estado', 'En curso')->where('s.estado_aprobacion', 'Aprobado')->whereNotIn('a.estado', ['Cerrada', 'Cancelada'])->exists()) {
+                throw ValidationException::withMessages(['id_mesa' => 'La mesa ya tiene una atención activa.']);
+            }
             abort_unless($service, 422, 'El servicio no está disponible.');
             abort_if(DB::table('atenciones')->where('id_mesa', $table->id_mesa)->whereNotIn('estado', ['Cerrada', 'Cancelada'])->where('id_servicio', $service->id_servicio)->exists(), 422, 'La mesa ya tiene una atención activa.');
             DB::table('atenciones')->insert(['id_servicio' => $service->id_servicio, 'id_mesa' => $table->id_mesa, 'id_usuario_mesero' => $request->user()->id_usuario, 'estado' => 'En atención', 'comensales' => $data['comensales'], 'inicio_hora' => now()->format('H:i:s')]);
@@ -90,13 +98,20 @@ class MeseroController extends Controller
             'capacidad' => ['required', 'integer', 'min:1', 'max:100'],
             'estado_fisico' => ['required', 'in:Disponible,Mantenimiento,Fuera de servicio'],
             'observaciones' => ['nullable', 'string', 'max:500'],
+            'id_servicio' => ['required', 'integer'],
         ]);
         DB::transaction(function () use ($data, $site, $request): void {
+            $service = DB::table('servicios')->where('id_servicio', $data['id_servicio'])->where('id_sede', $site->id_sede)->where('estado_aprobacion', 'Aprobado')->where('estado', 'En curso')->lockForUpdate()->first();
+            abort_unless($service, 403, 'No hay un servicio activo para operar mesas.');
             $zone = DB::table('zonas')->where('id_zona', $data['id_zona'])->where('id_sede', $site->id_sede)
-                ->whereExists(fn ($query) => $query->from('zona_meseros')->whereColumn('zona_meseros.id_zona', 'zonas.id_zona')->where('id_usuario_mesero', $request->user()->id_usuario)->where('activo', 1))->lockForUpdate()->first();
+                ->whereExists(fn ($query) => $query->from('zona_meseros')->whereColumn('zona_meseros.id_zona', 'zonas.id_zona')->where('id_usuario_mesero', $request->user()->id_usuario)->where('id_servicio', $service->id_servicio)->where('activo', 1))->lockForUpdate()->first();
             abort_unless($zone, 403, 'Solo puedes crear mesas en tus zonas asignadas.');
-            abort_if(DB::table('mesas')->where('id_zona', $data['id_zona'])->where('numero', $data['numero'])->exists(), 422, 'Ya existe esa mesa en la zona.');
-            DB::table('mesas')->insert(['id_zona' => $data['id_zona'], 'numero' => $data['numero'], 'capacidad' => $data['capacidad'], 'estado_fisico' => $data['estado_fisico'], 'observaciones' => $data['observaciones'] ?? null]);
+            $table = DB::table('mesas')->where('id_zona', $data['id_zona'])->where('numero', $data['numero'])->lockForUpdate()->first();
+            if ($table) {
+                DB::table('mesas')->where('id_mesa', $table->id_mesa)->update(['capacidad' => $data['capacidad'], 'estado_fisico' => $data['estado_fisico'], 'observaciones' => $data['observaciones'] ?? null]);
+            } else {
+                DB::table('mesas')->insert(['id_zona' => $data['id_zona'], 'numero' => $data['numero'], 'capacidad' => $data['capacidad'], 'estado_fisico' => $data['estado_fisico'], 'observaciones' => $data['observaciones'] ?? null]);
+            }
         });
         return back()->with('status', 'Mesa creada correctamente.');
     }

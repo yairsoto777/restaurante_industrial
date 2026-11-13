@@ -141,6 +141,10 @@ class ServiceController extends Controller
             }
 
             $lockedService->update(['estado' => $validated['estado']]);
+            if (in_array($validated['estado'], ['Finalizado', 'Cancelado'], true) && Schema::hasColumn('zona_meseros', 'id_servicio')) {
+                DB::table('zona_meseros')->where('id_servicio', $lockedService->id_servicio)->where('activo', 1)
+                    ->update(['activo' => 0, 'fecha_fin' => now()]);
+            }
         }, 3);
 
         return redirect()->route('services.index')->with('status', 'El estado del servicio fue actualizado.');

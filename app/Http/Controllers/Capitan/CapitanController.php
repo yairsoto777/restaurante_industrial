@@ -138,6 +138,8 @@ class CapitanController extends Controller
             ->orderBy('u.nombre')
             ->get();
 
+        $serviciosAsignables = DB::table('servicios')->where('id_sede', $id)->where('estado_aprobacion', 'Aprobado')->whereIn('estado', ['Programado', 'En curso'])->orderBy('fecha')->orderBy('inicio_hora')->get();
+
         /*
         | ASIGNACIONES ACTIVAS
         */
@@ -157,6 +159,8 @@ class CapitanController extends Controller
             )
             ->where('z.id_sede', $id)
             ->where('zm.activo', 1)
+            ->whereNotNull('zm.id_servicio')
+            ->whereIn('zm.id_servicio', $serviciosAsignables->pluck('id_servicio'))
             ->select(
                 'zm.id_zona_mesero',
                 'z.nombre as zona',
@@ -308,6 +312,8 @@ class CapitanController extends Controller
             ->join('usuarios as u', 'u.id_usuario', '=', 'zm.id_usuario_mesero')
             ->where('z.id_sede', $id)
             ->where('zm.activo', 1)
+            ->whereNotNull('zm.id_servicio')
+            ->whereIn('zm.id_servicio', $serviciosAsignables->pluck('id_servicio'))
             ->select(
                 'u.id_usuario',
                 'u.nombre',
@@ -503,6 +509,7 @@ class CapitanController extends Controller
             'meseros',
             'asignaciones',
             'servicios',
+            'serviciosAsignables',
             'atenciones',
             'comandas',
             'grupos',
@@ -549,6 +556,7 @@ class CapitanController extends Controller
                     ->where('id_sede', $idSede)
                     ->where('id_rol', 6),
             ],
+            'id_servicio' => ['required', 'integer', Rule::exists('servicios', 'id_servicio')->where('id_sede', $idSede)->where('estado_aprobacion', 'Aprobado')->whereIn('estado', ['Programado', 'En curso'])],
         ]);
 
         DB::transaction(function () use ($datos) {
@@ -556,6 +564,7 @@ class CapitanController extends Controller
                 [
                     'id_zona' => $datos['id_zona'],
                     'id_usuario_mesero' => $datos['id_usuario_mesero'],
+                    'id_servicio' => $datos['id_servicio'],
                 ],
                 [
                     'activo' => 1,

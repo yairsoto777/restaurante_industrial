@@ -9,6 +9,7 @@
 
     <section class="chef-panel"><div class="chef-panel-heading"><div><span class="chef-kicker">Administración operativa</span><h2>Crear mesa</h2><p>Solo puedes crear mesas dentro de tus zonas asignadas.</p></div></div>
         <form method="POST" action="{{ route('waiter.table.store') }}" class="chef-filters">@csrf
+            <select name="id_servicio" required><option value="">Servicio activo</option>@foreach($services->where('estado', 'En curso') as $service)<option value="{{ $service->id_servicio }}" @selected(old('id_servicio') == $service->id_servicio)>{{ $service->nombre }} · {{ $service->fecha }}</option>@endforeach</select>
             <select name="id_zona" required><option value="">Zona asignada</option>@foreach($zones as $zone)<option value="{{ $zone->id_zona }}">{{ $zone->nombre }}</option>@endforeach</select>
             <input type="number" name="numero" min="1" max="9999" placeholder="Número de mesa" required><input type="number" name="capacidad" min="1" max="100" placeholder="Capacidad" required>
             <select name="estado_fisico" required><option value="Disponible">Disponible</option><option value="Mantenimiento">Mantenimiento</option><option value="Fuera de servicio">Fuera de servicio</option></select><input name="observaciones" maxlength="500" placeholder="Observaciones (opcional)">

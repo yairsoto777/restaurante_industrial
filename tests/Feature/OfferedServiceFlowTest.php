@@ -161,7 +161,7 @@ class OfferedServiceFlowTest extends TestCase
     {
         $waiter = $this->createUser('Mesero', 6, 'mesero@example.test');
         $cashier = $this->createUser('Cajero', 8, 'cajero@example.test');
-        Schema::getConnection()->table('zona_meseros')->insert(['id_zona' => 1, 'id_usuario_mesero' => $waiter->id_usuario, 'activo' => 1]);
+        Schema::getConnection()->table('zona_meseros')->insert(['id_zona' => 1, 'id_usuario_mesero' => $waiter->id_usuario, 'id_servicio' => 1, 'activo' => 1]);
         Schema::getConnection()->table('mesas')->insert(['id_mesa' => 1, 'id_zona' => 1, 'numero' => 4, 'capacidad' => 6, 'estado_fisico' => 'Disponible']);
         Schema::getConnection()->table('servicios')->insert([
             'id_servicio' => 1, 'id_sede' => 1, 'nombre' => 'Desayuno', 'fecha' => now()->toDateString(),
@@ -200,7 +200,7 @@ class OfferedServiceFlowTest extends TestCase
         Schema::create('sedes', function (Blueprint $t): void { $t->increments('id_sede'); $t->string('nombre'); });
         Schema::create('usuario_sede', function (Blueprint $t): void { $t->increments('id_usuario_sede'); $t->integer('id_usuario'); $t->integer('id_sede'); $t->integer('id_rol'); });
         Schema::create('zonas', function (Blueprint $t): void { $t->increments('id_zona'); $t->integer('id_sede'); $t->string('nombre'); });
-        Schema::create('zona_meseros', function (Blueprint $t): void { $t->integer('id_zona'); $t->integer('id_usuario_mesero'); $t->boolean('activo'); });
+        Schema::create('zona_meseros', function (Blueprint $t): void { $t->integer('id_zona'); $t->integer('id_usuario_mesero'); $t->integer('id_servicio')->nullable(); $t->boolean('activo'); });
         Schema::create('mesas', function (Blueprint $t): void { $t->increments('id_mesa'); $t->integer('id_zona'); $t->integer('numero'); $t->integer('capacidad'); $t->string('estado_fisico'); });
         Schema::create('servicios', function (Blueprint $t): void { $t->increments('id_servicio'); $t->integer('id_sede'); $t->string('nombre'); $t->date('fecha'); $t->time('inicio_hora'); $t->time('fin_hora'); $t->string('estado'); $t->string('estado_aprobacion'); });
         Schema::create('atenciones', function (Blueprint $t): void { $t->increments('id_atencion'); $t->integer('id_servicio'); $t->integer('id_mesa'); $t->integer('id_usuario_mesero'); $t->string('estado'); $t->integer('comensales'); $t->time('inicio_hora')->nullable(); $t->time('fin_hora')->nullable(); });
