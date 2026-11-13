@@ -15,11 +15,10 @@
             }
         }
         $siteImage = function ($value, $fallback) {
-            $path = is_array($value) ? ($value['url'] ?? $value['path'] ?? null) : $value;
+            $path = is_array($value) ? ($value['path'] ?? $value['url'] ?? null) : $value;
             if (!$path || !is_string($path)) return $fallback;
             if (preg_match('~^https?://~i', $path)) return $path;
-            if (str_starts_with($path, '/storage/')) return '/storage/'.ltrim(preg_replace('~^/storage/~', '', $path), '/');
-            return '/storage/'.ltrim(preg_replace('~^(?:public/|storage/)~', '', $path), '/');
+            return asset('storage/'.ltrim(preg_replace('~^(?:/?storage/|public/)~', '', $path), '/'));
         };
         $isVideo = fn ($value) => is_array($value) && (($value['type'] ?? '') === 'video' || str_starts_with((string) ($value['mime'] ?? ''), 'video/'));
         $heroMedia = $content['hero_image'] ?? null;
@@ -31,8 +30,13 @@
         $experiencePhoto = $siteImage($content['experience_image'] ?? null, 'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=1200&q=85');
     @endphp
     {{-- CSS propio de la plantilla de las sedes, NO del welcome original. --}}
-    <link rel="stylesheet" href="{{ asset('css/site-page-theme.css') }}">
+    <link id="site-theme-css" rel="stylesheet" href="{{ asset('css/site-page-theme.css') }}">
+    <script src="{{ asset('js/site-page-media.js') }}?v={{ filemtime(public_path('js/site-page-media.js')) }}" data-placeholder="{{ asset('img/site-media-placeholder.svg') }}"></script>
     <style>
+        .nu-vision-image video,.nu-experience-image video{display:block;width:100%;height:100%;min-height:280px;object-fit:cover;object-position:center}
+        .nu-solution-photo video{display:block;width:100%;height:100%;object-fit:cover;object-position:center}
+        .nu-vision-image,.nu-experience-image,.nu-solution-photo{position:relative}
+        .nu-media-unavailable{position:absolute;bottom:8px;left:8px;right:8px;background:#163554e8;color:#fff;padding:8px 12px;border-radius:6px;font:12px/1.4 system-ui;z-index:2}
         :root {
             --site-bg: {{ $theme['background'] ?? '#0b0d10' }};
             --site-panel: {{ $theme['panel'] ?? '#12171d' }};
@@ -71,7 +75,11 @@
     <section class="nu-section nu-vision" id="vision">
         <div class="public-container nu-vision-grid">
             <figure class="nu-vision-image">
-                <img src="{{ $visionPhoto }}" alt="{{ $content['vision_image_alt'] ?? 'Equipo de cocina profesional preparando alimentos' }}" loading="lazy">
+                @if($isVideo($content['vision_image'] ?? null))
+                    <video src="{{ $visionPhoto }}" autoplay muted loop playsinline controls preload="metadata"></video>
+                @else
+                    <img src="{{ $visionPhoto }}" alt="{{ $content['vision_image_alt'] ?? 'Equipo de cocina profesional preparando alimentos' }}" loading="lazy">
+                @endif
                 <figcaption>{{ $content['vision_caption'] ?? 'VISIÓN OPERATIVA / NUTRILIADO' }}</figcaption>
             </figure>
             <div class="nu-vision-content">
@@ -116,7 +124,11 @@
                                     ? 'https://images.unsplash.com/'.$solutionPath.'?auto=format&fit=crop&w=850&q=82'
                                     : $siteImage($solutionMedia, 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=850&q=82');
                             @endphp
-                            <img src="{{ $solutionImage }}" alt="{{ $solution[1] }}" loading="lazy">
+                            @if($isVideo($solutionMedia))
+                                <video src="{{ $solutionImage }}" autoplay muted loop playsinline controls preload="metadata"></video>
+                            @else
+                                <img src="{{ $solutionImage }}" alt="{{ $solution[1] }}" loading="lazy">
+                            @endif
                         </div>
                         <div class="nu-solution-body">
                             <h3>{{ $solution[1] }}</h3>
@@ -137,7 +149,11 @@
                 <div class="nu-timeline">@foreach($content['experience_steps'] ?? [['01','Accede y selecciona','Inicio de sesión seguro y elección de sede.'],['02','Organiza la operación','Coordina equipos, inventarios y servicios.'],['03','Revisa y mejora','Información centralizada para tomar mejores decisiones.']] as $step)<div><strong>{{ $step[1] }}</strong><p>{{ $step[2] }}</p></div>@endforeach</div>
             </div>
             <figure class="nu-experience-image">
-                <img src="{{ $experiencePhoto }}" alt="{{ $content['experience_image_alt'] ?? 'Restaurante con área de servicio organizada' }}" loading="lazy">
+                @if($isVideo($content['experience_image'] ?? null))
+                    <video src="{{ $experiencePhoto }}" autoplay muted loop playsinline controls preload="metadata"></video>
+                @else
+                    <img src="{{ $experiencePhoto }}" alt="{{ $content['experience_image_alt'] ?? 'Restaurante con área de servicio organizada' }}" loading="lazy">
+                @endif
                 <figcaption>{{ $content['experience_caption'] ?? 'UNA EXPERIENCIA CONECTADA' }}</figcaption>
             </figure>
         </div>

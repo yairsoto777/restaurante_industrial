@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Mesas y zonas del capitán')
+
 @push('styles')
     @vite('resources/css/capitan-mesas.css')
 @endpush
@@ -47,9 +49,11 @@
     <section class="cz-stats" aria-label="Indicadores de mesas y zonas">
         <div class="cz-stat"><span>Zonas registradas</span><strong>{{ $zonas->count() }}</strong><small>Áreas de la sede</small></div>
         <div class="cz-stat"><span>Total de mesas</span><strong>{{ $mesas->count() }}</strong><small>Inventario de espacios</small></div>
-        <div class="cz-stat"><span>Mesas disponibles</span><strong>{{ $numDisponibles }}</strong><small>Estado físico disponible</small></div>
+        <div class="cz-stat"><span>Estado físico disponible</span><strong>{{ $numDisponibles }}</strong><small>La ocupación se consulta por servicio</small></div>
         <div class="cz-stat"><span>Con mantenimiento / fuera</span><strong>{{ $numMantenimiento }}</strong><small>Requieren atención</small></div>
     </section>
+
+    @include('capitan.partials.table-grid')
 
     <div class="cz-layout">
         <section class="cz-panel">
@@ -84,7 +88,7 @@
                             <td><span class="cz-mesatag">{{ str_pad((string)$mesa->numero, 2, '0', STR_PAD_LEFT) }}</span><strong>Mesa {{ $mesa->numero }}</strong>@if($mesa->observaciones)<small>{{ $mesa->observaciones }}</small>@endif</td>
                             <td>{{ $mesa->zona_nombre }}</td>
                             <td>{{ $mesa->capacidad }} personas</td>
-                            <td><span class="cz-status {{ mb_strtolower((string) $mesa->estado_fisico) === 'disponible' ? 'good' : 'warn' }}">{{ $mesa->estado_fisico ?: 'Sin estado' }}</span></td>
+                            <td data-captain-physical="{{ $mesa->estado_fisico }}"><x-ops.status :value="$mesa->estado_fisico" :physical="true" /></td>
                             <td><button type="button" class="cz-link" data-edit-table="{{ $mesa->id_mesa }}" data-zone="{{ $mesa->id_zona }}" data-number="{{ $mesa->numero }}" data-capacity="{{ $mesa->capacidad }}" data-status="{{ $mesa->estado_fisico }}" data-observations="{{ $mesa->observaciones }}">Editar</button></td>
                         </tr>
                     @empty

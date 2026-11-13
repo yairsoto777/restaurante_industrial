@@ -4,7 +4,7 @@
 <div class="chef-page">
     <section class="chef-hero" aria-labelledby="incidents-title">
         <div class="chef-hero-icon"><x-icon name="alert" /></div>
-        <div class="chef-hero-copy"><span class="chef-eyebrow">{{ $site->nombre }} · Cocina</span><h1 id="incidents-title">Incidencias</h1><p>Reporta faltantes o problemas de operación y consulta su estado y respuesta.</p></div>
+        <div class="chef-hero-copy"><span class="chef-eyebrow">{{ $site->nombre }} · {{ auth()->user()->hasRole('Capitan de meseros') || auth()->user()->hasRole('Mesero') || auth()->user()->hasRole('Cajero') ? auth()->user()->roleLabel() : 'Cocina' }}</span><h1 id="incidents-title">Incidencias</h1><p>Reporta faltantes o problemas de operación y consulta su estado y respuesta.</p></div>
     </section>
 
     <section class="chef-stat-grid" aria-label="Resumen de incidencias">
@@ -17,6 +17,16 @@
     @if(! $available)
         <section class="chef-panel"><div class="chef-empty"><strong>Incidencias no disponible</strong><p>La tabla de incidencias o su relación con usuarios no está completa en la base conectada.</p></div></section>
     @else
+        @if(auth()->user()->hasRole('Mesero') && !auth()->user()->hasRole('Capitan de meseros') && !auth()->user()->hasRole('Cajero'))
+            @include('mesero.partials.incident-summary')
+        @endif
+        @if(auth()->user()->hasRole('Capitan de meseros') || auth()->user()->hasRole('Mesero') || auth()->user()->hasRole('Cajero'))
+            @if(auth()->user()->hasRole('Mesero') && !auth()->user()->hasRole('Capitan de meseros') && !auth()->user()->hasRole('Cajero'))
+                @include('mesero.partials.incident-cards')
+            @else
+                @include('modules.partials.incident-cards')
+            @endif
+        @endif
         <section class="chef-panel">
             <div class="chef-panel-heading"><div><span class="chef-kicker">Registro de sede</span><h2>Incidencias registradas</h2></div><span class="chef-count">{{ $incidents->total() }} resultados</span></div>
             <form class="chef-filters" method="GET" action="{{ route('incidents.index') }}">
@@ -43,11 +53,11 @@
                     <thead><tr><th>Fecha</th><th>Descripción y recepción</th><th>Registró</th><th>Estado registrado</th><th>Respuesta</th><th>Cierre</th></tr></thead>
                     <tbody>
                     @forelse($incidents as $incident)
-                        <tr>
+                        <tr data-waiter-incident-state="{{ $incident->estado }}">
                             <td>{{ $incident->fecha ? \Carbon\Carbon::parse($incident->fecha)->format('d/m/Y H:i') : '—' }}</td>
                             <td><strong>{{ $incident->descripcion }}</strong>@if($incident->insumo_nombre)<small class="chef-cell-note">Recepción · {{ $incident->insumo_nombre }}</small>@endif</td>
                             <td>{{ trim(($incident->usuario_nombre ?? '').' '.($incident->usuario_apellido ?? '')) ?: 'Sin nombre' }}</td>
-                            <td>@if($incident->estado === 'Pendiente')<span class="chef-pill chef-pill-amber">Pendiente</span>@elseif($incident->estado)<span class="chef-pill chef-pill-slate">{{ $incident->estado }}</span>@else<span class="chef-pill chef-pill-amber">Sin estado definido</span>@endif</td>
+                            <td>@if(auth()->user()->hasRole('Capitan de meseros') || auth()->user()->hasRole('Mesero') || auth()->user()->hasRole('Cajero'))<x-ops.status :value="$incident->estado ?: 'Sin estado definido'" />@elseif($incident->estado === 'Pendiente')<span class="chef-pill chef-pill-amber">Pendiente</span>@elseif($incident->estado)<span class="chef-pill chef-pill-slate">{{ $incident->estado }}</span>@else<span class="chef-pill chef-pill-amber">Sin estado definido</span>@endif</td>
                             <td>{{ $incident->respuesta ?: '—' }}</td>
                             <td>{{ $incident->fecha_cierre ? \Carbon\Carbon::parse($incident->fecha_cierre)->format('d/m/Y H:i') : '—' }}</td>
                         </tr>

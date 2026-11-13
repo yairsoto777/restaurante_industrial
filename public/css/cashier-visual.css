@@ -1,0 +1,235 @@
+/* Presentation scoped to the Cashier role. Existing operational behavior is preserved. */
+.ops-cashier{--cash-navy:#102d50;--cash-blue:#1479eb;--cash-muted:#62768e;background:#f2f6fb;color:#183653;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+.ops-cashier .chef-hero-copy{flex:1 1 auto;width:100%;min-width:0}
+.ops-cashier .app-sidebar{background:#0a203e}
+.ops-cashier :is(.dashboard-heading,.cashier-page>.page-heading,.page-content>.page-heading,.chef-hero){position:relative;isolation:isolate;display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:154px;padding:26px 30px;border:1px solid #24496e;border-radius:17px;background:#102d50;color:white;box-shadow:0 8px 24px #163c5c0c}
+.ops-cashier .dashboard-heading{background-image:linear-gradient(90deg,#081f3bf5,#0a2949e6 55%,#0b284455),url('../img/ui/captain-dining.webp');background-size:cover;background-position:center 45%}
+.ops-cashier :is(.page-heading,.dashboard-heading,.chef-hero) h1{color:white;font-size:clamp(25px,2.4vw,33px);line-height:1.2;margin:5px 0 9px}
+.ops-cashier :is(.page-heading,.dashboard-heading,.chef-hero) p{color:#d5e4f4;max-width:65ch;line-height:1.65;font-size:13px}
+.ops-cashier :is(.page-heading,.dashboard-heading,.chef-hero) :is(.section-kicker,.chef-eyebrow){color:#a2ceff;font-size:10px;letter-spacing:.1em}
+.ops-cashier .cash-heading-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.ops-cashier .cash-heading-actions>.button,.ops-cashier .page-heading>a{background:#ffffff12;border-color:#aac8e44a;color:white}
+.ops-cashier .dashboard-heading .current-date{background:#081f3bad;border-color:#a8c9ec44}
+.ops-cashier .dashboard-heading .current-date :is(strong,small,.ui-icon){color:#e8f3ff}
+.ops-cashier :is(.panel,.dashboard-card,.chef-panel,.ops-record,.ops-metric,.site-choice){border:1px solid #dce6f1;border-radius:14px;box-shadow:0 3px 16px #16345106;background-color:white}
+.ops-cashier :is(.kpi-grid,.chef-stat-grid){gap:14px}
+.ops-cashier .cashier-page>.kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.ops-cashier .kpi-grid .kpi-card:nth-child(n){position:relative;isolation:isolate;overflow:hidden;display:flex;align-items:center;gap:14px;min-height:112px;padding:19px;border:1px solid #dce6f1;border-radius:14px;background:#fff;box-shadow:0 3px 16px #16345106}
+.ops-cashier .kpi-copy{position:relative;min-width:0;z-index:1}
+.ops-cashier .kpi-copy>span{color:#526b85;font-size:12px;font-weight:600}
+.ops-cashier .kpi-copy>strong{color:#14385b;font-size:clamp(23px,2.1vw,29px);font-variant-numeric:tabular-nums;line-height:1.35}
+.ops-cashier .kpi-copy>small{color:#6b7e92;font-size:11px;line-height:1.5}
+.ops-cashier .kpi-icon{flex-shrink:0;width:44px;height:44px;border-radius:12px}
+.ops-cashier .cashier-page .kpi-card:first-child{border-left:3px solid #e8b844;background:#fffdf7}
+.ops-cashier .cashier-page .kpi-card:nth-child(5){border-left:3px solid #2a9b69;background:#f5fcf8}
+.ops-cashier .kpi-icon.yellow{background:#fff2cd;color:#946513}
+.ops-cashier .cash-actions{padding:22px 24px;border-left:4px solid #1479eb;align-items:center}
+.ops-cashier .cash-actions>div{max-width:44%}
+.ops-cashier .cash-actions h2{font-size:19px;color:#173b60}
+.ops-cashier .cash-shift-state{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:12px 0;font-size:12px;color:#526b85}
+.ops-cashier .cash-shift-state .status{display:inline-flex;align-items:center;gap:7px;padding:7px 11px;border-radius:999px;font-weight:700;line-height:1.4}
+.ops-cashier .cash-shift-state .status::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}
+.ops-cashier .cash-shift-state .status.on{background:#e6f5ec;color:#17683e}
+.ops-cashier .cash-shift-state .status.off{background:#eef2f6;color:#536174}
+.ops-cashier .cash-shift-fund{display:grid;gap:4px;margin:12px 0;padding:13px 16px;border:1px solid #d6e7fa;border-radius:11px;background:#eff6ff}
+.ops-cashier .cash-shift-fund>span{font-size:12px;color:#526b85}
+.ops-cashier .cash-shift-fund>strong{font-size:25px;line-height:1.3;color:#153d64;font-variant-numeric:tabular-nums}
+.ops-cashier .cash-shift-expected{border-left:3px solid #1479eb;background:#f4f8ff}
+.ops-cashier .cash-shift-expected>small{font-size:11px;line-height:1.5;color:#62768e}
+.ops-cashier .cash-actions p{line-height:1.65;color:#62768e}
+.ops-cashier .cash-actions form{flex:1;justify-content:flex-end;gap:12px;min-width:0}
+.ops-cashier .cash-actions label{max-width:380px;flex:1;min-width:0;font-size:12px;color:#405c77}
+.ops-cashier .cash-actions label small{display:block;margin-top:7px;font-size:11px;line-height:1.5;color:#65798e}
+.ops-cashier .cash-actions .cash-closing-field{padding:16px;border:1px solid #cbdff4;border-radius:12px;background:#f7faff;font-weight:650}
+.ops-cashier .cash-closing-field input{margin-top:9px;min-height:46px;background:white;font-size:20px;font-variant-numeric:tabular-nums;color:#153d64}
+.ops-cashier .cash-closing-field small{font-weight:400}
+.ops-cashier .cash-actions:has(.cash-closing-form){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;gap:28px}
+.ops-cashier .cash-actions:has(.cash-closing-form)>div{max-width:none}
+.ops-cashier .cash-actions .cash-closing-form{display:grid;align-content:start;gap:16px;padding:22px;border:1px solid #d6e3f1;border-radius:14px;background:#f8fbff}
+.ops-cashier .cash-closing-heading h3{margin:7px 0 9px;font-size:20px;line-height:1.35;color:#173b60}
+.ops-cashier .cash-closing-heading p{margin:0;font-size:12px;line-height:1.65}
+.ops-cashier .cash-actions .cash-closing-form .cash-closing-field{max-width:none;width:100%;margin:0;background:white}
+.ops-cashier .cash-actions .cash-closing-form .cash-close-button{width:100%;justify-content:center;min-height:48px}
+@media(max-width:760px){.ops-cashier .cash-actions:has(.cash-closing-form){grid-template-columns:minmax(0,1fr);gap:20px}.ops-cashier .cash-actions .cash-closing-form{padding:17px}}
+.ops-cashier :is(input,select,textarea){border-color:#cfdeed;border-radius:9px}
+.ops-cashier :is(input,select,textarea):focus{outline:2px solid #1479eb;outline-offset:2px}
+.ops-cashier :is(.button,.chef-button){border-radius:9px;min-height:39px;font-weight:650}
+.ops-cashier :is(.button.primary,.chef-button-primary){background:#1479eb;border-color:#1479eb;color:white}
+.ops-cashier .button.danger{background:#fff4f3;border-color:#edc6c1;color:#a3332e}
+.ops-cashier .cash-actions .cash-close-button{height:auto;min-height:46px;padding:12px 18px;background:#b8322c;border-color:#b8322c;color:white;white-space:nowrap}
+.ops-cashier .cash-actions .cash-close-button:hover{background:#992a25;border-color:#992a25}
+.ops-cashier :is(.cash-difference.loss,.cash-difference.gain,.ops-status-danger){color:#a52e2e;background:#ffedeb}
+.ops-cashier .ops-metric-danger{border-color:#efc7c3;background:#fff8f7}
+.ops-cashier .ops-metric-danger :is(.ops-metric-icon,strong){color:#a52e2e}
+.ops-cashier .alert.error{color:#a52e2e;background:#fff0ee;border:1px solid #efc7c3;border-left:4px solid #c23b35}
+.ops-cashier :is(.ops-field-error,.chef-field-error){color:#a52e2e}
+.ops-cashier :is(input,select,textarea)[aria-invalid="true"]{border-color:#c23b35;background:#fff8f7}
+.ops-cashier :is(.panel-head,.card-heading,.chef-panel-heading) h2{color:#183b5e;font-size:18px}
+.ops-cashier :is(.panel-subtitle,.chef-panel-heading p){line-height:1.6;color:#667c93}
+.ops-cashier :is(.table-wrap,.chef-table-wrap){overflow-x:auto}
+.ops-cashier :is(table,.chef-table){font-size:12px}
+.ops-cashier :is(table,.chef-table) th{background:#f3f7fc;color:#58708b;font-size:10px;letter-spacing:.045em;padding:14px 16px;white-space:nowrap}
+.ops-cashier :is(table,.chef-table) td{padding:16px;border-color:#eaf0f7;vertical-align:middle}
+.ops-cashier :is(table,.chef-table) tbody tr:hover{background:#f8fbff}
+.ops-cashier table td small{line-height:1.6;color:#6a7f94}
+.ops-cashier .cash-operation-date{display:grid;gap:5px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.ops-cashier .cash-operation-date strong{color:#183b5e;font-size:12px;font-weight:650}
+.ops-cashier .cash-operation-date>span{color:#62768e;font-size:11px}
+.ops-cashier .cash-recent-operations table th{padding:11px 12px}
+.ops-cashier .cash-recent-operations table td{padding:12px;line-height:1.4}
+.ops-cashier .cash-movement-reference{display:inline-flex;align-items:center;gap:8px;font-weight:650;white-space:nowrap;color:#183b5e}
+.ops-cashier .cash-movement-icon{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:#eaf3ff;color:#1479eb;flex-shrink:0}
+.ops-cashier .cash-movement-icon .ui-icon{width:16px;height:16px}
+.ops-cashier .cash-payment-method{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;background:#f0f5fb;color:#405c77}
+.ops-cashier .cash-payment-method>span{display:inline-flex}
+.ops-cashier .cash-payment-method .ui-icon{width:15px;height:15px}
+.ops-cashier .cash-recent-operations td:nth-child(4){color:#17683e;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+.ops-cashier .cash-recent-operations td:last-child .button{display:inline-flex;align-items:center;gap:7px;min-height:34px;padding:8px 10px;font-size:11px;white-space:nowrap}
+.ops-cashier .cash-recent-operations td:last-child .button .ui-icon{width:15px;height:15px}
+.ops-cashier .cash-history-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.ops-cashier .cash-history-summary .ops-metric{display:flex;align-items:center;gap:14px;padding:18px;min-height:104px;border-top:3px solid #1479eb}
+.ops-cashier .cash-history-summary .ops-metric-warning{border-top-color:#e8b844;background:#fffdf7}
+.ops-cashier .cash-history-summary .ops-metric-danger{border-top-color:#c23b35}
+.ops-cashier .cash-history-summary .ops-metric>div{min-width:0}
+.ops-cashier .cash-history-summary .ops-metric strong{font-size:29px;line-height:1.25;font-variant-numeric:tabular-nums}
+.ops-cashier .cash-history-summary .ops-metric>div>span{font-size:12px;line-height:1.5}
+.ops-cashier .cash-history-summary .ops-metric-icon{flex-shrink:0;width:42px;height:42px;border-radius:12px}
+.ops-cashier .cash-history-ledger .panel-head{align-items:center;padding-bottom:16px;border-bottom:1px solid #e5edf6}
+.ops-cashier #ops-shifts-table{width:100%;min-width:1050px}
+.ops-cashier #ops-shifts-table th{padding:11px 12px;letter-spacing:.02em}
+.ops-cashier #ops-shifts-table td{padding:12px;font-size:12px}
+.ops-cashier #ops-shifts-table td:nth-child(n+3){white-space:nowrap;font-variant-numeric:tabular-nums}
+.ops-cashier #ops-shifts-table :is(th,td):nth-child(n+3):nth-child(-n+7){text-align:right}
+.ops-cashier #ops-shifts-table :is(th,td):nth-child(6){background:#f1f6fd;color:#153d64}
+.ops-cashier .cash-history-id{display:block;margin-bottom:7px;font-size:15px;color:#173b60}
+.ops-cashier #ops-shifts-table td:first-child small{display:block;font-size:10px;white-space:nowrap;line-height:1.7}
+.ops-cashier .cash-history-date-label{font-weight:650;color:#526b85}
+.ops-cashier #ops-shifts-table .cash-difference{padding:6px 9px;font-size:10px;border-radius:7px}
+@media(max-width:760px){.ops-cashier .cash-history-summary{grid-template-columns:minmax(0,1fr);gap:10px}.ops-cashier .cash-history-summary .ops-metric{min-height:82px;padding:15px}.ops-cashier .cash-history-summary .ops-metric>div{display:flex;align-items:center;justify-content:space-between;gap:15px;flex:1}.ops-cashier .cash-history-summary .ops-metric strong{font-size:25px}}
+.ops-cashier .cash-accounts-table td:nth-child(4){color:#173b60;white-space:nowrap;font-variant-numeric:tabular-nums}
+/* Retain the complete table and its search hooks, presenting each account as a card. */
+.ops-cashier .cashier-page .cash-accounts-table{display:block;min-width:0;width:100%;border-collapse:separate}
+.ops-cashier .cash-accounts-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.ops-cashier .cash-accounts-table tbody{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding:2px}
+.ops-cashier .cash-accounts-table tbody tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;gap:15px;padding:20px;border:1px solid #dce6f1;border-top:3px solid #e9be52;border-radius:13px;background:white}
+.ops-cashier .cash-accounts-table tbody tr[hidden]{display:none}
+.ops-cashier .cash-accounts-table tbody td{display:block;min-width:0;padding:0;border:0;overflow-wrap:anywhere}
+.ops-cashier .cash-accounts-table td::before{display:block;margin-bottom:6px;font-size:10px;font-weight:650;letter-spacing:.035em;color:#62768e}
+.ops-cashier .cash-accounts-table td:nth-child(1){font-size:18px;font-weight:700;color:#183b5e}
+.ops-cashier .cash-accounts-table td:nth-child(1)::before{content:'Mesa / atención'}
+.ops-cashier .cash-accounts-table td:nth-child(1) small{display:block;margin-top:6px;font-size:11px;font-weight:400}
+.ops-cashier .cash-account-state{display:block;margin-bottom:10px}
+.ops-cashier .cash-account-state .ops-status{background:#fff3d5;color:#865b06}
+.ops-cashier .cash-accounts-table td:nth-child(2)::before{content:'Servicio programado'}
+.ops-cashier .cash-accounts-table td:nth-child(3){grid-column:1 / -1;line-height:1.65;padding:13px;border-radius:9px;background:#f5f8fc}
+.ops-cashier .cash-accounts-table td:nth-child(3)::before{content:'Servicio ofrecido / conceptos'}
+.ops-cashier .cash-accounts-table td:nth-child(3) small{display:block;margin-top:5px}
+.ops-cashier .cash-accounts-table td:nth-child(4){align-self:center;font-size:25px;white-space:normal}
+.ops-cashier .cash-accounts-table td:nth-child(4)::before{content:'Total de la cuenta'}
+.ops-cashier .cash-accounts-table td:nth-child(5){align-self:end;justify-self:end}
+.ops-cashier .cash-accounts-table td:nth-child(5) .button{white-space:normal;text-align:center;justify-content:center}
+.ops-cashier .cash-accounts-table tr:has(.table-empty){grid-column:1 / -1;display:block;border-top:1px solid #dce6f1;background:#f8fbff;text-align:center;padding:26px}
+.ops-cashier .cash-accounts-table .table-empty::before{content:none}
+@media(max-width:1000px){.ops-cashier .cash-accounts-table tbody{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:440px){.ops-cashier .cash-accounts-table tbody tr{padding:16px;gap:14px}.ops-cashier .cash-accounts-table td:nth-child(4),.ops-cashier .cash-accounts-table td:nth-child(5){grid-column:1 / -1;justify-self:stretch}.ops-cashier .cash-accounts-table td:nth-child(5) .button{width:100%}}
+.ops-cashier .ops-money{color:#153e66;font-size:26px;font-variant-numeric:tabular-nums}
+.ops-cashier .ops-record{padding:20px;border-top:3px solid #e9be52;display:flex;flex-direction:column;gap:9px}
+.ops-cashier .ops-record>.button{align-self:flex-start;margin-top:auto}
+.ops-cashier .ops-record p{color:#61778e;line-height:1.6}
+.ops-cashier .ops-quick-actions{background:white;border-color:#dce6f1;border-radius:13px;padding:17px 20px}
+.ops-cashier .ops-filter{background:white;border:1px solid #dce6f1;border-radius:12px;padding:14px 18px}
+.ops-cashier .site-choice{position:relative;padding:24px;gap:17px;background-image:none;overflow:hidden}
+.ops-cashier .site-choice::before{content:'';position:absolute;inset:0 0 auto;height:4px;background:#dce8f6}
+.ops-cashier .site-choice.is-current{border-color:#9dc4ef;background:#f9fcff}
+.ops-cashier .site-choice.is-current::before{background:#1479eb}
+.ops-cashier .site-choice-icon{background:#eaf3ff;color:#1479eb;border-radius:12px}
+.ops-cashier .site-choice>div>strong{color:#193e63;font-size:18px}
+.ops-cashier .site-choice>div>span{color:#62768e;line-height:1.6}
+.ops-cashier .site-choice .button{width:100%;justify-content:center}
+.ops-cashier .chef-hero-icon{background:#ffffff15;border:1px solid #ffffff25;color:#b3d8ff}
+.ops-cashier .chef-stat{display:flex;align-items:center;gap:14px;min-height:104px;padding:18px;background:white;border:1px solid #dce6f1;border-radius:13px}
+.ops-cashier .chef-stat>div{display:grid;gap:5px}
+.ops-cashier .chef-stat strong{font-size:28px;color:#173b60}
+.ops-cashier .chef-stat span{font-size:12px}
+.ops-cashier .chef-stat-grid[aria-label="Resumen de incidencias"]{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.ops-cashier .chef-stat-grid[aria-label="Resumen de incidencias"] .chef-stat{border-top:3px solid #1479eb;box-shadow:0 3px 16px #16345106}
+.ops-cashier .chef-stat-grid[aria-label="Resumen de incidencias"] .chef-stat>div{min-width:0}
+.ops-cashier .chef-stat-grid[aria-label="Resumen de incidencias"] .chef-stat strong{font-size:30px;line-height:1.2;font-variant-numeric:tabular-nums}
+.ops-cashier .chef-stat-grid[aria-label="Resumen de incidencias"] .chef-stat>div>span{color:#62768e;line-height:1.5;font-size:11px}
+.ops-cashier .chef-stat-grid[aria-label="Resumen de incidencias"] .chef-stat-icon{display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;border-radius:11px;background:#eaf3ff;color:#1479eb}
+.ops-cashier .chef-stat-grid[aria-label="Resumen de incidencias"] .chef-stat-icon .ui-icon{width:20px;height:20px}
+.ops-cashier .chef-stat-grid[aria-label="Resumen de incidencias"] .chef-stat:last-child{border-top-color:#2a9b69;background:#f8fcfa}
+.ops-cashier .chef-stat-grid[aria-label="Resumen de incidencias"] .chef-stat-green{background:#e6f5ec;color:#17683e}
+@media(max-width:1200px){.ops-cashier .chef-stat-grid[aria-label="Resumen de incidencias"]{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:440px){.ops-cashier .chef-stat-grid[aria-label="Resumen de incidencias"]{gap:10px}.ops-cashier .chef-stat-grid[aria-label="Resumen de incidencias"] .chef-stat{flex-direction:column;align-items:flex-start;gap:10px;padding:14px}.ops-cashier .chef-stat-grid[aria-label="Resumen de incidencias"] .chef-stat strong{font-size:26px}}
+.ops-cashier .chef-create-panel{background:#f7faff;border-color:#d7e5f4;border-radius:12px}
+.ops-cashier .chef-page .ops-status{border:1px solid #dce4ed;background:#eef2f6;color:#536174;border-radius:8px;font-weight:700}
+.ops-cashier .chef-page .ops-status-warning{border-color:#edda9b;background:#fff3d5;color:#865b06}
+.ops-cashier .chef-page .ops-status-success{border-color:#bde0cb;background:#e6f5ec;color:#17683e}
+.ops-cashier .chef-page .ops-status-danger{border-color:#efc7c3;background:#ffedeb;color:#a52e2e}
+.ops-cashier .chef-page .ops-status-info{border-color:#c9def7;background:#eaf3ff;color:#1a63b1}
+.ops-cashier .chef-page .chef-table{width:100%;min-width:940px;table-layout:auto}
+.ops-cashier .chef-page .chef-table th{padding:11px 12px;font-size:10px;letter-spacing:.025em}
+.ops-cashier .chef-page .chef-table td{padding:12px;vertical-align:top;font-size:12px;line-height:1.6}
+.ops-cashier .chef-page .chef-table td:first-child,.ops-cashier .chef-page .chef-table td:last-child{white-space:nowrap;font-size:11px;color:#62768e;font-variant-numeric:tabular-nums}
+.ops-cashier .chef-page .chef-table td:nth-child(2){min-width:230px;max-width:380px;overflow-wrap:anywhere}
+.ops-cashier .chef-page .chef-table td:nth-child(2)>strong{font-weight:600;color:#183b5e;white-space:pre-wrap}
+.ops-cashier .chef-page .chef-table td:nth-child(3){min-width:115px;color:#405c77}
+.ops-cashier .chef-page .chef-table td:nth-child(5){min-width:190px;max-width:330px;white-space:pre-wrap;overflow-wrap:anywhere;color:#526b85}
+.ops-cashier .chef-page .chef-table .chef-cell-note{margin-top:6px;font-size:10px;line-height:1.5;color:#62768e}
+.ops-cashier .chef-page>.ops-cards .ops-record{border-top:3px solid #cbdff4;padding:17px;gap:8px}
+.ops-cashier .chef-page>.ops-cards .ops-record h3{font-size:14px}
+.ops-cashier .chef-page>.ops-cards .ops-record p{margin:0;font-size:12px;line-height:1.6;overflow-wrap:anywhere;white-space:pre-wrap}
+.ops-cashier .chef-page>.ops-cards .ops-record p>strong{font-size:11px;color:#405c77}
+.ops-cashier .chef-page .chef-filters{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:16px;margin:16px 0;border:1px solid #dce6f1;border-radius:12px;background:#f7faff}
+.ops-cashier .chef-page .chef-filters .chef-search{flex:1 1 260px;min-width:0;min-height:44px;background:white;border-color:#cfdeed;border-radius:9px}
+.ops-cashier .chef-page .chef-filters .chef-search input{min-width:0;width:100%;font-size:13px;background:transparent}
+.ops-cashier .chef-page .chef-filters .chef-search .ui-icon{flex-shrink:0;color:#527fae}
+.ops-cashier .chef-page .chef-filters>label:not(.chef-search){flex:0 1 230px;min-width:0}
+.ops-cashier .chef-page .chef-filters select{width:100%;min-height:44px;background-color:white;color:#405c77;font-size:12px}
+.ops-cashier .chef-page .chef-filters .chef-button{min-height:44px;padding:10px 18px;background:#1479eb;border-color:#1479eb;color:white}
+.ops-cashier .chef-page .chef-filters .chef-link-muted{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px;color:#526b85;text-decoration:underline;text-underline-offset:3px}
+@media(max-width:620px){.ops-cashier .chef-page .chef-filters{gap:10px;padding:13px;align-items:stretch}.ops-cashier .chef-page .chef-filters .chef-search,.ops-cashier .chef-page .chef-filters>label:not(.chef-search){flex:1 1 100%}.ops-cashier .chef-page .chef-filters .chef-button,.ops-cashier .chef-page .chef-filters .chef-link-muted{flex:1}}
+.ops-cashier .chef-create-panel summary{padding:18px}
+.ops-cashier .chef-create-panel summary{display:flex;align-items:center;gap:13px;cursor:pointer}
+.ops-cashier .chef-create-panel .chef-plus{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;border-radius:10px;background:#e5f0ff;color:#1479eb;font-size:23px}
+.ops-cashier .chef-create-panel summary>span:last-child{display:grid;gap:5px;min-width:0}
+.ops-cashier .chef-create-panel summary strong{font-size:15px;color:#173b60}
+.ops-cashier .chef-create-panel summary small{font-size:12px;line-height:1.6;color:#62768e}
+.ops-cashier .chef-create-panel .chef-create-form{padding:20px;margin:0;border-top:1px solid #dce6f1;background:white;border-radius:0 0 12px 12px;gap:18px}
+.ops-cashier .chef-create-panel .chef-field{gap:8px;min-width:0}
+.ops-cashier .chef-create-panel .chef-field>span{font-size:12px;font-weight:650;color:#405c77}
+.ops-cashier .chef-create-panel textarea{width:100%;min-height:132px;padding:13px 14px;line-height:1.65;resize:vertical;background:#fbfdff;font-size:13px}
+.ops-cashier .chef-create-panel select{width:100%;min-height:44px;background:#fbfdff;font-size:12px}
+.ops-cashier .chef-create-panel .chef-form-actions{margin:0;display:flex;justify-content:flex-end}
+.ops-cashier .chef-create-panel .chef-form-actions .chef-button{min-height:44px;padding:11px 20px}
+@media(max-width:620px){.ops-cashier .chef-create-panel summary{padding:15px;align-items:flex-start}.ops-cashier .chef-create-panel .chef-create-form{padding:16px}.ops-cashier .chef-create-panel .chef-form-actions .chef-button{width:100%}}
+.ops-cashier .chef-create-panel[open]{border-color:#9bc3ee}
+.ops-cashier .chef-form-actions{border-top:1px solid #e0e9f3;padding-top:16px}
+.ops-cashier .payment-modal[hidden]{display:none}
+.ops-cashier .payment-dialog{max-height:calc(100dvh - 32px);overflow-y:auto;padding:30px;border:1px solid #cfdff0;border-radius:19px;box-shadow:0 28px 90px #061d3f66}
+.ops-cashier .payment-dialog h2{font-size:25px;color:#153a60}
+.ops-cashier .payment-total{align-items:center;background:#eff6ff;border:1px solid #d6e7fa;padding:19px;border-radius:12px}
+.ops-cashier .payment-total strong{font-variant-numeric:tabular-nums;font-size:30px}
+.ops-cashier .payment-dialog label{font-size:12px;color:#405c77}
+.ops-cashier .payment-dialog label small{line-height:1.6;color:#657b92}
+.ops-cashier .payment-dialog form>.button{width:100%;justify-content:center;min-height:45px}
+.ops-cashier .change-box{padding:16px;border-radius:11px}
+.ops-cashier :is(.button,button,summary,a):focus-visible{outline:3px solid #579ff1;outline-offset:3px}
+@media(min-width:1100px){.ops-cashier .dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:1100px){.ops-cashier .cash-actions{align-items:stretch;flex-direction:column}.ops-cashier .cash-actions>div{max-width:none}.ops-cashier .cash-actions form{justify-content:flex-start}.ops-cashier .cash-actions label{max-width:none}}
+@media(max-width:760px){.ops-cashier :is(.dashboard-heading,.cashier-page>.page-heading,.page-content>.page-heading,.chef-hero){padding:23px;min-height:0;align-items:flex-start;flex-direction:column}.ops-cashier .cashier-page>.kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ops-cashier .kpi-grid .kpi-card:nth-child(n){padding:16px;gap:10px;min-height:112px}.ops-cashier .kpi-copy>strong{font-size:23px}.ops-cashier .cashier-page table{min-width:760px}.ops-cashier .cash-actions form{flex-direction:column;align-items:stretch}.ops-cashier .cash-actions .button{width:100%}.ops-cashier .cash-heading-actions{width:100%}.ops-cashier .ops-quick-actions{align-items:stretch}.ops-cashier .site-choice{padding:22px}}
+@media(max-width:440px){.ops-cashier .cashier-page>.kpi-grid{gap:10px}.ops-cashier .cashier-page .kpi-card{flex-direction:column;align-items:flex-start!important}.ops-cashier .kpi-copy>strong{font-size:22px}.ops-cashier .kpi-icon{width:35px;height:35px}.ops-cashier .payment-modal{padding:12px}.ops-cashier .payment-dialog{padding:24px}.ops-cashier .cash-actions{padding:20px}.ops-cashier .cash-heading-actions>.button{flex:1;justify-content:center}}
+/* Local decorative restaurant photograph; available sites and selection remain unchanged. */
+.ops-cashier .site-choice,.ops-cashier .site-choice.is-current{display:grid;grid-template-columns:96px minmax(0,1fr);align-items:start;align-content:start;min-height:0;padding:18px;gap:12px;background-color:white}
+.ops-cashier .site-choice::before,.ops-cashier .site-choice.is-current::before{content:none}
+.ops-cashier .cash-site-photo{display:block;grid-column:1;grid-row:1;width:96px;height:54px;max-width:100%;aspect-ratio:16/9;object-fit:cover;object-position:center;border-radius:8px}
+.ops-cashier .site-choice.is-current{border-color:#1479eb}
+.ops-cashier .site-choice .site-choice-icon{display:none}
+.ops-cashier .site-choice>div:not(.site-choice-icon){display:grid;grid-column:2;grid-row:1;gap:6px;min-width:0}
+.ops-cashier .site-choice>div>strong{font-size:17px;line-height:1.35;overflow-wrap:anywhere}
+.ops-cashier .site-choice>div>:is(span,small){margin:0;line-height:1.5;overflow-wrap:anywhere}
+.ops-cashier .site-choice>div>small{color:#526b85;font-size:11px}
+.ops-cashier .site-choice>.button{grid-column:1 / -1;justify-self:stretch;margin:0;min-height:42px}
+.ops-cashier .site-choice .ops-site-active{position:static;grid-column:1 / -1;justify-self:start;z-index:1}
+.ops-cashier .site-choice .ops-site-active .ops-status{background:#eef6ff;color:#145ba3;border:1px solid #b9d6f5;box-shadow:0 2px 8px #08203c22}

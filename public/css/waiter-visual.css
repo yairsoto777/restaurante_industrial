@@ -1,0 +1,155 @@
+/* Waiter only. No layout or colors are applied to Captain or Cashier. */
+.ops-waiter { --waiter-navy:#102c4e; --waiter-blue:#1479eb; --waiter-muted:#62768e; background:#f1f6fc; }
+.ops-waiter .app-sidebar { background:#0a203e; }
+.ops-waiter :is(.dashboard-heading,.chef-hero) { position:relative; isolation:isolate; display:flex; align-items:center; justify-content:space-between; gap:20px; min-height:164px; padding:26px 30px; border:1px solid #1d416a; border-radius:17px; color:#fff; background:#102c4e; background-image:linear-gradient(90deg,#071e3bf5,#0a2949d9 55%,#0b28444a),url('../img/ui/captain-dining.webp'); background-repeat:no-repeat; background-size:cover; background-position:center 44%; box-shadow:0 8px 24px #163c5c0c; }
+.ops-waiter :is(.dashboard-heading h1,.chef-hero h1) { color:#fff; font-size:clamp(25px,2.4vw,34px); line-height:1.2; font-weight:800; margin:5px 0 9px; }
+.ops-waiter :is(.dashboard-heading p,.chef-hero p) { color:#d8e5f3; max-width:65ch; font-size:13px; line-height:1.65; }
+.ops-waiter :is(.dashboard-heading .section-kicker,.chef-hero .chef-eyebrow) { color:#9dcbff; font-size:10px; letter-spacing:.1em; }
+.ops-waiter .chef-hero-icon { color:#b4d9ff; background:#e7f3ff1c; border:1px solid #e7f3ff26; }
+.ops-waiter .chef-hero-actions .chef-button-primary { background:#1479eb; border-color:#479aff; }
+.ops-waiter .dashboard-heading .current-date { background:#081f3bbd; border-color:#a8c9ec44; }
+.ops-waiter .dashboard-heading .current-date :is(strong,small,.ui-icon) { color:#e8f3ff; }
+.ops-waiter .kpi-grid .kpi-card:nth-child(n) { background:#fff; background-image:none; min-height:110px; border-radius:13px; }
+.ops-waiter .chef-stat-grid { margin:0; }
+.ops-waiter .chef-page>:is(.chef-hero,.chef-panel,.ops-quick-actions,.ops-disclosure,.ops-cards) { margin-bottom:0; }
+.ops-waiter .chef-page>.ops-section-title { margin:4px 0 0; }
+.ops-waiter .chef-stat { display:flex; flex-direction:row; align-items:center; justify-content:flex-start; gap:14px; background:#fff; min-height:110px; padding:18px; }
+.ops-waiter .chef-stat>div { display:grid; gap:5px; }
+.ops-waiter .chef-stat strong { font-size:31px; line-height:1.15; color:#163552; }
+.ops-waiter .chef-stat span { font-size:12px; color:#637790; }
+.ops-waiter .waiter-stat-icon { display:grid; place-items:center; flex:0 0 41px; width:41px; height:41px; border-radius:11px; color:#246ec1; background:#ebf4ff; }
+.ops-waiter .waiter-stat-icon .ui-icon { width:21px; height:21px; }
+.ops-waiter .waiter-stat-success { color:#287a50; background:#eaf7ef; }
+.ops-waiter .waiter-stat-warning { color:#956716; background:#fff5dd; }
+.ops-waiter .chef-stat .waiter-stat-icon { color:#246ec1; }
+.ops-waiter .chef-stat .waiter-stat-success { color:#287a50; }
+.ops-waiter .chef-stat .waiter-stat-warning { color:#956716; }
+.ops-waiter :is(.chef-panel,.dashboard-card,.ops-record,.ops-disclosure) { border-color:#dce6f1; border-radius:14px; box-shadow:0 3px 16px #16345106; }
+.ops-waiter .chef-panel-heading h2 { font-size:19px; color:#173858; }
+.ops-waiter .ops-quick-actions { background:#fff; border-color:#d8e6f5; }
+.ops-waiter .ops-cards { gap:15px; }
+.ops-waiter .waiter-service-grid { grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr)); align-items:stretch; }
+.ops-waiter .waiter-service-card { display:flex; flex-direction:column; padding:0; gap:0; overflow:hidden; }
+.ops-waiter .captain-card-photo { display:block; position:static; width:100%; height:auto; aspect-ratio:16/10; object-fit:cover; object-position:center; background:#edf3fa; }
+.ops-waiter .captain-card-photo[data-meal="breakfast"] { object-position:center 65%; }
+.ops-waiter .captain-card-photo[data-meal="dinner"] { object-position:center 60%; }
+.ops-waiter .waiter-service-info { display:grid; align-content:start; gap:13px; flex:1; padding:18px; }
+.ops-waiter .waiter-service-info p { margin:0; color:#687c92; font-size:12px; line-height:1.6; }
+.ops-waiter .waiter-service-info p .ui-icon { width:15px; height:15px; vertical-align:middle; color:#347dc6; }
+.ops-waiter .waiter-service-info .ops-record-head { flex-wrap:wrap; align-items:start; }
+.ops-waiter .waiter-service-info h3 { font-size:18px; }
+.ops-waiter .waiter-service-info dl { border-top:1px solid #e6edf6; padding-top:13px; }
+.ops-waiter [data-waiter-service-state="En curso" i] .ops-status,.ops-waiter [data-waiter-service-state="Finalizado" i] .ops-status { color:#1e7144; background:#e8f6ed; }
+.ops-waiter [data-waiter-service-state="Programado" i] .ops-status { color:#2269b2; background:#edf5ff; }
+.ops-waiter [data-waiter-service-state="Cancelado" i] .ops-status { color:#b13c3c; background:#fff0ee; }
+.ops-waiter .waiter-tables-grid { grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr)); }
+.ops-waiter .waiter-table { --table-color:#8b9bae; --table-fill:#f3f6f9; border-top:3px solid var(--table-color); padding:17px; gap:11px; }
+.ops-waiter .waiter-table .ops-record-head { flex-wrap:wrap; gap:8px; }
+.ops-waiter .waiter-table .ops-table-number { font-size:19px; color:#183a5f; }
+.ops-waiter .waiter-table [data-waiter-physical-label] { font-size:11px; color:#6b7f95; }
+.ops-waiter .waiter-table[data-waiter-physical="Disponible" i] { --table-color:#2d8b5c; --table-fill:#eef8f2; }
+.ops-waiter .waiter-table[data-waiter-occupied="true"] { --table-color:#cd7733; --table-fill:#fff5e9; }
+.ops-waiter .waiter-table[data-waiter-physical="Mantenimiento" i] { --table-color:#b68a24; --table-fill:#fff9e9; }
+.ops-waiter .waiter-table[data-waiter-physical="Fuera de servicio" i] { --table-color:#8b9bae; --table-fill:#f3f6f9; }
+.ops-waiter .waiter-table[data-waiter-physical="Disponible" i] .waiter-physical-status .ops-status { color:#26754d; background:#eaf7ef; }
+.ops-waiter .waiter-table[data-waiter-physical="Mantenimiento" i] .waiter-physical-status .ops-status { color:#916b19; background:#fff5df; }
+.ops-waiter .waiter-table[data-waiter-physical="Disponible" i] .ops-status-info { color:#26754d; background:#eaf7ef; }
+.ops-waiter .waiter-table[data-waiter-physical="Mantenimiento" i] .ops-status-neutral { color:#916b19; background:#fff5df; }
+.ops-waiter .captain-table-symbol { position:relative; display:grid; place-items:center; width:132px; height:118px; margin:5px auto; }
+.ops-waiter .captain-table-surface { position:relative; z-index:1; display:grid; place-items:center; align-content:center; width:90px; height:78px; border:2px solid var(--table-color); background:var(--table-fill); border-radius:21px; color:var(--table-color); box-shadow:0 4px 0 #16345108; }
+.ops-waiter .captain-table-surface .ui-icon { width:23px; height:23px; opacity:.7; }
+.ops-waiter .captain-table-surface strong { font-size:23px; line-height:1.2; }
+.ops-waiter .captain-chair { position:absolute; width:34px; height:13px; border:1px solid var(--table-color); border-radius:7px; background:var(--table-fill); opacity:.75; }
+.ops-waiter .captain-chair-top { top:0; left:49px; }
+.ops-waiter .captain-chair-bottom { bottom:0; left:49px; }
+.ops-waiter .captain-chair-left { left:-7px; top:52px; transform:rotate(90deg); }
+.ops-waiter .captain-chair-right { right:-7px; top:52px; transform:rotate(90deg); }
+.ops-waiter .waiter-state-legend { display:flex; flex-wrap:wrap; gap:10px 17px; margin:0 0 18px; font-size:11px; color:#60758a; }
+.ops-waiter .waiter-state-legend>span { display:inline-flex; align-items:center; gap:6px; }
+.ops-waiter .waiter-dot { display:inline-block; flex:0 0 7px; width:7px; height:7px; border-radius:50%; background:#8799ac; }
+.ops-waiter .waiter-dot.success { background:#2d8b5c; }.ops-waiter .waiter-dot.occupied { background:#cd7733; }.ops-waiter .waiter-dot.warning { background:#b68a24; }
+.ops-waiter .waiter-zone-panel { position:relative; }
+.ops-waiter .waiter-zone-panel.ops-assigned { border-color:#79ace4; border-left:3px solid #1479eb; }
+.ops-waiter .waiter-zone-panel .chef-panel-heading { border-bottom:1px solid #e4ecf6; padding-bottom:15px; }
+.ops-waiter .waiter-zone-panel .status { color:#2267ae; background:#eaf3ff; }
+.ops-waiter .waiter-zone-count { padding:8px 11px; border:1px solid #dce8f5; border-radius:8px; background:#f7faff; color:#506f8c; font-size:12px; }
+.ops-waiter .waiter-zone-panel .chef-table-wrap { max-height:260px; overflow:auto; }
+.ops-waiter .waiter-zone-panel .chef-table th { position:sticky; top:0; }
+.ops-waiter #directorio-atencion .chef-filters { display:grid; grid-template-columns:minmax(170px,1.5fr) minmax(100px,1fr) auto; align-items:end; min-width:430px; }
+.ops-waiter #directorio-atencion .chef-filters label { min-width:0; }
+.ops-waiter #directorio-atencion .chef-filters :is(input,select) { width:100%; }
+.ops-waiter #servicios-ofrecidos .chef-filters { margin-bottom:12px; padding:12px; border:1px solid #e1e9f3; border-radius:10px; background:#f7faff; }
+.ops-waiter #servicios-ofrecidos td:last-child { min-width:315px; }
+.ops-waiter .ops-disclosure>summary { display:flex; gap:8px; align-items:center; }
+.ops-waiter .ops-selected-row { background:#eef6ff; }
+.ops-waiter .waiter-attention-cards .ops-record { border-top:3px solid #d5a23d; }
+.ops-waiter .waiter-attention-cards .ops-record[data-waiter-state="Pagado" i] { border-top-color:#2d8b5c; }
+.ops-waiter .waiter-attention-cards .ops-record-head { flex-wrap:wrap; }
+.ops-waiter .waiter-state-metrics .ops-metric { border-top:3px solid #709dce; }
+.ops-waiter .waiter-state-metrics [data-waiter-state="Pendiente" i],.ops-waiter .waiter-state-metrics [data-waiter-state="Abierta" i] { border-top-color:#c99c3c; }
+.ops-waiter .waiter-state-metrics [data-waiter-state="Resuelta" i],.ops-waiter .waiter-state-metrics [data-waiter-state="Cerrada" i] { border-top-color:#319162; }
+.ops-waiter .waiter-state-metrics [data-waiter-state="Urgente" i],.ops-waiter .waiter-state-metrics [data-waiter-state="Crítica" i] { border-top-color:#c74b4b; }
+.ops-waiter .site-choice,.ops-waiter .site-choice.is-current { position:relative; display:grid; grid-template-columns:44px minmax(0,1fr); align-items:start; align-content:start; min-height:0; padding:116px 18px 18px; gap:14px; background:#fff; overflow:hidden; }
+.ops-waiter .site-choice::before { content:""; position:absolute; inset:0 0 auto; height:100px; background:linear-gradient(90deg,#102c4e88,#102c4e11),url('../img/ui/captain-dining.webp') center 38%/cover; background-repeat:no-repeat; }
+.ops-waiter .site-choice>div:not(.site-choice-icon) { display:grid; gap:5px; min-width:0; }
+.ops-waiter .site-choice>div>strong { font-size:17px; line-height:1.3; overflow-wrap:anywhere; }
+.ops-waiter .site-choice>div>:is(span,small) { margin:0; line-height:1.45; }
+.ops-waiter .site-choice>.button { grid-column:1/-1; width:100%; justify-self:stretch; margin:0; }
+.ops-waiter .ops-site-active { top:17px; z-index:1; }
+.ops-waiter .waiter-dashboard-services { grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr)); }
+.ops-waiter .waiter-dashboard-services .waiter-service-info h3 { font-size:16px; }
+.ops-waiter :is(.chef-table th,.chef-table td) { font-size:12px; }
+.ops-waiter .chef-table th { color:#536d87; background:#f4f8fd; }
+.ops-waiter .chef-create-panel { border:1px solid #d4e4f5; background:#f5f9ff; border-radius:12px; }
+.ops-waiter .waiter-operation-page .chef-hero { min-height:125px; background-image:none; background:linear-gradient(115deg,#102c4e,#1b426c); }
+.ops-waiter .waiter-services-page .chef-hero { background-image:linear-gradient(90deg,#071e3bf5,#0a2949d9 55%,#0b28444a),url('../img/ui/captain-kitchen.webp'); background-position:center 57%; }
+.ops-waiter .chef-hero[aria-labelledby="incidents-title"] { min-height:132px; background-image:none; }
+.ops-waiter .waiter-zones-page { display:flex; flex-direction:column; }
+.ops-waiter .waiter-zones-page>.chef-hero { order:0; }
+.ops-waiter .waiter-zones-page>.chef-stat-grid { order:1; }
+.ops-waiter .waiter-zones-page>.waiter-zone-panel { order:3; }
+.ops-waiter .waiter-zones-page>.waiter-zone-panel.ops-assigned { order:2; }
+.ops-waiter .waiter-zone-list>summary { cursor:pointer; color:#2b6cae; font-size:12px; font-weight:700; padding:8px 0 14px; }
+.ops-waiter .waiter-incident-cards .ops-record { border-top:3px solid #d0a03c; }
+.ops-waiter .waiter-incident-cards .ops-record-head { align-items:start; flex-wrap:wrap; }
+.ops-waiter .waiter-incident-description { color:#233e5c; line-height:1.6; }
+.ops-waiter .waiter-incident-response { padding:12px; background:#f5f8fc; border:1px solid #e2ebf5; border-radius:10px; }
+.ops-waiter .waiter-incident-response small { color:#647990; font-size:11px; }
+.ops-waiter .waiter-incident-response p { margin:5px 0 0; }
+.ops-waiter :is([data-waiter-incident-state="En proceso" i],[data-waiter-incident-state="En curso" i]) .ops-status { color:#2469b4; background:#eaf3ff; }
+.ops-waiter :is([data-waiter-incident-state="Resuelta" i],[data-waiter-incident-state="Cerrada" i]) { border-top-color:#319162; }
+.ops-waiter :is([data-waiter-incident-state="Crítica" i],[data-waiter-incident-state="Urgente" i]) { border-top-color:#c74b4b; }
+.ops-waiter :is([data-waiter-incident-state="Crítica" i],[data-waiter-incident-state="Urgente" i]) .ops-status { color:#ae3737; background:#fff0ee; }
+@media(max-width:1000px) { .ops-waiter .chef-stat-grid-three { grid-template-columns:repeat(3,minmax(0,1fr)); } .ops-waiter .chef-stat { flex-wrap:wrap; } }
+@media(max-width:600px) {
+ .ops-waiter :is(.dashboard-heading,.chef-hero) { display:grid; grid-template-columns:minmax(0,1fr); min-height:0; padding:23px; gap:13px; }
+ .ops-waiter .chef-hero-actions { width:100%; justify-content:flex-start; }
+ .ops-waiter .chef-stat-grid-three { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .ops-waiter .chef-stat { padding:14px; min-height:105px; gap:9px; }
+ .ops-waiter .chef-stat strong { font-size:27px; }
+ .ops-waiter .waiter-tables-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+ .ops-waiter .waiter-table { padding:12px; }
+ .ops-waiter .waiter-table p { font-size:11px; overflow-wrap:anywhere; }
+ .ops-waiter .waiter-table .ops-table-number { font-size:17px; }
+ .ops-waiter .waiter-table .button { font-size:11px; padding:9px 7px; }
+ .ops-waiter .captain-table-symbol { transform:scale(.82); width:112px; transform-origin:center; margin:-5px auto; }
+ .ops-waiter .captain-table-surface { width:76px; }
+ .ops-waiter .captain-chair-top,.ops-waiter .captain-chair-bottom { left:39px; }
+ .ops-waiter .waiter-service-info { padding:16px; }
+ .ops-waiter #directorio-atencion .chef-filters { grid-template-columns:1fr; min-width:235px; }
+}
+@media(max-width:360px) { .ops-waiter .waiter-tables-grid { grid-template-columns:1fr; } }
+
+/* Assigned tables only: original attention forms are embedded in their cards. */
+.ops-waiter #mesas-asignadas .waiter-tables-grid { grid-template-columns:repeat(3,minmax(0,1fr)); align-items:stretch; }
+.ops-waiter #mesas-asignadas .waiter-table { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.ops-waiter #mesas-asignadas .captain-table-symbol { flex-shrink:0; height:100px; margin:0 auto; transform:scale(.82); }
+.ops-waiter #mesas-asignadas .waiter-table[data-waiter-occupied="true"] { --table-color:#c64a4a; --table-fill:#fff1ef; }
+.ops-waiter #mesas-asignadas .waiter-table[data-waiter-occupied="true"] .waiter-occupancy .ops-status { color:#ad3535; background:#ffefed; }
+.ops-waiter #mesas-asignadas .waiter-table-observations { padding:10px; border-radius:8px; background:#f5f8fc; font-size:12px; overflow-wrap:anywhere; }
+.ops-waiter #mesas-asignadas #directorio-atencion .waiter-table-attention-form { display:grid; grid-template-columns:minmax(0,1fr); gap:10px; min-width:0; width:100%; margin-top:auto; padding-top:13px; border-top:1px solid #e2ebf5; }
+.ops-waiter #mesas-asignadas .waiter-table-attention-form label { display:grid; gap:6px; min-width:0; font-size:12px; }
+.ops-waiter #mesas-asignadas .waiter-table-attention-form :is(select,input,button) { width:100%; min-width:0; max-width:100%; }
+.ops-waiter #mesas-asignadas .waiter-table-attention-form button { white-space:normal; }
+@media(max-width:1200px) { .ops-waiter #mesas-asignadas .waiter-tables-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:600px) { .ops-waiter #mesas-asignadas .waiter-tables-grid { grid-template-columns:minmax(0,1fr); } }
