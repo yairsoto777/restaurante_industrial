@@ -283,6 +283,10 @@
 
     {{-- VALIDACIÓN DE SEDE --}}
 
+    @if(auth()->user()->hasRole('Capitan de meseros') || auth()->user()->hasRole('Mesero') || auth()->user()->hasRole('Cajero'))
+        <x-ops.dashboard-actions />
+    @endif
+
     @if(!$currentSite)
 
         <div class="alert warning">
@@ -393,6 +397,10 @@
     {{-- ==================================================
          PANELES OPERATIVOS
     ================================================== --}}
+
+    @if(auth()->user()->hasRole('Mesero') && !auth()->user()->hasRole('Capitan de meseros') && !auth()->user()->hasRole('Cajero'))
+        @include('mesero.partials.dashboard-services')
+    @endif
 
     <div class="dashboard-grid">
 

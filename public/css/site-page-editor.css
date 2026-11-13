@@ -1,0 +1,35 @@
+.nu-editor{grid-template-columns:minmax(0,2.1fr) minmax(300px,1fr);gap:20px;background:#edf2f8;padding:18px;border-radius:18px;align-items:start}
+.nu-editor-heading{flex-wrap:wrap;align-items:center}
+.nu-editor-heading>div:first-child{flex:1 1 300px;min-width:0}
+.nu-editor-heading .actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px;min-width:0;max-width:100%}
+.nu-editor-heading .actions>*{margin:0;flex-shrink:1}
+.nu-editor-heading .nu-page-state{padding:8px 12px}
+.nu-editor-center,.nu-editor-panel{border-color:#dce5ef;border-radius:14px;box-shadow:0 5px 20px #15366008}
+.nu-editor-center{position:sticky;top:20px;padding:14px}
+.nu-editor-toolbar strong{color:#153b67}.nu-editor-toolbar{font-size:13px}
+#save-state,.nu-page-state{display:inline-flex;padding:6px 10px;border-radius:20px;background:#e8eff9;color:#244e80;font-size:12px;font-weight:650}
+#save-state[data-tone=pending],.nu-page-state[data-tone=pending]{background:#fff3cd;color:#815c05}
+#save-state[data-tone=error],.nu-page-state[data-tone=error]{background:#fee2e2;color:#a32626}
+#save-state[data-tone=success],.nu-page-state[data-tone=success]{background:#dcfce7;color:#166534}
+.nu-frame-outer{position:relative;display:block;padding:10px;min-height:0;height:calc(100vh - 270px);min-height:480px;overflow:hidden}
+.nu-frame-outer iframe{position:absolute;transform-origin:top left;transition:none;max-width:none;border:0;border-radius:8px;background:#fff;box-shadow:0 0 0 1px #ced7e4}
+.nu-editor-fields{grid-column:auto;max-height:calc(100vh - 120px);overflow:auto;padding:20px;scrollbar-width:thin}
+.nu-editor-panel nav{display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid #e1e8f0;padding-bottom:16px;margin-bottom:20px}
+.nu-editor-panel nav button{width:auto;padding:8px 10px;background:#f0f5fb;font-size:12px}
+.nu-editor-panel nav button.active{background:#1769ca}.nu-editor-panel h3{color:#183c68}
+.nu-editor-fields label{font-size:13px;color:#29425e;margin:16px 0}
+.nu-editor-fields input,.nu-editor-fields textarea{background:#fbfdff;padding:10px 12px;line-height:1.5;font:inherit;font-weight:400}
+.nu-editor-fields input:focus,.nu-editor-fields textarea:focus{outline:2px solid #60a5fa;outline-offset:2px}
+.nu-editor-fields small{display:block;font-size:12px;line-height:1.5;overflow-wrap:anywhere;margin-top:7px}
+.nu-media-field{padding:14px;background:#f4f8fd;border:1px solid #dde7f3;border-radius:12px;margin:16px 0}
+.nu-media-field label{margin:0}.nu-media-preview{margin:10px 0;background:#e6edf6;border-radius:8px;overflow:hidden}
+.nu-media-preview img,.nu-media-preview video{display:block;width:100%;height:150px;object-fit:contain;object-position:center;margin:0;background:#e6edf6}
+.nu-media-name{overflow-wrap:anywhere;white-space:normal;font-size:12px;color:#344c66;margin:8px 0}
+.nu-media-pending{color:#875d00!important}.nu-media-error{color:#b42318!important}
+.nu-media-field button,#discard-page{cursor:pointer;border:1px solid #cbd8e8;border-radius:8px;background:#fff;color:#234f81;padding:8px 11px;font:inherit;font-size:12px}
+.nu-editor-note{line-height:1.5;margin:12px 0 0}.nu-devices button:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+.nu-editor button:disabled,#save-page:disabled{opacity:.55;cursor:wait}
+@media(min-width:1500px){.nu-editor{grid-template-columns:minmax(0,2.2fr) minmax(330px,1fr)}}
+@media(max-width:1050px){.nu-editor{grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);padding:10px;gap:12px}}
+@media(max-width:800px){.nu-editor{grid-template-columns:1fr}.nu-editor-center{position:static}.nu-editor-fields{grid-column:auto;max-height:none}.nu-frame-outer{height:65vh;min-height:380px}.nu-editor-toolbar{display:flex}.nu-devices{margin:0}.nu-editor-heading{display:block}.nu-editor-heading .actions{margin-top:16px;justify-content:flex-start}.nu-editor-heading .actions .button{padding:8px 10px}}
+@media(max-width:480px){.nu-editor{padding:6px}.nu-editor-center,.nu-editor-fields{padding:12px}.nu-frame-outer{padding:4px}.nu-devices button{padding:7px}.nu-editor-toolbar{gap:8px}}

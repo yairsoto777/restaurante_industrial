@@ -28,9 +28,24 @@
     {{-- ESTILOS PARTICULARES DE CADA VISTA --}}
     @stack('styles')
 
+    @if(auth()->user()->hasRole('Capitan de meseros') || auth()->user()->hasRole('Mesero') || auth()->user()->hasRole('Cajero'))
+        <link rel="stylesheet" href="{{ asset('css/operations.css') }}?v=20261112">
+        <script src="{{ asset('js/operations.js') }}?v=20261112" defer></script>
+    @endif
+    @if(auth()->user()->hasRole('Capitan de meseros'))
+        <link rel="stylesheet" href="{{ asset('css/captain-visual.css') }}?v=20261113">
+        <script src="{{ asset('js/captain-visual.js') }}?v=20261113" defer></script>
+    @endif
+    @if(auth()->user()->hasRole('Mesero') && !auth()->user()->hasRole('Capitan de meseros') && !auth()->user()->hasRole('Cajero'))
+        <link rel="stylesheet" href="{{ asset('css/waiter-visual.css') }}?v=20261113">
+    @endif
+
+    @if(auth()->user()->hasRole('Cajero') && !auth()->user()->hasRole('Capitan de meseros'))
+        <link rel="stylesheet" href="{{ asset('css/cashier-visual.css') }}?v=20261113">
+    @endif
 </head>
 
-<body class="app-body">
+<body class="app-body {{ auth()->user()->hasRole('Cajero') && !auth()->user()->hasRole('Capitan de meseros') ? 'ops-cashier' : '' }} {{ auth()->user()->hasRole('Capitan de meseros') || auth()->user()->hasRole('Mesero') || auth()->user()->hasRole('Cajero') ? 'ops-ui' : '' }} {{ auth()->user()->hasRole('Capitan de meseros') ? 'ops-captain' : '' }} {{ auth()->user()->hasRole('Mesero') && !auth()->user()->hasRole('Capitan de meseros') && !auth()->user()->hasRole('Cajero') ? 'ops-waiter' : '' }}">
 
 @php
     /*
@@ -89,10 +104,10 @@
 
         <div class="sidebar-brand">
 
-            <span>GI</span>
+            <span>{{ $isCaptain || $isService || $isCashier ? 'N' : 'GI' }}</span>
 
             <div>
-                <strong>Gestión Industrial</strong>
+                <strong>{{ $isCaptain || $isService || $isCashier ? 'NUTRILIADO' : 'Gestión Industrial' }}</strong>
                 <small>Operación alimentaria</small>
             </div>
 
@@ -1091,7 +1106,7 @@
              CONTENIDO DE CADA VISTA
         =================================================== --}}
 
-        <main class="page-content">
+        <main class="page-content" id="main-content">
 
             {{-- MENSAJES DEL SISTEMA --}}
 
@@ -1132,6 +1147,10 @@
 
 
             {{-- VISTAS DE LARAVEL --}}
+
+            @if(($isCaptain || $isService || $isCashier) && $errors->any())
+                <script type="application/json" id="ops-validation-errors">@json($errors->messages())</script>
+            @endif
 
             @yield('content')
 

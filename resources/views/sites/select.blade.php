@@ -9,7 +9,13 @@
         <form method="POST" action="{{ route('sites.select.update') }}" class="site-choice {{ $currentSite?->id_sede === $site->id_sede ? 'is-current' : '' }}">
             @csrf
             <input type="hidden" name="id_sede" value="{{ $site->id_sede }}">
+            @if(auth()->user()->hasRole('Cajero') && !auth()->user()->hasRole('Capitan de meseros'))
+                <img class="cash-site-photo" src="{{ asset($loop->even ? 'img/ui/service-dinner.jpg' : 'img/ui/captain-kitchen.webp') }}" alt="" width="96" height="54" loading="lazy" decoding="async">
+            @endif
             <div class="site-choice-icon"><x-icon name="building" /></div>
+            @if((auth()->user()->hasRole('Capitan de meseros') || auth()->user()->hasRole('Mesero') || auth()->user()->hasRole('Cajero')) && $currentSite?->id_sede === $site->id_sede)
+                <span class="ops-site-active"><x-ops.status value="Sede activa" class="ops-status-info" /></span>
+            @endif
             <div><strong>{{ $site->nombre }}</strong><span>{{ $site->direccion ?: 'Sin dirección registrada' }}</span><small>Capacidad: {{ $site->capacidad ?? 'Sin datos' }}</small></div>
             <button type="submit" class="button {{ $currentSite?->id_sede === $site->id_sede ? '' : 'primary' }}">{{ $currentSite?->id_sede === $site->id_sede ? 'Sede actual' : 'Seleccionar' }}</button>
         </form>

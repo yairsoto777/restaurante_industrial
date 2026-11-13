@@ -1,12 +1,16 @@
 @extends('layouts.app')
 @section('title', 'Operación del mesero')
 @section('content')
-<div class="chef-page">
+<div class="chef-page waiter-operation-page">
     <div class="chef-hero"><div class="chef-hero-copy"><span class="chef-eyebrow">{{ $site->nombre }} · Servicio</span><h1>Mi operación</h1><p>Atiende únicamente las zonas asignadas por tu capitán.</p></div></div>
     @if(session('status'))<div class="chef-notice chef-notice-success">{{ session('status') }}</div>@endif
     @if($errors->any())<div class="chef-notice">{{ $errors->first() }}</div>@endif
-    <section class="chef-stat-grid chef-stat-grid-three"><article class="chef-stat"><strong>{{ $zones->count() }}</strong><span>Zonas asignadas</span></article><article class="chef-stat"><strong>{{ $tables->count() }}</strong><span>Mesas asignadas</span></article><article class="chef-stat"><strong>{{ $attentions->whereNotIn('estado', ['Cerrada', 'Cancelada'])->count() }}</strong><span>Atenciones activas</span></article></section>
+    <section class="chef-stat-grid chef-stat-grid-three"><article class="chef-stat"><span class="waiter-stat-icon"><x-icon name="map" /></span><div><strong>{{ $zones->count() }}</strong><span>Zonas asignadas</span></div></article><article class="chef-stat"><span class="waiter-stat-icon"><x-icon name="plates" /></span><div><strong>{{ $tables->count() }}</strong><span>Mesas asignadas</span></div></article><article class="chef-stat"><span class="waiter-stat-icon waiter-stat-warning"><x-icon name="activity" /></span><div><strong>{{ $attentions->whereNotIn('estado', ['Cerrada', 'Cancelada'])->count() }}</strong><span>Atenciones activas</span></div></article></section>
 
+    <nav class="ops-quick-actions" aria-label="Acciones del mesero"><strong>Tu jornada de servicio</strong><a class="button primary" href="#mesas-asignadas">Atender mis mesas</a><a class="button" href="#servicios-ofrecidos">Servicios ofrecidos</a><a class="button" href="{{ route('services.index') }}">Consultar servicios</a></nav>
+    @include('mesero.partials.assigned-tables')
+
+    <details class="ops-disclosure" @if($errors->hasAny(['id_zona','numero','capacidad','estado_fisico','observaciones'])) open @endif><summary>Crear mesa en una zona asignada</summary>
     <section class="chef-panel"><div class="chef-panel-heading"><div><span class="chef-kicker">Administración operativa</span><h2>Crear mesa</h2><p>Solo puedes crear mesas dentro de tus zonas asignadas.</p></div></div>
         <form method="POST" action="{{ route('waiter.table.store') }}" class="chef-filters">@csrf
             <select name="id_servicio" required><option value="">Servicio activo</option>@foreach($services->where('estado', 'En curso') as $service)<option value="{{ $service->id_servicio }}" @selected(old('id_servicio') == $service->id_servicio)>{{ $service->nombre }} · {{ $service->fecha }}</option>@endforeach</select>
@@ -15,17 +19,14 @@
             <select name="estado_fisico" required><option value="Disponible">Disponible</option><option value="Mantenimiento">Mantenimiento</option><option value="Fuera de servicio">Fuera de servicio</option></select><input name="observaciones" maxlength="500" placeholder="Observaciones (opcional)">
             <button class="chef-button chef-button-primary" type="submit">Crear mesa</button>
         </form>
-    </section>
+    </section></details>
 
-    <section class="chef-panel"><div class="chef-panel-heading"><div><span class="chef-kicker">Mesas asignadas</span><h2>Iniciar atención</h2><p>Selecciona un servicio programado y registra los comensales.</p></div></div><div class="chef-table-wrap"><table class="chef-table"><thead><tr><th>Mesa</th><th>Zona</th><th>Capacidad</th><th>Acción</th></tr></thead><tbody>
-    @forelse($tables as $table)<tr><td>Mesa {{ $table->numero }}@if($table->observaciones)<small>{{ $table->observaciones }}</small>@endif</td><td>{{ $table->zona }}</td><td>{{ $table->capacidad }}</td><td>@if($table->active_attention_id)<span>Ocupada</span>@else<form method="POST" action="{{ route('waiter.attention.store') }}" class="chef-filters">@csrf<select name="id_servicio" required><option value="">Servicio programado</option>@foreach($services as $service)<option value="{{ $service->id_servicio }}">{{ $service->nombre }} · {{ $service->fecha }}</option>@endforeach</select><input type="hidden" name="id_mesa" value="{{ $table->id_mesa }}"><input type="number" name="comensales" min="1" max="{{ $table->capacidad }}" placeholder="Comensales" required><button class="chef-button chef-button-primary" type="submit">Iniciar atención</button></form>@endif</td></tr>@empty<tr><td colspan="4">No tienes mesas asignadas.</td></tr>@endforelse
-    </tbody></table></div></section>
-
-    <section class="chef-panel"><div class="chef-panel-heading"><div><span class="chef-kicker">Registro y cobro</span><h2>Servicios ofrecidos</h2><p>Registra lo que recibió el comensal; el total se calcula por persona y se envía a Caja al finalizar.</p></div></div><div class="chef-table-wrap"><table class="chef-table"><thead><tr><th>Servicio programado / mesa</th><th>Atención</th><th>Servicio ofrecido</th><th>Estado y acciones</th></tr></thead><tbody>
+    @include('mesero.partials.attention-summary')
+    <section class="chef-panel" id="servicios-ofrecidos"><div class="chef-panel-heading"><div><span class="chef-kicker">Registro y cobro</span><h2>Servicios ofrecidos</h2><p>Registra lo que recibió el comensal; el total se calcula por persona y se envía a Caja al finalizar.</p></div></div><x-ops.filter target="ops-offered-table" label="Buscar atención, mesa o servicio" /><div class="chef-table-wrap"><table class="chef-table" id="ops-offered-table"><thead><tr><th>Servicio programado / mesa</th><th>Atención</th><th>Servicio ofrecido</th><th>Estado y acciones</th></tr></thead><tbody>
     @forelse($attentions as $attention)
         <tr>
             <td><strong>{{ $attention->servicio_programado }}</strong><small>{{ $attention->fecha }} · Mesa {{ $attention->mesa }} ({{ $attention->zona }})</small></td>
-            <td>{{ $attention->comensales }} comensales · {{ $attention->estado }}</td>
+            <td><strong>Atención #{{ $attention->id_atencion }}</strong><small>{{ $attention->comensales }} comensales</small><x-ops.status :value="$attention->estado" /></td>
             <td>
                 @if($attention->id_servicio_ofrecido)
                     <strong>{{ $attention->servicio_ofrecido }}</strong><small>{{ $attention->comensales_ofrecidos }} × ${{ number_format((float) $attention->precio_unitario, 2) }} = ${{ number_format((float) $attention->total_ofrecido, 2) }}</small>
@@ -50,9 +51,9 @@
                     </form>
                     <form method="POST" action="{{ route('waiter.offered-service.finalize', $attention->id_atencion) }}" onsubmit="return confirm('¿Finalizar el servicio ofrecido y enviarlo a Caja?')">@csrf @method('PATCH')<button class="chef-button chef-button-primary" type="submit">Finalizar y enviar a Caja</button></form>
                 @elseif($attention->estado_ofrecido === 'Pendiente de cobro')
-                    <span class="status">En Caja · pendiente de pago</span>
+                    <x-ops.status value="Pendiente de cobro" /><small>En Caja · pendiente de pago</small>
                 @elseif($attention->estado_ofrecido === 'Pagado')
-                    <span class="status">Pagado</span>
+                    <x-ops.status value="Pagado" />
                 @else
                     <span>{{ $attention->estado_ofrecido ?? 'Atención cerrada' }}</span>
                 @endif

@@ -324,7 +324,7 @@ class SitePageController extends Controller
             'id' => $media->id,
             'name' => Str::ascii((string) $media->name),
             'path' => $path,
-            'url' => '/storage/' . $path,
+            'url' => asset('storage/' . $path),
             'mime' => $mime,
             'type' => $type,
             'size' => $media->size,
