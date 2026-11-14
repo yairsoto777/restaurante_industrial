@@ -34,7 +34,7 @@ class ReceptionOrderController extends Controller
 
     private function isWarehouseManager(Request $request, int $siteId): bool
     {
-        return $request->user()->roles()->get()->contains(
+        return $request->user()->hasRole('Jefe de almacen') && $request->user()->roles()->get()->contains(
             fn ($role) => (int) $role->pivot->id_sede === $siteId
                 && EmploymentRoles::matches($role->nombre, 'Jefe de almacen')
         );
@@ -105,10 +105,48 @@ class ReceptionOrderController extends Controller
                 ->get(['r.id_recepcion', 'r.id_pedido', 'r.fecha_recepcion', 'r.estado']);
         }
 
+        if ($request->user()->isManager()) {
+            return $this->managerListing($request, $site, $orders, $states, $filters, $search);
+        }
         return view('receptions.orders', compact(
             'site', 'orders', 'states', 'filters', 'search',
             'isWarehouseManager', 'receiptsAvailable', 'recentReceipts'
         ));
+    }
+
+    private function managerListing(Request $request, $site, $orders, $states, $filters, string $search): View
+    {
+        $receiptFilters = $request->validate(['recepcion_q' => ['nullable', 'string', 'max:150'], 'recepcion_estado' => ['nullable', 'string', 'max:50']]);
+        $receipts = collect(); $receiptStates = collect(); $distribution = collect();
+        $summary = ['received' => 0, 'pending' => 0, 'rejected_lines' => null, 'incidents' => null];
+        if ($this->receiptsAvailable()) {
+            $base = DB::table('recepciones as r')->join('pedidos as p', 'p.id_pedido', '=', 'r.id_pedido')->where('p.id_sede', $site->id_sede);
+            $summary['received'] = (clone $base)->count();
+            $summary['pending'] = (clone $base)->where('r.estado', config('receptions.pending', 'Pendiente de revisión'))->count();
+            $distribution = (clone $base)->select('r.estado')->selectRaw('COUNT(*) as total')->groupBy('r.estado')->orderBy('r.estado')->get();
+            $receiptStates = $distribution->pluck('estado')->filter()->values();
+            $receipts = (clone $base)->leftJoin('proveedores as pr', 'pr.id_proveedor', '=', 'p.id_proveedor')
+                ->when(filled($receiptFilters['recepcion_estado'] ?? null), fn ($q) => $q->where('r.estado', $receiptFilters['recepcion_estado']))
+                ->when(filled($receiptFilters['recepcion_q'] ?? null), function ($q) use ($receiptFilters) {
+                    $term = trim($receiptFilters['recepcion_q']);
+                    $q->where(function ($q) use ($term) {
+                        $q->where('pr.nombre', 'like', '%'.$term.'%');
+                        if (ctype_digit($term)) $q->orWhere('r.id_recepcion', (int) $term)->orWhere('r.id_pedido', (int) $term);
+                    });
+                })->select('r.id_recepcion', 'r.id_pedido', 'r.fecha_recepcion', 'r.estado', 'pr.nombre as proveedor_nombre')
+                ->orderByDesc('r.id_recepcion')->paginate(12, ['*'], 'recepciones_pagina')->withQueryString();
+            if (Schema::hasTable('recepcion_detalles')) {
+                $lines = DB::table('recepcion_detalles as rd')->join('recepciones as r', 'r.id_recepcion', '=', 'rd.id_recepcion')
+                    ->join('pedidos as p', 'p.id_pedido', '=', 'r.id_pedido')->where('p.id_sede', $site->id_sede);
+                if (Schema::hasColumn('recepcion_detalles', 'cantidad_entregada') && Schema::hasColumn('recepcion_detalles', 'cantidad_aceptada')) {
+                    $summary['rejected_lines'] = (clone $lines)->whereColumn('rd.cantidad_entregada', '>', 'rd.cantidad_aceptada')->count();
+                }
+                if (Schema::hasTable('incidencias') && Schema::hasColumn('incidencias', 'id_recepcion_detalle')) {
+                    $summary['incidents'] = (clone $lines)->join('incidencias as i', 'i.id_recepcion_detalle', '=', 'rd.id_recepcion_detalle')->where('i.id_sede', $site->id_sede)->count();
+                }
+            }
+        }
+        return view('manager.receptions.index', compact('site', 'orders', 'states', 'filters', 'search', 'receipts', 'receiptStates', 'receiptFilters', 'distribution', 'summary'));
     }
 
     /** Vista existente: resources/views/receptions/order.blade.php */

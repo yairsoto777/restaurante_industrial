@@ -29,6 +29,7 @@ class SiteSelectionController extends Controller
         abort_unless($siteContext->userCanAccess($request->user(), (int) $data['id_sede']), 403);
         $request->session()->put('current_site_id', (int) $data['id_sede']);
 
-        return back()->with('status', 'Sede actualizada correctamente.');
+        app(\App\Support\ActiveRole::class)->apply($request);
+        return redirect()->route('dashboard')->with('status', 'Sede actualizada correctamente.');
     }
 }

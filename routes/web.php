@@ -137,6 +137,8 @@ Route::middleware('auth')->group(function () {
 */
 
 Route::middleware(['auth', 'active'])->group(function () {
+    Route::get('/roles/seleccionar', [\App\Http\Controllers\ActiveRoleController::class, 'index'])->name('roles.select');
+    Route::post('/roles/seleccionar', [\App\Http\Controllers\ActiveRoleController::class, 'update'])->name('roles.update');
 
     /*
     |--------------------------------------------------------------------------
@@ -213,6 +215,9 @@ Route::middleware(['auth', 'active'])->group(function () {
             '/recepciones',
             [\App\Http\Controllers\ReceptionOrderController::class, 'index']
         )->name('receptions.index');
+
+        Route::get('/recepciones/revision/{receipt}', [\App\Http\Controllers\ReceptionOrderController::class, 'supervise'])
+            ->whereNumber('receipt')->name('receptions.review.show');
 
         Route::get('/recepciones/pedidos/{order}', [\App\Http\Controllers\ReceptionOrderController::class, 'show'])
             ->whereNumber('order')->name('receptions.orders.show');
@@ -749,6 +754,8 @@ Route::middleware(['auth', 'active'])->group(function () {
         ->name('manager.')
         ->middleware('role:manager')
         ->group(function () {
+            Route::get('notificaciones', [\App\Http\Controllers\Manager\NotificationController::class, 'index'])->name('notifications.index');
+            Route::post('notificaciones/leer', [\App\Http\Controllers\Manager\NotificationController::class, 'read'])->name('notifications.read');
 
             Route::get(
                 'sedes',
@@ -800,6 +807,7 @@ Route::middleware(['auth', 'active'])->group(function () {
                 [SitePageController::class, 'publish']
             )->name('site-page.publish');
 
+            Route::get('empleados/{employee}/foto', [EmployeeController::class, 'photo'])->name('employees.photo');
             Route::resource('empleados', EmployeeController::class)
                 ->parameters(['empleados' => 'employee'])
                 ->except(['show'])

@@ -43,11 +43,13 @@ class AuthController extends Controller
         }
 
         $request->session()->regenerate();
+        $request->session()->forget(['active_role_id', 'current_site_id']);
 
         if (Auth::user()?->mustChangePassword()) {
             return redirect()->route('password.change');
         }
 
+        if (Auth::user()->roles()->count() > 1) return redirect()->route('roles.select');
         return redirect()->intended(route('dashboard'));
     }
 

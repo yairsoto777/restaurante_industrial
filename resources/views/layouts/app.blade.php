@@ -27,6 +27,16 @@
 
     {{-- ESTILOS PARTICULARES DE CADA VISTA --}}
     @stack('styles')
+    <link rel="stylesheet" href="{{ asset('css/role-workspace.css') }}?v=20261114">
+    <link rel="stylesheet" href="{{ asset('css/site-brand.css') }}?v=20261114">
+    @if(auth()->user()->isManager())
+        <link rel="stylesheet" href="{{ asset('css/manager.css') }}?v=20261113">
+        @if(request()->routeIs('manager.employees.*'))
+            <link rel="stylesheet" href="{{ asset('css/manager-users.css') }}?v=20261113">
+        @endif
+        <link rel="stylesheet" href="{{ asset('css/manager-finish.css') }}?v=20261114">
+        <link rel="stylesheet" href="{{ asset('css/manager-polish.css') }}?v=20261114">
+    @endif
 
     @if(auth()->user()->hasRole('Capitan de meseros') || auth()->user()->hasRole('Mesero') || auth()->user()->hasRole('Cajero'))
         <link rel="stylesheet" href="{{ asset('css/operations.css') }}?v=20261112">
@@ -102,12 +112,28 @@
 
         {{-- IDENTIDAD DEL SISTEMA --}}
 
-        <div class="sidebar-brand">
+        <div class="sidebar-brand {{ $isManager ? 'sidebar-brand-manager' : '' }}">
 
-            <span>{{ $isCaptain || $isService || $isCashier ? 'N' : 'GI' }}</span>
+            @php
+                $sidebarSiteBrand = !$isSuperAdministrator && ($isManager || $isKitchen || $isWarehouse || $isService || $isCashier)
+                    && filled($currentSite?->logo_url);
+            @endphp
+            @if($sidebarSiteBrand)
+                <div class="site-brand-custom">
+                    <div class="site-brand-logo"><img src="{{ asset(ltrim(\Illuminate\Support\Facades\Storage::url($currentSite->logo_url), '/')) }}" alt="" onerror="this.closest('.site-brand-custom').hidden=true; this.closest('.sidebar-brand').classList.add('logo-failed');"></div>
+                    @if($isManager)
+                        <strong>{{ $currentSite->nombre }}</strong>
+                        <small>Operación alimentaria</small>
+                    @else
+                        <small>Gestionado con NUTRILIADO</small>
+                    @endif
+                </div>
+            @else
+                <span>N</span>
+            @endif
 
-            <div>
-                <strong>{{ $isCaptain || $isService || $isCashier ? 'NUTRILIADO' : 'Gestión Industrial' }}</strong>
+            <div class="site-brand-name">
+                <strong>NUTRILIADO</strong>
                 <small>Operación alimentaria</small>
             </div>
 
@@ -122,6 +148,9 @@
             class="sidebar-nav"
             aria-label="Navegación principal"
         >
+            @if($isManager)
+                <div class="mgr-sidebar-context"><x-icon name="building"/><div><strong>Gerente de Sede</strong><small>Sede: {{ $currentSite?->nombre ?? 'Sin sede' }}</small></div></div>
+            @endif
 
             {{-- ==============================================
                  INICIO
@@ -336,7 +365,7 @@
                         href="{{ route('manager.employees.index') }}"
                     >
                         <x-icon name="users"/>
-                        <b>Empleados</b>
+                        <b>Gestión de usuarios</b>
                     </a>
 
                     <a
@@ -758,7 +787,7 @@
                  OPERACIÓN DE ADMINISTRADOR Y GERENTE
             ================================================== --}}
 
-            @if(($canAdminister || $isManager) && !$isSuperAdministrator)
+            @if($canAdminister && !$isManager && !$isSuperAdministrator)
 
                 <div class="nav-section">
 
@@ -1019,9 +1048,13 @@
             =============================================== --}}
 
             <div class="topbar-right">
+                @include('auth.role-dropdown')
 
                 {{-- NOTIFICACIONES --}}
 
+                @if(auth()->user()->isManager())
+                    @include('manager.notifications')
+                @else
                 <button
                     class="notification-button"
                     type="button"
@@ -1029,6 +1062,7 @@
                 >
                     <x-icon name="bell"/>
                 </button>
+                @endif
 
 
                 {{-- MENÚ DE USUARIO --}}

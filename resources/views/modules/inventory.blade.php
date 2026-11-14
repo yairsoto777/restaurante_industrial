@@ -1,6 +1,6 @@
 ```
 @extends('layouts.app')
-@section('title', $isWarehouseManager ? 'Inventario de almacén' : 'Inventario de cocina')
+@section('title', auth()->user()->isManager() ? 'Inventario de insumos' : ($isWarehouseManager ? 'Inventario de almacén' : 'Inventario de cocina'))
 @section('content')
     @php
         // La consulta, el permiso de alta y la persistencia se resuelven en InventoryController.
@@ -57,7 +57,7 @@
         <section class="inventory-hero inventory-sheet-heading" aria-labelledby="inventory-title">
             <div class="inventory-hero-copy">
                 <span class="inventory-eyebrow">{{ $site->nombre }}</span>
-                <h1 id="inventory-title">{{ $isWarehouseManager ? 'Inventario de almacén' : 'Inventario de cocina' }}</h1>
+                <h1 id="inventory-title">{{ auth()->user()->isManager() ? 'Inventario de insumos' : ($isWarehouseManager ? 'Inventario de almacén' : 'Inventario de cocina') }}</h1>
                 <p class="inventory-hero-description">{{ $isWarehouseManager ? 'Agrega alimentos, consulta existencias y actualiza las cantidades desde una sola pantalla.' : ($canManageInventory ? 'Consulta y control de existencias de la sede activa.' : 'Consulta las existencias reales de la sede. Reporta un faltante para que el equipo responsable pueda atenderlo.') }}</p>
             </div>
             @if(auth()->user()->hasRole('Personal de cocina'))
@@ -72,7 +72,7 @@
             </div>
             <div class="inventory-sheet-meta">
                 <div><small>Establecimiento</small><strong>{{ $site->nombre }}</strong></div>
-                <div><small>Departamento</small><strong>{{ $isWarehouseManager ? 'Almacén' : 'Cocina' }}</strong></div>
+                <div><small>Departamento</small><strong>{{ auth()->user()->isManager() ? 'Consulta gerencial' : ($isWarehouseManager ? 'Almacén' : 'Cocina') }}</strong></div>
                 <div><small>Fecha</small><strong>{{ $inventoryDate->format('d/m/Y') }}</strong></div>
                 <div><small>Empleado</small><strong>{{ $employeeName ?: 'Usuario autenticado' }}</strong></div>
             </div>
@@ -121,6 +121,9 @@
             </article>
         </section>
 
+        @if(auth()->user()->isManager())
+            @include('manager.inventory-overview')
+        @endif
         <section class="inventory-panel inventory-sheet-panel" aria-labelledby="inventory-list-title">
             <div class="inventory-panel-heading inventory-sheet-toolbar">
                 <div>

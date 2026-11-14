@@ -16,6 +16,10 @@ use Illuminate\Support\Collection;
 
 class User extends Authenticatable implements CanResetPassword
 {
+    // Request-local authorization context; never persisted on the account.
+    public ?int $activeRoleId = null;
+    public ?int $activeSiteId = null;
+
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, CanResetPasswordTrait;
 
@@ -132,6 +136,7 @@ class User extends Authenticatable implements CanResetPassword
 
     public function isManagerAtSite(int $siteId): bool
     {
+        if ($this->activeRoleId !== null && (! $this->isManager() || $this->activeSiteId !== $siteId)) return false;
         return in_array($siteId, $this->managerSiteIds(), true);
     }
 
@@ -187,6 +192,11 @@ class User extends Authenticatable implements CanResetPassword
 
     private function roleNames(): Collection
     {
+        if ($this->activeRoleId !== null) {
+            return $this->roles()->where('roles.id_rol', $this->activeRoleId)
+                ->where('usuario_sede.id_sede', $this->activeSiteId)->pluck('roles.nombre');
+        }
+
         return $this->relationLoaded('roles')
             ? $this->roles->pluck('nombre')
             : $this->roles()->pluck('roles.nombre');

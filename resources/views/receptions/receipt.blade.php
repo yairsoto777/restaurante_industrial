@@ -3,7 +3,8 @@
 @section('content')
     @php
         $user = auth()->user();
-        $rolesForSite = $user->roles()->get()->filter(fn ($role) => (int) ($role->pivot->id_sede ?? 0) === (int) $site->id_sede);
+        $rolesForSite = $user->roles()->get()->filter(fn ($role) => (int) ($role->pivot->id_sede ?? 0) === (int) $site->id_sede
+            && ($user->activeRoleId === null || (int) $role->id_rol === $user->activeRoleId));
         $isWarehouseManager = $isWarehouseManager ?? $rolesForSite->contains(fn ($role) => \App\Support\EmploymentRoles::matches($role->nombre, 'Jefe de almacen'));
         $isReceptionist = $rolesForSite->contains(fn ($role) => \App\Support\EmploymentRoles::matches($role->nombre, 'Recepcion de insumos'));
         $pendingState = (string) config('receptions.pending', 'Pendiente de revisión');

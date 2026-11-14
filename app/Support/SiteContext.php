@@ -13,7 +13,7 @@ class SiteContext
     {
         return $user->canAdminister()
             ? Site::query()->orderBy('nombre')->get()
-            : $user->sites()->orderBy('sedes.nombre')->get();
+            : $user->sites()->orderBy('sedes.nombre')->get()->unique('id_sede')->values();
     }
 
     public function currentFor(Request $request, User $user): ?Site

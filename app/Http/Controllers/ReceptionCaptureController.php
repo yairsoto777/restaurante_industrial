@@ -15,6 +15,7 @@ class ReceptionCaptureController extends Controller
 {
     private function site(Request $request, SiteContext $context)
     {
+        abort_unless($request->user()->hasRole('Recepcion de insumos'), 403);
         $site = $context->currentFor($request, $request->user());
         abort_unless($site && $request->user()->roles()->get()->contains(fn ($role) =>
                 (int) $role->pivot->id_sede === (int) $site->id_sede

@@ -11,7 +11,13 @@ class EnsureUserIsActive
 {
     public function handle(Request $request, Closure $next): Response
     {
+        app(\App\Support\ActiveRole::class)->apply($request);
         $user = $request->user();
+        if ($user?->isManager()) {
+            $site = app(\App\Support\SiteContext::class)->currentFor($request, $user);
+            abort_unless(\App\Support\ManagerRouteAccess::allows((string) $request->route()?->getName(), $request->method()), 403);
+            abort_if($site && ! $user->isManagerAtSite((int) $site->getKey()), 403);
+        }
         if ($user?->mustChangePassword() && $user->temporary_password_expires_at->isPast()) {
             Auth::logout();
 
