@@ -20,6 +20,9 @@ class DashboardController extends Controller
 {
     public function __invoke(Request $request, SiteContext $siteContext): View|RedirectResponse
     {
+        if ($request->user()->isManager()) {
+            return $this->managerDashboard($request, $siteContext);
+        }
         if ($request->user()->hasRole('Personal de cocina')) {
             return $this->kitchenDashboard($request, $siteContext);
         }
@@ -126,6 +129,37 @@ class DashboardController extends Controller
             'recentIncidents' => $siteId ? $this->recentRows('incidencias', (int) $siteId, 'id_incidencia') : collect(),
             'contactSummary' => $contactSummary,
         ]);
+    }
+
+    private function managerDashboard(Request $request, SiteContext $siteContext): View|RedirectResponse
+    {
+        $site = $siteContext->currentFor($request, $request->user());
+        if (! $site) return redirect()->route('manager.sites');
+        abort_unless($request->user()->isManagerAtSite((int) $site->getKey()), 403);
+        $siteId = (int) $site->getKey();
+        $services = Schema::hasTable('servicios')
+            ? DB::table('servicios')->where('id_sede', $siteId)->orderBy('fecha')->orderBy('inicio_hora')->get()
+            : collect();
+        $pendingServices = $services->where('estado_aprobacion', 'Pendiente');
+        $activeServices = $services->where('estado', 'En curso')->where('estado_aprobacion', 'Aprobado')->count();
+        $scheduledServices = $services->filter(fn ($s) => ($s->fecha ?? '') >= now()->toDateString()
+            && ! in_array($s->estado ?? '', ['Cancelado', 'Finalizado'], true)
+            && ($s->estado_aprobacion ?? '') === 'Aprobado')->take(6);
+        $receiptCount = Schema::hasTable('recepciones') && Schema::hasTable('pedidos')
+            ? DB::table('recepciones as r')->join('pedidos as p', 'p.id_pedido', '=', 'r.id_pedido')
+                ->where('p.id_sede', $siteId)->whereBetween('r.fecha_recepcion', [now()->startOfMonth(), now()->endOfMonth()])->count()
+            : 0;
+        $employees = Schema::hasTable('empleados') ? \App\Models\Employee::query()->where('id_sede', $siteId)
+            ->with(['user.roles' => fn ($q) => $q->where('usuario_sede.id_sede', $siteId)])
+            ->orderBy('nombre')->limit(5)->get() : collect();
+        $employeeCount = Schema::hasTable('empleados') ? DB::table('empleados')->where('id_sede', $siteId)->distinct()->count('id_usuario') : 0;
+        $operationStates = collect([
+            ['label' => 'Servicios activos', 'value' => $activeServices, 'color' => '#8150cf'],
+            ['label' => 'Pendientes de aprobación', 'value' => $pendingServices->count(), 'color' => '#b394e9'],
+            ['label' => 'Programados', 'value' => $services->where('estado', 'Programado')->where('estado_aprobacion', 'Aprobado')->count(), 'color' => '#ffc766'],
+            ['label' => 'Finalizados hoy', 'value' => $services->where('estado', 'Finalizado')->filter(fn ($s) => substr((string) $s->fecha, 0, 10) === now()->toDateString())->count(), 'color' => '#e5e0ef'],
+        ]);
+        return view('manager.dashboard', compact('site', 'employeeCount', 'employees', 'pendingServices', 'activeServices', 'scheduledServices', 'receiptCount', 'operationStates'));
     }
 
     private function kitchenDashboard(Request $request, SiteContext $siteContext): View

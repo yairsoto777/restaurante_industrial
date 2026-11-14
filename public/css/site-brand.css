@@ -1,0 +1,25 @@
+/* Shared sidebar identity; preserve the institutional sidebar background. */
+/* Keep the shared sidebar within the viewport; only its menu scrolls. */
+.app-shell>.app-sidebar{display:flex;flex-direction:column;height:100vh;height:100dvh;min-height:0;box-sizing:border-box;overflow:hidden}
+.app-sidebar>.sidebar-brand{position:relative;top:auto;flex:0 0 auto}
+.app-sidebar>.sidebar-nav{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;align-content:start;overscroll-behavior-y:contain;scrollbar-width:thin;scrollbar-color:#527493 transparent;padding-bottom:12px}
+.app-sidebar>.sidebar-footer{flex:0 0 auto}
+.app-sidebar>.sidebar-nav::-webkit-scrollbar{width:5px}
+.app-sidebar>.sidebar-nav::-webkit-scrollbar-track{background:transparent}
+.app-sidebar>.sidebar-nav::-webkit-scrollbar-thumb{background:#527493;border-radius:8px}
+.app-sidebar>.sidebar-nav::-webkit-scrollbar-thumb:hover{background:#7195b5}
+.sidebar-brand-manager .site-brand-custom .site-brand-logo{width:220px;max-width:100%;height:110px;padding:0;background:transparent;border:0;border-radius:0;box-shadow:none}
+.sidebar-brand-manager .site-brand-custom>strong{width:100%;text-align:center;color:#fff;font-size:16px;line-height:1.4;overflow-wrap:anywhere}
+.sidebar-brand-manager .site-brand-custom>small{margin-top:-5px}
+.sidebar-brand:has(.site-brand-custom){flex-direction:column;align-items:center}
+.sidebar-brand>.site-brand-custom{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;min-width:0}
+.sidebar-brand>.site-brand-custom[hidden]{display:none}
+.sidebar-brand .site-brand-logo{display:flex;align-items:center;justify-content:center;width:220px;max-width:100%;height:95px;padding:10px 14px;box-sizing:border-box;background:#fff;border-radius:14px}
+.sidebar-brand .site-brand-logo img{display:block;width:100%;height:100%;object-fit:contain;object-position:center}
+.sidebar-brand .site-brand-custom>small{font-size:10px;font-weight:400;color:#adbed2;text-align:center;line-height:1.5}
+.sidebar-brand:has(.site-brand-custom)>.site-brand-name{display:none}
+.sidebar-brand.logo-failed>.site-brand-name{display:grid;text-align:center}
+.sidebar-brand.logo-failed>.site-brand-name:before{content:'N';display:grid;place-items:center;width:42px;height:42px;margin:0 auto 8px;border-radius:11px;background:#1479cf;color:#fff;font-weight:900}
+.sidebar-brand>span.site-brand-logo{flex:0 0 48px;width:48px;height:48px;padding:4px;background:#fff;box-shadow:none;border:1px solid #ffffff30;border-radius:10px;box-sizing:border-box;overflow:visible}
+.sidebar-brand .site-brand-logo img{display:block;width:100%;height:100%;object-fit:contain;object-position:center;border-radius:0}
+.sidebar-brand>div{min-width:0;flex:1}.sidebar-brand strong{overflow-wrap:anywhere;line-height:1.35}

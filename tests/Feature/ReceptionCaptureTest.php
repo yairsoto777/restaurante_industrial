@@ -62,6 +62,33 @@ class ReceptionCaptureTest extends RoleAccessTest
         ]]];
     }
 
+    public function test_warehouse_manager_can_open_review_from_reception_list_and_order_history(): void
+    {
+        $token = $this->prepareCapture();
+        $this->post('/recepciones/pedidos/1/capturas', $this->payload($token))->assertRedirect();
+        Schema::table('unidades', fn (Blueprint $t) => $t->string('codigo')->nullable());
+        Schema::table('incidencias', fn (Blueprint $t) => $t->text('respuesta')->nullable());
+        Schema::create('ubicacion_inventarios', function (Blueprint $t) {
+            $t->increments('id_ubicacion_inv');
+            $t->integer('id_sede');
+            $t->string('nombre');
+        });
+
+        $reviewUrl = route('receptions.review.show', ['receipt' => 1]);
+        $this->get($reviewUrl)->assertForbidden();
+        $manager = $this->createUser('Jefe de almacen', 13, 1);
+        $this->actingAs($manager)->get('/recepciones')->assertOk()->assertSee($reviewUrl, false);
+        $this->get('/recepciones/pedidos/1')->assertOk()->assertSee($reviewUrl, false);
+        $this->get($reviewUrl)->assertOk()
+            ->assertViewIs('receptions.receipt')
+            ->assertViewHas('receipt', fn ($receipt) => (int) $receipt->id_recepcion === 1)
+            ->assertSee('L-001');
+        $this->get(route('receptions.review.show', 999))->assertNotFound();
+
+        DB::table('usuario_sede')->insert(['id_usuario' => $manager->id_usuario, 'id_sede' => 2, 'id_rol' => 13]);
+        $this->withSession(['current_site_id' => 2])->get($reviewUrl)->assertNotFound();
+    }
+
     public function test_valid_receipt_incident_detail_and_no_stock_movements(): void
     {
         $token = $this->prepareCapture();

@@ -20,7 +20,7 @@ class WarehouseOrderController extends Controller
         $site = $context->currentFor($request, $user);
         abort_unless($site, 403);
 
-        $role = $user->roles()->get()->contains(fn ($role) =>
+        $role = $user->hasRole('Jefe de almacen') && $user->roles()->get()->contains(fn ($role) =>
             (int) $role->pivot->id_sede === (int) $site->id_sede &&
             EmploymentRoles::matches($role->nombre, 'Jefe de almacen')
         );
@@ -37,6 +37,7 @@ class WarehouseOrderController extends Controller
 
     private function assertWarehouse(Request $request, int $siteId): void
     {
+        abort_unless($request->user()->hasRole('Jefe de almacen'), 403);
         abort_unless($request->user()->roles()->get()->contains(fn ($role) =>
             (int) $role->pivot->id_sede === $siteId &&
             EmploymentRoles::matches($role->nombre, 'Jefe de almacen')
@@ -74,7 +75,7 @@ class WarehouseOrderController extends Controller
             'total' => DB::table('pedidos')->where('id_sede', $site->id_sede)->count(),
             'programados' => DB::table('pedidos')->where('id_sede', $site->id_sede)->where('estado', 'Programado')->count(),
         ];
-        $canCreate = $request->user()->roles()->get()->contains(fn ($role) =>
+        $canCreate = $request->user()->hasRole('Jefe de almacen') && $request->user()->roles()->get()->contains(fn ($role) =>
             (int) $role->pivot->id_sede === (int) $site->id_sede &&
             EmploymentRoles::matches($role->nombre, 'Jefe de almacen')
         );

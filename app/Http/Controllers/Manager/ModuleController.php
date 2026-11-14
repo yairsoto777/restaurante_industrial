@@ -17,7 +17,8 @@ class ModuleController extends Controller
 {
     public function sites(): View
     {
-        $site = request()->user()->sites()->orderBy('sedes.nombre')->first();
+        $site = app(\App\Support\SiteContext::class)->currentFor(request(), request()->user());
+        abort_if($site && ! request()->user()->isManagerAtSite((int) $site->getKey()), 403);
 
         return view('manager.sites', [
             'site' => $site,
@@ -29,7 +30,8 @@ class ModuleController extends Controller
     public function saveSite(Request $request): RedirectResponse
     {
         $user = $request->user();
-        $site = $user->sites()->orderBy('sedes.id_sede')->first();
+        $site = app(\App\Support\SiteContext::class)->currentFor($request, $user);
+        abort_if($site && ! $user->isManagerAtSite((int) $site->getKey()), 403);
         $data = $this->validatedSite($request);
         $wasOnboarding = ! $site;
 

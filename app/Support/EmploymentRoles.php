@@ -117,6 +117,26 @@ final class EmploymentRoles
         });
     }
 
+    public static function visual(string $role): array
+    {
+        $key = self::canonicalKey($role);
+        $detail = self::PUBLIC_ROLE_DETAILS[$key] ?? [];
+        return [
+            'icon' => $detail['icon'] ?? ($key === 'gerente de sede' ? 'building' : 'users'),
+            'description' => $detail['description'] ?? match ($key) {
+                'gerente de sede' => 'Supervisa su sede, administra empleados y revisa la programación de servicios.',
+                'superadministrador' => 'Administra la configuración global, las sedes y sus responsables.',
+                default => 'Consulta los módulos y las funciones autorizadas para tu cuenta.',
+            },
+            'tone' => match ($key) {
+                'gerente de sede' => 'manager', 'cajero' => 'cashier', 'jefe de cocina' => 'chef',
+                'personal de cocina' => 'kitchen', 'capitan de meseros' => 'captain', 'mesero' => 'waiter',
+                'jefe de almacen' => 'warehouse', 'recepcion de insumos' => 'reception',
+                default => 'admin',
+            },
+        ];
+    }
+
     public static function displayName(string $role): string
     {
         $key = self::canonicalKey($role);

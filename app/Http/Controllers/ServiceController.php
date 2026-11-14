@@ -19,11 +19,23 @@ class ServiceController extends Controller
     public function managerIndex(Request $request, SiteContext $siteContext): View
     {
         $site = $this->managerSite($request, $siteContext);
-        $services = Service::query()->where('id_sede', $site->id_sede)
+        $filters = $request->validate([
+            'q' => ['nullable', 'string', 'max:150'], 'fecha' => ['nullable', 'date_format:Y-m-d'],
+            'estado' => ['nullable', Rule::in(self::STATES)],
+            'aprobacion' => ['nullable', Rule::in(['Pendiente', 'Aprobado', 'Rechazado'])],
+        ]);
+        $base = Service::query()->where('id_sede', $site->id_sede);
+        $summary = ['total' => (clone $base)->count(), 'pending' => (clone $base)->where('estado_aprobacion', 'Pendiente')->count(),
+            'approved' => (clone $base)->where('estado_aprobacion', 'Aprobado')->count(), 'rejected' => (clone $base)->where('estado_aprobacion', 'Rechazado')->count()];
+        $services = (clone $base)->with('creator')
+            ->when(filled($filters['q'] ?? null), fn ($q) => $q->where('nombre', 'like', '%'.$filters['q'].'%'))
+            ->when($filters['fecha'] ?? null, fn ($q, $value) => $q->whereDate('fecha', $value))
+            ->when($filters['estado'] ?? null, fn ($q, $value) => $q->where('estado', $value))
+            ->when($filters['aprobacion'] ?? null, fn ($q, $value) => $q->where('estado_aprobacion', $value))
             ->orderByRaw('CASE WHEN fecha IS NULL THEN 1 ELSE 0 END')
-            ->orderBy('fecha')->orderBy('inicio_hora')->paginate(15);
+            ->orderBy('fecha')->orderBy('inicio_hora')->paginate(15)->withQueryString();
 
-        return view('manager.services.index', compact('site', 'services'));
+        return view('manager.services.index', compact('site', 'services', 'filters', 'summary'));
     }
 
     public function create(Request $request, SiteContext $siteContext): View

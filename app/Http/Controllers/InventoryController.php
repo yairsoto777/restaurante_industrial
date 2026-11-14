@@ -49,6 +49,7 @@ class InventoryController extends Controller
         $depletedCount = 0;
         $expiringCount = 0;
         $soonDays = 30;
+        $inventoryDistribution = collect();
 
         $search = trim((string) $request->query('q', ''));
         $filterState = (string) $request->query('estado', '');
@@ -90,6 +91,10 @@ class InventoryController extends Controller
 
             $siteStock = DB::table('insumo_sedes')->where('id_sede', $site->id_sede);
             $registeredCount = (clone $siteStock)->count();
+            if ($request->user()->isManager()) {
+                $inventoryDistribution = (clone $siteStock)->selectRaw("CASE WHEN stock IS NULL THEN 'Sin dato' WHEN stock <= 0 THEN 'Agotado' WHEN punto_de_reorden IS NULL THEN 'Sin mínimo' WHEN stock <= punto_de_reorden THEN 'Bajo mínimo' ELSE 'Suficiente' END as label, COUNT(*) as total")
+                    ->groupByRaw("CASE WHEN stock IS NULL THEN 'Sin dato' WHEN stock <= 0 THEN 'Agotado' WHEN punto_de_reorden IS NULL THEN 'Sin mínimo' WHEN stock <= punto_de_reorden THEN 'Bajo mínimo' ELSE 'Suficiente' END")->get();
+            }
             $lowCount = (clone $siteStock)
                 ->whereNotNull('punto_de_reorden')
                 ->whereColumn('stock', '<=', 'punto_de_reorden')
@@ -320,6 +325,7 @@ class InventoryController extends Controller
         }
 
         return view('modules.inventory', compact(
+            'inventoryDistribution',
             'site',
             'rows',
             'ingredients',
@@ -886,7 +892,7 @@ class InventoryController extends Controller
     /** Comprueba la asignación del rol en la sede activa, no en otra sede. */
     private function hasSiteRole(Request $request, Site $site, string $roleName): bool
     {
-        return $request->user()->roles()->get()->contains(
+        return $request->user()->hasRole($roleName) && $request->user()->roles()->get()->contains(
             fn ($role): bool => (int) $role->pivot->id_sede === (int) $site->id_sede
                 && \App\Support\EmploymentRoles::matches($role->nombre, $roleName)
         );

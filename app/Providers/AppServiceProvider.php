@@ -31,6 +31,7 @@ class AppServiceProvider extends ServiceProvider
             $view->with([
                 'availableSites' => $siteContext->availableFor($user),
                 'currentSite' => $siteContext->currentFor(request(), $user),
+                'roleAssignments' => app(\App\Support\ActiveRole::class)->assignments($user),
             ]);
         });
     }
