@@ -48,6 +48,19 @@ class ServiceController extends Controller
         ]);
     }
 
+    public function captainCreate(Request $request, SiteContext $siteContext): View
+    {
+        $site = $this->captainSite($request, $siteContext);
+        return view('manager.services.form', ['site' => $site, 'service' => new Service(['estado' => 'Programado', 'estado_aprobacion' => 'Aprobado']), 'captainFlow' => true]);
+    }
+
+    public function captainStore(Request $request, SiteContext $siteContext): RedirectResponse
+    {
+        $site = $this->captainSite($request, $siteContext);
+        $service = Service::create([...$this->validated($request), 'id_sede' => $site->id_sede, 'estado' => 'Programado', 'estado_aprobacion' => 'Aprobado', 'id_usuario_registro' => $request->user()->getKey(), 'id_usuario_revision' => $request->user()->getKey(), 'revisado_en' => now()]);
+        return redirect()->route('services.index')->with('status', "El servicio {$service->nombre} quedó abierto para la operación.");
+    }
+
     public function store(Request $request, SiteContext $siteContext): RedirectResponse
     {
         $site = $this->kitchenChiefSite($request, $siteContext);
@@ -281,6 +294,14 @@ class ServiceController extends Controller
     private function kitchenChiefSite(Request $request, SiteContext $siteContext)
     {
         abort_unless($request->user()->hasRole('Jefe de cocina'), 403);
+        $site = $siteContext->currentFor($request, $request->user());
+        abort_unless($site && $request->user()->sites()->whereKey($site->id_sede)->exists(), 403);
+        return $site;
+    }
+
+    private function captainSite(Request $request, SiteContext $siteContext)
+    {
+        abort_unless($request->user()->hasRole('Capitan de meseros'), 403);
         $site = $siteContext->currentFor($request, $request->user());
         abort_unless($site && $request->user()->sites()->whereKey($site->id_sede)->exists(), 403);
         return $site;

@@ -247,6 +247,12 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('/mesero/atenciones/{attention}/servicio-ofrecido', [App\Http\Controllers\MeseroController::class, 'storeOfferedService'])->middleware('role:Mesero')->name('waiter.offered-service.store');
         Route::put('/mesero/atenciones/{attention}/servicio-ofrecido', [App\Http\Controllers\MeseroController::class, 'updateOfferedService'])->middleware('role:Mesero')->name('waiter.offered-service.update');
         Route::patch('/mesero/atenciones/{attention}/servicio-ofrecido/finalizar', [App\Http\Controllers\MeseroController::class, 'finalizeOfferedService'])->middleware('role:Mesero')->name('waiter.offered-service.finalize');
+        Route::get('/capitan/servicios/nuevo', [App\Http\Controllers\ServiceController::class, 'captainCreate'])->middleware('role:Capitan de meseros')->name('captain.services.create');
+        Route::post('/capitan/servicios', [App\Http\Controllers\ServiceController::class, 'captainStore'])->middleware('role:Capitan de meseros')->name('captain.services.store');
+        Route::patch('/mesero/atenciones/{attention}', [App\Http\Controllers\MeseroController::class, 'updateAttention'])->middleware('role:Mesero')->name('waiter.attention.update');
+        Route::post('/mesero/atenciones/{attention}/comanda', [App\Http\Controllers\MeseroController::class, 'storeComanda'])->middleware('role:Mesero')->name('waiter.comanda.store');
+        Route::post('/mesero/atenciones/{attention}/comanda/platillos', [App\Http\Controllers\MeseroController::class, 'storeComandaItem'])->middleware('role:Mesero')->name('waiter.comanda.item.store');
+        Route::post('/mesero/atenciones/{attention}/comanda/cerrar', [App\Http\Controllers\MeseroController::class, 'closeComanda'])->middleware('role:Mesero')->name('waiter.comanda.close');
 
         Route::get(
             '/servicios',
