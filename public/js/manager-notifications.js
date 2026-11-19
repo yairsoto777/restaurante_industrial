@@ -2,6 +2,7 @@
     const root = document.querySelector('.manager-notifications');
     if (!root) return;
     const feedback = root.querySelector('.mn-feedback');
+    const explicitReview = root.hasAttribute('data-explicit-review');
     let busy = false;
     async function refresh(id) {
         if (busy) return;
@@ -27,15 +28,15 @@
                 const description = document.createElement('p'); description.textContent = item.description;
                 const date = document.createElement('small'); date.textContent = `${item.date} · ${item.read ? 'Leída' : 'Sin leer'}`;
                 link.append(title, description, date);
-                link.addEventListener('click', async event => { if (!item.read) { event.preventDefault(); await refresh(item.id); location.assign(item.url); } });
+                if (!explicitReview) link.addEventListener('click', async event => { if (!item.read) { event.preventDefault(); await refresh(item.id); location.assign(item.url); } });
                 article.append(icon, link);
-                if (!item.read) { const button = document.createElement('button'); button.type = 'button'; button.textContent = 'Marcar leída'; button.onclick = () => refresh(item.id); article.append(button); }
+                if (!explicitReview && !item.read) { const button = document.createElement('button'); button.type = 'button'; button.textContent = 'Marcar leída'; button.onclick = () => refresh(item.id); article.append(button); }
                 list.append(article);
             });
         } catch { feedback.textContent = 'No se pudieron actualizar los avisos. Se reintentará automáticamente.'; }
         finally { busy = false; }
     }
-    root.querySelector('.mn-all').onclick = () => refresh('all');
+    root.querySelector('.mn-all')?.addEventListener('click', () => refresh('all'));
     document.addEventListener('click', event => { if (!root.contains(event.target)) root.open = false; });
     document.addEventListener('keydown', event => { if (event.key === 'Escape') root.open = false; });
     refresh(); setInterval(() => refresh(), 30000);

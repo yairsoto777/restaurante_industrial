@@ -6,6 +6,7 @@
 <div class="mgr-kpis">@foreach([['calendar',$summary['total'],'Servicios registrados'],['clock',$summary['pending'],'Pendientes de aprobación'],['dish',$summary['approved'],'Servicios aprobados'],['alert',$summary['rejected'],'Servicios rechazados']] as [$icon,$value,$label])<article class="mgr-card mgr-kpi"><span class="mgr-kpi-icon"><x-icon :name="$icon"/></span><div><strong>{{ $value }}</strong><span>{{ $label }}</span></div></article>@endforeach</div>
 <form class="mgr-card manager-filters" method="GET"><label>Buscar servicio<input name="q" value="{{ $filters['q'] ?? '' }}" maxlength="150" placeholder="Nombre del servicio"></label><label>Fecha<input type="date" name="fecha" value="{{ $filters['fecha'] ?? '' }}"></label><label>Estado operativo<select name="estado"><option value="">Todos</option>@foreach(['Programado','En curso','Finalizado','Cancelado'] as $state)<option @selected(($filters['estado'] ?? '') === $state)>{{ $state }}</option>@endforeach</select></label><label>Aprobación<select name="aprobacion"><option value="">Todas</option>@foreach(['Pendiente','Aprobado','Rechazado'] as $state)<option @selected(($filters['aprobacion'] ?? '') === $state)>{{ $state }}</option>@endforeach</select></label><button class="mgr-button">Filtrar</button><a href="{{ route('manager.services.index') }}">Limpiar</a></form>
 <div class="manager-service-grid">
+@include('manager.services.schedules')
 @forelse($services as $service)
     @php
         $name = \Illuminate\Support\Str::lower(\Illuminate\Support\Str::ascii($service->nombre));

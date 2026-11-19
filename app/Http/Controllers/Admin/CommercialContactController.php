@@ -97,220 +97,26 @@ class CommercialContactController extends Controller
 
     public function createConversion(CommercialContact $contact): View|RedirectResponse
     {
-        if ($contact->estado === CommercialContact::STATUS_APPROVED) {
-            return redirect()->route('admin.contacts.show', $contact)
-                ->with('status', 'Este contacto ya fue aprobado y convertido.');
-        }
+        return redirect()->route('superadmin.index',['modulo'=>'solicitudes','seleccion'=>$contact->id_contacto,'abrir'=>'convertir']);
+    }
 
-        if (! in_array($contact->estado, [CommercialContact::STATUS_NEW, CommercialContact::STATUS_CONTACTED], true)) {
-            return redirect()->route('admin.contacts.show', $contact)
-                ->withErrors(['conversion' => 'El contacto debe estar nuevo o contactado antes de aprobarlo.']);
-        }
-
-        return view('admin.contacts.convert', [
-            'contact' => $contact,
-            'managerDefaults' => $this->managerDefaults($contact),
-            'temporaryPassword' => $this->generateTemporaryPassword(),
-        ]);
+    private function multiline(?string $value): ?string
+    {
+        // Keep every line and all captured text; Blade escapes it when displayed.
+        return $value === null ? null : str_replace(["\r\n", "\r"], "\n", $value);
     }
 
     public function convert(Request $request, CommercialContact $contact): RedirectResponse
     {
-        if (! in_array($contact->estado, [CommercialContact::STATUS_NEW, CommercialContact::STATUS_CONTACTED], true)) {
-            throw ValidationException::withMessages([
-                'conversion' => $contact->estado === CommercialContact::STATUS_APPROVED
-                    ? 'Este contacto ya fue aprobado y convertido.'
-                    : 'El contacto debe estar nuevo o contactado antes de aprobarlo.',
-            ]);
-        }
-
-        $request->merge([
-            'gerente_nombre' => $this->singleLine($request->input('gerente_nombre')),
-            'gerente_apellido_p' => $this->singleLine($request->input('gerente_apellido_p')),
-            'gerente_apellido_m' => $this->singleLine($request->input('gerente_apellido_m')),
-            'gerente_correo' => is_string($request->input('gerente_correo'))
-                ? Str::lower(trim($request->input('gerente_correo')))
-                : $request->input('gerente_correo'),
-        ]);
-
-        $data = $request->validate([
-            'gerente_nombre' => ['required', 'string', 'max:100'],
-            'gerente_apellido_p' => ['required', 'string', 'max:100'],
-            'gerente_apellido_m' => ['nullable', 'string', 'max:100'],
-            'gerente_correo' => ['required', 'email:rfc', 'max:150', Rule::unique('usuarios', 'correo')],
-            'gerente_password' => ['required', 'string', 'min:12', 'max:255'],
-        ], [
-            'id_sede.required' => 'Selecciona la sede existente.',
-            'sede_nombre.required' => 'Indica el nombre de la nueva sede.',
-            'sede_telefono.regex' => 'Ingresa un teléfono de sede válido.',
-            'gerente_correo.unique' => 'Ya existe un usuario con ese correo.',
-        ]);
-
-        $manager = DB::transaction(function () use ($data, $contact, $request): User {
-            $lockedContact = CommercialContact::query()
-                ->whereKey($contact->getKey())
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            if (! in_array($lockedContact->estado, [CommercialContact::STATUS_NEW, CommercialContact::STATUS_CONTACTED], true)) {
-                throw ValidationException::withMessages([
-                    'conversion' => $lockedContact->estado === CommercialContact::STATUS_APPROVED
-                        ? 'Este contacto ya fue aprobado y convertido.'
-                        : 'El contacto ya no está disponible para aprobación.',
-                ]);
-            }
-
-            $managerRole = Role::query()
-                ->lockForUpdate()
-                ->get()
-                ->first(fn (Role $role): bool => EmploymentRoles::isManager($role->nombre));
-
-            if (! $managerRole) {
-                throw ValidationException::withMessages([
-                    'gerente_correo' => 'No existe el rol Gerente de sede en el catálogo de roles.',
-                ]);
-            }
-
-            $manager = User::create([
-                'nombre' => $data['gerente_nombre'],
-                'apellido_p' => $data['gerente_apellido_p'],
-                'apellido_m' => $data['gerente_apellido_m'] ?? null,
-                'correo' => $data['gerente_correo'],
-                'password' => Hash::make($data['gerente_password']),
-                'temporary_password_expires_at' => now()->addMinutes(30),
-                'temporary_password_used_at' => null,
-            ]);
-
-            DB::table('usuario_sede')->insert([
-                'id_usuario' => (int) $manager->getKey(),
-                'id_sede' => null,
-                'id_rol' => (int) $managerRole->getKey(),
-            ]);
-
-            $lockedContact->estado = CommercialContact::STATUS_APPROVED;
-            $lockedContact->fecha_respuesta ??= now();
-            $lockedContact->id_superadmin_responde = (int) $request->user()->getKey();
-            $lockedContact->save();
-
-            return $manager;
-        }, 3);
-
-        try {
-            $this->sendApprovalEmail($contact, $manager, $data['gerente_password']);
-        } catch (\Throwable $exception) {
-            $this->logActivationEmailFailure($contact, $manager, $exception);
-            return redirect()->route('admin.contacts.show', $contact)
-                ->withErrors(['conversion' => 'La cuenta fue creada, pero no fue posible enviar el correo de activación.']);
-        }
-
-        return redirect()->route('admin.contacts.show', $contact)
-            ->with('status', "Contacto aprobado. Se creó la cuenta {$manager->correo} y se envió el correo de activación.");
+        return \App\Support\SuperadminCommercialFlow::convert($request,$contact);
     }
 
     public function resendActivation(CommercialContact $contact): RedirectResponse
     {
-        if ($contact->estado !== CommercialContact::STATUS_APPROVED) {
-            return back()->withErrors(['conversion' => 'Solo puedes reenviar activación después de aprobar el contacto.']);
-        }
-
-        $manager = User::query()->where('correo', $contact->correo)->first();
-        if (! $manager || ! $manager->isManager()) {
-            return back()->withErrors(['conversion' => 'No existe una cuenta de gerente asociada a este contacto.']);
-        }
-
-        try {
-            $temporaryPassword = $this->generateTemporaryPassword();
-            $manager->password = Hash::make($temporaryPassword);
-            $manager->temporary_password_expires_at = now()->addMinutes(30);
-            $manager->temporary_password_used_at = null;
-            $manager->save();
-            $this->sendApprovalEmail($contact, $manager, $temporaryPassword);
-        } catch (\Throwable $exception) {
-            $this->logActivationEmailFailure($contact, $manager, $exception);
-
-            return back()->withErrors(['conversion' => 'No fue posible reenviar el correo de activación.']);
-        }
-
-        return back()->with('status', 'El correo de activación fue reenviado correctamente.');
-    }
-
-    private function managerDefaults(CommercialContact $contact): array
-    {
-        if (filled($contact->apellido_p)) {
-            return [
-                'nombre' => $contact->nombre,
-                'apellido_p' => $contact->apellido_p,
-                'apellido_m' => $contact->apellido_m ?? '',
-            ];
-        }
-
-        $fullName = $contact->nombre;
-        $parts = preg_split('/\s+/u', trim($fullName), -1, PREG_SPLIT_NO_EMPTY) ?: [];
-
-        if (count($parts) <= 1) {
-            return ['nombre' => $parts[0] ?? '', 'apellido_p' => '', 'apellido_m' => ''];
-        }
-
-        if (count($parts) === 2) {
-            return ['nombre' => $parts[0], 'apellido_p' => $parts[1], 'apellido_m' => ''];
-        }
-
-        $apellidoMaterno = array_pop($parts);
-        $apellidoPaterno = array_pop($parts);
-
-        return [
-            'nombre' => implode(' ', $parts),
-            'apellido_p' => $apellidoPaterno,
-            'apellido_m' => $apellidoMaterno,
-        ];
-    }
-
-    private function singleLine(mixed $value): mixed
-    {
-        return is_string($value) ? Str::squish(strip_tags($value)) : $value;
-    }
-
-    private function multiline(mixed $value): mixed
-    {
-        if (! is_string($value)) {
-            return $value;
-        }
-
-        $value = strip_tags($value);
-        $value = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $value) ?? $value;
-
-        return trim(preg_replace("/\R{3,}/u", PHP_EOL.PHP_EOL, $value) ?? $value);
-    }
-
-    private function generateTemporaryPassword(): string
-    {
-        $groups = ['ABCDEFGHJKLMNPQRSTUVWXYZ', 'abcdefghijkmnopqrstuvwxyz', '23456789', '!@#$%&*+-_?'];
-        $allCharacters = implode('', $groups);
-        $characters = array_map(fn (string $group): string => $group[random_int(0, strlen($group) - 1)], $groups);
-
-        while (count($characters) < 12) {
-            $characters[] = $allCharacters[random_int(0, strlen($allCharacters) - 1)];
-        }
-
-        for ($index = count($characters) - 1; $index > 0; $index--) {
-            $swapIndex = random_int(0, $index);
-            [$characters[$index], $characters[$swapIndex]] = [$characters[$swapIndex], $characters[$index]];
-        }
-
-        return implode('', $characters);
-    }
-
-    private function sendApprovalEmail(CommercialContact $contact, User $manager, string $temporaryPassword): void
-    {
-        Mail::to($manager->correo)->send(new ManagerApprovalMail($contact->fresh(), $temporaryPassword));
-    }
-
-    private function logActivationEmailFailure(CommercialContact $contact, User $manager, \Throwable $exception): void
-    {
-        Log::error('No fue posible enviar el correo de aprobación del gerente.', [
-            'contact_id' => $contact->getKey(),
-            'user_id' => $manager->getKey(),
-            'exception_type' => $exception::class,
-        ]);
+        \App\Support\SuperadminWorkspace::authorize(request());
+        $manager=$contact->id_usuario_gerente?User::find($contact->id_usuario_gerente):User::where('correo',$contact->correo)->first();
+        if(!$manager||!$manager->roles()->get()->contains(fn($r)=>EmploymentRoles::isManager($r->nombre)))throw ValidationException::withMessages(['activacion'=>'No existe un gerente vinculado a la solicitud.']);
+        try{\App\Support\SuperadminCommercialFlow::activation($manager);}catch(\Throwable $error){report($error);throw ValidationException::withMessages(['activacion'=>'No se pudo enviar el enlace. Reintenta desde Usuarios del sistema.']);}
+        return back()->with('status','Enlace de acceso reenviado sin enviar contraseñas.');
     }
 }

@@ -597,20 +597,6 @@
                     class="cp-form"
                 >
                     @csrf
-                    <label for="cp-assignment-service">
-                        Servicio
-                        <select id="cp-assignment-service" name="id_servicio" required>
-                            <option value="">Selecciona un servicio</option>
-                            @foreach($serviciosAsignables as $servicio)
-                                <option
-                                    value="{{ $servicio->id_servicio }}"
-                                    @selected(old('id_servicio') == $servicio->id_servicio)
-                                >
-                                    {{ $servicio->nombre }} · {{ $servicio->fecha }} · {{ $servicio->estado }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </label>
                     <label>
                         Zona de servicio
                         <select name="id_zona" required>
@@ -1047,5 +1033,4 @@
             })();
         </script>
     @endif
-
 @endsection

@@ -16,6 +16,9 @@ class IncidentController extends Controller
 {
     public function index(Request $request, SiteContext $siteContext): View
     {
+        if ($request->user()->hasRole('Recepcion de insumos')) {
+            return app(ReceptionWorkspaceController::class)->incidents($request, $siteContext);
+        }
         $site = $this->activeSite($request, $siteContext);
         $available = $this->hasIncidentSchema();
         $search = trim((string) $request->query('q', ''));
@@ -68,6 +71,12 @@ class IncidentController extends Controller
 
     public function store(Request $request, SiteContext $siteContext): RedirectResponse
     {
+        if ($request->user()->hasRole('Jefe de cocina')) {
+            return app(ChefWorkspaceController::class)->incidentStore($request,$siteContext);
+        }
+        if ($request->user()->hasRole('Recepcion de insumos')) {
+            return app(ReceptionWorkspaceController::class)->storeIncident($request, $siteContext);
+        }
         $site = $this->activeSite($request, $siteContext);
         abort_unless($this->hasIncidentSchema(), 503, 'La tabla de incidencias no está disponible.');
         $receivingLinkRules = $this->hasReceivingSchema()

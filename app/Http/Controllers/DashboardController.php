@@ -20,6 +20,17 @@ class DashboardController extends Controller
 {
     public function __invoke(Request $request, SiteContext $siteContext): View|RedirectResponse
     {
+        if($request->user()->isSuperAdministrator())return app(\App\Http\Controllers\Admin\SuperadminWorkspaceController::class)->index($request);
+        if ($request->user()->hasRole('Cajero')) return redirect()->route('cash.index');
+        if ($request->user()->hasRole('Jefe de cocina')) {
+            return app(ChefWorkspaceController::class)->dashboard($request, $siteContext);
+        }
+        if ($request->user()->hasRole('Jefe de almacen')) {
+            return app(\App\Http\Controllers\Almacen\WarehouseWorkspaceController::class)->dashboard($request, $siteContext);
+        }
+        if ($request->user()->hasRole('Recepcion de insumos')) {
+            return app(ReceptionWorkspaceController::class)->dashboard($request, $siteContext);
+        }
         if ($request->user()->isManager()) {
             return $this->managerDashboard($request, $siteContext);
         }

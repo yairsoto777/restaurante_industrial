@@ -12,7 +12,7 @@
     <div class="current-date"><x-icon name="calendar"/><div><small>Fecha actual</small><strong>{{ now()->format('d/m/Y') }}</strong></div></div>
 </div>
 
-<section class="portal-hero">
+<section class="portal-hero dashboard-banner dashboard-banner--user">
     <div>
         <span class="section-kicker">Da el siguiente paso</span>
         <h2>Encuentra un puesto en la sede ideal para ti</h2>

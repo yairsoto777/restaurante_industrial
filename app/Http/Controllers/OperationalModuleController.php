@@ -41,6 +41,7 @@ class OperationalModuleController extends Controller
             $assignments = DB::table('zona_meseros as zm')->join('zonas as z', 'z.id_zona', '=', 'zm.id_zona')
                 ->join('usuarios as u', 'u.id_usuario', '=', 'zm.id_usuario_mesero')
                 ->where('z.id_sede', $site->id_sede)->where('zm.activo', 1)
+                ->when(\App\Support\CaptainWorkspace::scoped(),fn($q)=>$q->whereIn('zm.id_servicio',DB::table('servicios')->select('id_servicio')->where('id_sede',$site->id_sede)->whereDate('fecha',now()->toDateString())->where('estado','En curso')->where('estado_aprobacion','Aprobado')))
                 ->select('zm.id_zona', 'u.id_usuario', 'u.nombre', 'u.apellido_p')->get();
             return view('mesero.tables', compact('site', 'zones', 'tables', 'assignments'));
         }

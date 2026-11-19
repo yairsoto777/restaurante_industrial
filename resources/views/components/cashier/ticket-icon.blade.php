@@ -1,0 +1,2 @@
+@props(['name'])
+<svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">@switch($name)@case('download')<path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/>@break @case('send')<path d="m22 2-7 20-4-9-9-4L22 2ZM22 2 11 13"/>@break @default<path d="M20 7v5h-5M4 17v-5h5M5.5 7a7 7 0 0 1 11.6-2L20 8M4 16l2.9 3a7 7 0 0 0 11.6-2"/>@endswitch</svg>

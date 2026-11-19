@@ -1,0 +1,2 @@
+@props(['id','title','icon'=>'building'])
+<dialog id="{{ $id }}" class="sa-drawer" aria-labelledby="{{ $id }}-title"><header><span class="sa-heading-icon"><x-icon :name="$icon"/></span><div><small>ADMINISTRACIÓN GENERAL</small><h2 id="{{ $id }}-title">{{ $title }}</h2></div><button type="button" data-sa-close aria-label="Cerrar panel">×</button></header><div class="sa-drawer-content">{{ $slot }}</div></dialog>

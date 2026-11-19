@@ -22,7 +22,11 @@ class NotificationController extends Controller
         $add = function ($id, $title, $description, $url, $tone, $date = null) use (&$events) {
             $events[$id] = compact('id','title','description','url','tone') + ['date' => $date ?: now()->toIso8601String(), 'read' => false];
         };
-        if (Schema::hasColumn('servicios','estado_aprobacion')) foreach (DB::table('servicios')->where('id_sede',$sid)->where('estado_aprobacion','Pendiente')->where(fn ($q) => $q->whereNull('id_usuario_registro')->orWhere('id_usuario_registro','!=',$user->getKey()))->get() as $r)
+        if (\App\Support\ServiceRecurrence::ready()) foreach(DB::table('service_schedule_revisions as r')->join('service_schedules as s','s.id','=','r.schedule_id')->where('s.id_sede',$sid)->where('r.estado','Pendiente')->where('r.id_usuario','!=',$user->getKey())->get(['r.*']) as $r) {
+            $settings=\App\Support\ServiceRecurrence::settings($r);
+            $add('schedule-'.$r->id,'Programación pendiente de aprobación',$settings['nombre'],route('manager.services.index'),'waiting',$r->created_at);
+        }
+        if (Schema::hasColumn('servicios','estado_aprobacion')) foreach (DB::table('servicios')->where('id_sede',$sid)->when(\App\Support\ServiceRecurrence::ready(),fn($q)=>$q->whereNull('schedule_id'))->where('estado_aprobacion','Pendiente')->where(fn ($q) => $q->whereNull('id_usuario_registro')->orWhere('id_usuario_registro','!=',$user->getKey()))->get() as $r)
             $add('service-'.$r->id_servicio,'Servicio pendiente de aprobación',$r->nombre,route('manager.services.index',['q'=>$r->nombre]),'waiting',$r->fecha);
         if (Schema::hasTable('solicitudes_empleo')) foreach (DB::table('solicitudes_empleo')->where('id_sede',$sid)->where('estado','pendiente')->where('id_usuario','!=',$user->getKey())->get() as $r)
             $add('application-'.$r->id_solicitud,'Solicitud de empleo pendiente','Solicitud #'.$r->id_solicitud.' requiere autorización.',route('manager.applications.show',$r->id_solicitud),'waiting',$r->fecha_solicitud);

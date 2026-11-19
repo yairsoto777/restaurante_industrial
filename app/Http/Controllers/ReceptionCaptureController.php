@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Support\EmploymentRoles;
 use App\Support\SiteContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -13,13 +12,10 @@ use Illuminate\Validation\ValidationException;
 
 class ReceptionCaptureController extends Controller
 {
-    private function site(Request $request, SiteContext $context)
+    private function site(Request $request, SiteContext $context, bool $capture = true)
     {
-        abort_unless($request->user()->hasRole('Recepcion de insumos'), 403);
-        $site = $context->currentFor($request, $request->user());
-        abort_unless($site && $request->user()->roles()->get()->contains(fn ($role) =>
-                (int) $role->pivot->id_sede === (int) $site->id_sede
-                && EmploymentRoles::matches($role->nombre, 'Recepcion de insumos')), 403);
+        $site = \App\Support\ReceptionWorkspace::site($request, $context);
+        if (! $capture) return $site;
         abort_unless(config('receptions.capture_enabled') && Schema::hasColumn('recepciones', 'idempotency_key'), 503,
             'La captura está pendiente de autorización y preparación del esquema.');
         abort_unless(collect(Schema::getIndexes('recepciones'))->contains(
@@ -40,7 +36,10 @@ class ReceptionCaptureController extends Controller
     {
         return DB::table('detalle_pedidos as d')->leftJoin('insumos as i', 'i.id_insumo', '=', 'd.id_insumo')
             ->leftJoin('unidades as u', 'u.id_unidad', '=', 'i.id_unidad_base')
-            ->where('d.id_pedido', $order)->orderBy('d.id_detalle_pedido')->select('d.*', 'i.nombre as insumo_nombre', 'u.permite_fracciones')->get();
+            ->where('d.id_pedido', $order)->orderBy('d.id_detalle_pedido')->select('d.*', 'i.nombre as insumo_nombre', 'u.permite_fracciones')
+            ->selectRaw(Schema::hasColumn('unidades', 'codigo') ? 'u.codigo as unidad' : 'NULL as unidad')
+            ->selectRaw(Schema::hasColumn('unidades', 'nombre') ? 'u.nombre as unidad_nombre' : 'NULL as unidad_nombre')
+            ->selectRaw(Schema::hasColumn('insumos', 'imagen_url') ? 'i.imagen_url as imagen_url' : 'NULL as imagen_url')->get();
     }
 
     private function pending($detail): int
@@ -293,13 +292,20 @@ class ReceptionCaptureController extends Controller
 
     public function show(Request $request, int $receipt, SiteContext $context)
     {
-        $site = $this->site($request, $context);
+        $site = $this->site($request, $context, false);
         $receipt = DB::table('recepciones as r')->join('pedidos as p', 'p.id_pedido', '=', 'r.id_pedido')
-            ->where('p.id_sede', $site->id_sede)->where('r.id_recepcion', $receipt)->select('r.*')->first();
+            ->leftJoin('proveedores as pr', 'pr.id_proveedor', '=', 'p.id_proveedor')
+            ->where('p.id_sede', $site->id_sede)->where('r.id_usuario', $request->user()->id_usuario)
+            ->where('r.id_recepcion', $receipt)->select('r.*', 'pr.nombre as proveedor_nombre')->first();
         abort_unless($receipt, 404);
         $details = DB::table('recepcion_detalles as d')->leftJoin('detalle_pedidos as p', 'p.id_detalle_pedido', '=', 'd.id_detalle_pedido')
             ->leftJoin('insumos as i', 'i.id_insumo', '=', 'p.id_insumo')->leftJoin('unidades as u', 'u.id_unidad', '=', 'i.id_unidad_base')->leftJoin('lotes as l', 'l.id_lote', '=', 'd.id_lote')
-            ->where('d.id_recepcion', $receipt->id_recepcion)->select('d.*', 'i.nombre as insumo_nombre', 'l.codigo_lote', 'u.codigo as unidad')->get();
-        return view('receptions.receipt', compact('site', 'receipt', 'details'));
+            ->where('d.id_recepcion', $receipt->id_recepcion)->where('p.id_pedido', $receipt->id_pedido)
+            ->select('d.*', 'p.cantidad as cantidad_solicitada', 'i.nombre as insumo_nombre', 'l.codigo_lote')
+            ->selectRaw(Schema::hasColumn('unidades', 'codigo') ? 'u.codigo as unidad' : 'NULL as unidad')->get();
+        $incidents = \App\Support\ReceptionWorkspace::incidentsAvailable()
+            ? \App\Support\ReceptionWorkspace::incidents($site->id_sede, $request->user()->id_usuario)
+                ->where('r.id_recepcion', $receipt->id_recepcion)->select('i.*')->get() : collect();
+        return view('receptions.receipt', compact('site', 'receipt', 'details', 'incidents'));
     }
 }

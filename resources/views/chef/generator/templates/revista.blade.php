@@ -1,0 +1,3 @@
+<header class="gm-editorial-masthead"><div class="gm-editorial-topline">@include('chef.generator.brand')<span>EDICIÓN GASTRONÓMICA / {{ count($document['weeks']) }} {{ count($document['weeks'])===1 ? 'SEMANA' : 'SEMANAS' }}</span></div>@include('chef.generator.title')</header>
+@if($document['hero'])<figure class="gm-editorial-hero gm-hero gm-food-photo"><img src="{{ $document['hero'] }}" alt="Platillo registrado en este menú"><figcaption><span class="gm-kicker">EN ESTA EDICIÓN</span><strong>Una mesa,<br>muchos momentos.</strong><small>{{ $document['siteName'] }}</small></figcaption></figure>@endif
+@include('chef.generator.body',['layout'=>'editorial'])

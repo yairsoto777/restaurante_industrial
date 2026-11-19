@@ -13,8 +13,6 @@
         <div class="chef-hero-actions">
             @if($canManage)
                 <a class="chef-button chef-button-primary" href="{{ route('kitchen.services.create') }}"><x-icon name="calendar" />Registrar servicio</a>
-            @elseif(auth()->user()->hasRole('Capitan de meseros'))
-                <a class="chef-button chef-button-primary" href="{{ route('captain.services.create') }}"><x-icon name="calendar" />Abrir servicio</a>
             @endif
             <a class="chef-button chef-button-secondary" href="{{ route('services.live') }}"><x-icon name="activity" />Servicio en vivo</a>
         </div>

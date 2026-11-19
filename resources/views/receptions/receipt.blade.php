@@ -55,7 +55,7 @@
         <section class="chef-panel" aria-labelledby="reception-summary-title">
             <div class="chef-panel-heading">
                 <h2 id="reception-summary-title">Resumen de la recepción</h2>
-                <span class="chef-pill chef-pill-slate">{{ $status }}</span>
+                @if($isReceptionist)@include('receptions.workspace.status',['state'=>$status])@else<span class="chef-pill chef-pill-slate">{{ $status }}</span>@endif
             </div>
             <div class="chef-form">
                 <div><strong>Pedido:</strong> #{{ $receipt->id_pedido }}</div>
@@ -85,7 +85,7 @@
             <div class="chef-table-wrap">
                 <table class="chef-table">
                     <thead><tr>
-                        <th>Alimento</th><th>Entregada</th><th>Aceptada</th><th>Rechazada</th><th>No entregada</th>
+                        <th>Alimento</th>@if($isReceptionist)<th>Solicitada</th>@endif<th>Entregada</th><th>Aceptada</th><th>Rechazada</th><th>No entregada</th>
                         <th>Lote y caducidad</th><th>Resultado e incidencias</th>
                     </tr></thead>
                     <tbody>
@@ -105,6 +105,7 @@
                         @endphp
                         <tr>
                             <td><strong>{{ $detail->insumo_nombre ?: 'Alimento no disponible' }}</strong></td>
+                            @if($isReceptionist)<td>{{ isset($detail->cantidad_solicitada) ? number_format((float) $detail->cantidad_solicitada, 3, '.', ',').' '.$unit : 'Sin dato' }}</td>@endif
                             <td>{{ number_format($delivered, 3, '.', ',') }} {{ $unit }}</td>
                             <td>{{ number_format($accepted, 3, '.', ',') }} {{ $unit }}</td>
                             <td>{{ number_format($rejected, 3, '.', ',') }} {{ $unit }}</td>
@@ -118,7 +119,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="7"><strong>Esta recepción no tiene partidas registradas.</strong></td></tr>
+                        <tr><td colspan="{{ $isReceptionist ? 8 : 7 }}"><strong>Esta recepción no tiene partidas registradas.</strong></td></tr>
                     @endforelse
                     </tbody>
                 </table>
@@ -127,7 +128,7 @@
                 <h3>Seguimiento de incidencias</h3>
                 <div class="chef-table-wrap"><table class="chef-table"><thead><tr><th>Folio</th><th>Descripción</th><th>Estado</th><th>Respuesta</th></tr></thead>
                         <tbody>@foreach($incidents as $incident)
-                            <tr><td>#{{ $incident->id_incidencia }}</td><td>{{ $incident->descripcion }}</td><td>{{ $incident->estado }}</td><td>{{ $incident->respuesta ?: 'Pendiente de respuesta' }}</td></tr>
+                            <tr><td>#{{ $incident->id_incidencia }}</td><td>{{ $incident->descripcion }}</td><td>{{ $incident->estado }}</td><td>{{ $incident->respuesta ?? 'Pendiente de respuesta' }}</td></tr>
                         @endforeach</tbody>
                     </table></div>
             @endif

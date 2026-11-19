@@ -1,0 +1,10 @@
+@extends('almacen.workspace.layout')
+@section('title','Detalle de pedido')
+@section('banner','orders')
+@section('banner-title','Pedido #'.$order->id_pedido)
+@section('banner-copy',$order->proveedor_nombre.' · '.$order->estado)
+@section('workspace')
+<section class="wh-card"><header class="wh-card-heading"><h2>Información del pedido #{{ $order->id_pedido }}</h2><span class="wh-badge {{ \App\Support\WarehouseWorkspace::badgeTone($order->estado) }}">{{ $order->estado }}</span></header><dl class="wh-detail-grid"><div><dt>Proveedor</dt><dd>{{ $order->proveedor_nombre }}</dd></div><div><dt>Entrega prevista</dt><dd>{{ $order->fecha_entrega ?: 'Sin fecha' }}</dd></div><div><dt>Fecha del pedido</dt><dd>{{ $order->fecha_pedido ?: 'Sin fecha' }}</dd></div><div><dt>Observaciones</dt><dd>{{ $order->observaciones ?: 'Sin observaciones' }}</dd></div></dl><div class="wh-table-wrap"><table class="wh-table"><thead><tr><th>Insumo</th><th>Cantidad solicitada</th><th>Especificaciones</th></tr></thead><tbody>@forelse($details as $detail)<tr><td><strong>{{ mb_strtoupper($detail->insumo ?? 'Insumo no disponible') }}</strong></td><td>{{ \App\Support\WarehouseWorkspace::quantity($detail->cantidad) }} {{ $detail->unidad }}</td><td>{{ $detail->especificaciones ?: 'Sin especificaciones' }}</td></tr>@empty<tr><td colspan="3" class="wh-empty">Sin partidas registradas.</td></tr>@endforelse</tbody></table></div></section>
+<section class="wh-card"><header class="wh-card-heading"><h2>Recepciones asociadas</h2><a href="{{ route('receptions.index') }}">Revisar recepciones →</a></header>@forelse($receipts as $receipt)<a class="wh-related" href="{{ route('receptions.review.show',$receipt->id_recepcion) }}">Recepción #{{ $receipt->id_recepcion }} · {{ $receipt->fecha_recepcion }}<small>{{ $receipt->estado }}</small></a>@empty<p class="wh-empty">Este pedido todavía no tiene recepciones registradas.</p>@endforelse<p class="wh-note">La captura física corresponde a Recepción de insumos. El pedido no aumenta las existencias.</p></section>
+<div><a class="wh-button secondary" href="{{ route('orders.index') }}">Volver a pedidos</a></div>
+@endsection

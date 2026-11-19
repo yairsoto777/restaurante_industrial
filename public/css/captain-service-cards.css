@@ -1,0 +1,56 @@
+/* Only the captain's Servicios cards. No shared component overrides. */
+.ops-captain .captain-services-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:stretch}
+.ops-captain .captain-service-card{--meal-color:#17375e;--meal-bg:#edf2f8;display:flex;flex-direction:column;margin:0;padding:0;overflow:hidden;border:1px solid #e0e7ee;border-radius:15px;box-shadow:0 3px 12px #17375e08;min-width:0}
+.ops-captain .captain-meal-breakfast{--meal-color:#aa791d;--meal-bg:#fff5df}
+.ops-captain .captain-meal-lunch{--meal-color:#298166;--meal-bg:#eaf6ef}
+.ops-captain .captain-meal-dinner{--meal-color:#8253ab;--meal-bg:#f2ebf9}
+.ops-captain .captain-service-cover{height:155px;flex-shrink:0;position:relative;background:#e8edf3}
+.ops-captain .captain-service-cover:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,#10253e35,transparent 60%);pointer-events:none}
+.ops-captain .captain-service-cover img{height:100%;width:100%;object-fit:cover;display:block}
+.ops-captain .captain-service-folio{position:absolute;left:13px;top:13px;z-index:1;color:#fff;background:#17375edb;backdrop-filter:blur(5px);padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:.2px}
+.ops-captain .captain-service-cover .cw-badge{top:13px;right:13px;z-index:1;box-shadow:0 1px 5px #17375e12}
+.ops-captain .captain-service-body{padding:18px 20px 16px;display:flex;flex-direction:column;flex:1;gap:16px;min-width:0}
+.ops-captain .captain-service-intro{display:flex;align-items:center;gap:11px;min-width:0}
+.ops-captain .captain-service-intro>div{min-width:0;flex:1}
+.ops-captain .captain-service-icon{width:40px;height:40px;flex:0 0 40px;border-radius:11px;display:grid;place-items:center;background:var(--meal-bg);color:var(--meal-color)}
+.ops-captain .captain-service-icon svg{width:22px;height:22px}
+.ops-captain .captain-service-intro h2{margin:0 0 4px;font-size:20px;font-weight:750;line-height:1.25;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ops-captain .captain-service-intro .captain-service-description{margin:0;font-size:12px;line-height:1.5;color:#788698;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ops-captain .captain-service-facts{display:grid;grid-template-columns:1.05fr 1fr 1.05fr;margin:0;padding:13px 0;border-top:1px solid #edf0f4;border-bottom:1px solid #edf0f4;gap:0}
+.ops-captain .captain-service-facts>div{padding:0 12px;min-width:0;border-left:1px solid #e7ecf2}
+.ops-captain .captain-service-facts>div:first-child{padding-left:0;border-left:0}
+.ops-captain .captain-service-facts>div:last-child{padding-right:0}
+.ops-captain .captain-service-facts dt{display:flex;align-items:center;gap:5px;font-size:10px;color:#7b899b;margin-bottom:5px}
+.ops-captain .captain-service-facts dt svg{width:14px;height:14px;color:#8394aa;flex-shrink:0}
+.ops-captain .captain-service-facts dd{margin:0;font-size:12px;color:#2c405b;font-weight:700;line-height:1.5}
+.ops-captain .captain-service-facts dd span{font-size:10px;font-weight:500}
+.ops-captain .captain-service-team{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.ops-captain .captain-service-team>section{min-width:0}
+.ops-captain .captain-service-team h3{font-size:11px;margin:0 0 9px;color:#55677e;font-weight:700;letter-spacing:0}
+.ops-captain .captain-service-zones{display:flex;flex-wrap:wrap;gap:5px}
+.ops-captain .captain-service-zone{display:inline-flex;align-items:center;gap:5px;padding:4px 7px;border-radius:5px;background:color-mix(in srgb,var(--service-zone) 9%,white);border:1px solid color-mix(in srgb,var(--service-zone) 18%,white);color:#344860;font-size:10px;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
+.ops-captain .captain-service-zone:before{content:'';width:6px;height:6px;flex:0 0 6px;background:var(--service-zone);border-radius:50%}
+.ops-captain .captain-service-avatars{display:flex;align-items:center;flex-wrap:wrap;padding-left:3px;gap:0;min-height:34px}
+.ops-captain .captain-service-avatar{display:inline-flex;margin-left:-3px;border-radius:50%;position:relative}
+.ops-captain .captain-service-avatar:focus-visible,.ops-captain .captain-service-more:focus-visible{outline:2px solid #17375e;outline-offset:3px}
+.ops-captain .captain-service-avatar:hover{z-index:1;transform:translateY(-2px)}
+.ops-captain .captain-service-avatar .cw-avatar{width:34px;height:34px;border:2px solid white;box-shadow:none;font-size:11px}
+.ops-captain .captain-service-more{width:32px;height:32px;margin-left:-2px;border:2px solid #fff;display:inline-flex;align-items:center;justify-content:center;background:#edf2f8;color:#17375e;border-radius:50%;font-size:10px;font-weight:800}
+.ops-captain .captain-service-empty{font-size:11px;color:#8b97a7}
+.ops-captain .captain-service-coverage{--coverage:#8796a8;margin-top:auto}
+.ops-captain .captain-coverage-complete{--coverage:#249777}
+.ops-captain .captain-coverage-partial{--coverage:#d8aa20}
+.ops-captain .captain-coverage-empty{--coverage:#d35656}
+.ops-captain .captain-service-coverage>div:first-child{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:7px;font-size:11px;color:#718095}
+.ops-captain .captain-service-coverage strong{color:var(--coverage);font-size:12px}
+.ops-captain .captain-service-progress{height:6px;border-radius:10px;background:#edf1f5;overflow:hidden}
+.ops-captain .captain-service-progress i{display:block;height:100%;background:var(--coverage);border-radius:inherit}
+.ops-captain .captain-service-coverage small{font-size:10px;margin-top:5px;color:#8a97a7}
+.ops-captain .captain-service-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding-top:13px;border-top:1px solid #edf0f4}
+.ops-captain .captain-service-actions .cw-btn{min-width:0;width:100%;min-height:39px;padding:9px 6px;font-size:10px;line-height:1.35;gap:5px;border-radius:7px;text-align:center}
+.ops-captain .captain-service-actions .cw-outline{border-color:#17375e;color:#17375e}
+.ops-captain .captain-service-actions .cw-btn svg{width:14px;height:14px;flex:0 0 14px}
+.ops-captain .captain-service-actions .cw-btn:hover{filter:brightness(.96)}
+@media(min-width:1400px){.ops-captain .captain-service-actions .cw-btn{font-size:11px}.ops-captain .captain-service-facts dd{font-size:13px}}
+@media(max-width:900px){.ops-captain .captain-services-grid{grid-template-columns:minmax(0,1fr)}.ops-captain .captain-service-cover{height:155px}}
+@media(max-width:480px){.ops-captain .captain-service-body{padding:15px;gap:14px}.ops-captain .captain-service-cover{height:140px}.ops-captain .captain-service-facts>div{padding:0 8px}.ops-captain .captain-service-facts dd{font-size:11px}.ops-captain .captain-service-team{gap:10px}.ops-captain .captain-service-actions{gap:5px}.ops-captain .captain-service-actions .cw-btn{font-size:10px;padding:8px 4px;min-height:42px}.ops-captain .captain-service-intro h2{font-size:19px}}

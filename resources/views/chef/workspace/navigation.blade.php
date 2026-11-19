@@ -1,0 +1,3 @@
+@foreach(['INICIO'=>[['dashboard','Panel principal','home']], 'PLANIFICACIÓN'=>[['chef.services','Gestión de servicios','calendar'],['chef.dishes','Catálogo de platillos','dish'],['chef.menus','Menú por servicio','utensils'],['chef.generator','Generador de menús','layers']], 'OPERACIÓN DE COCINA'=>[['chef.commands','Comandas','activity'],['chef.stock','Consulta de insumos','box'],['chef.incidents','Incidencias','alert']]] as $section=>$links)
+<div class="nav-section"><span>{{ $section }}</span>@foreach($links as [$route,$label,$icon])<a class="nav-link {{ request()->routeIs($route,$route.'.*') ? 'active' : '' }}" href="{{ route($route) }}"><x-icon :name="$icon"/><b>{{ $label }}</b></a>@endforeach</div>
+@endforeach

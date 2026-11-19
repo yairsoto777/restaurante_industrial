@@ -9,7 +9,7 @@
     </section>
     <section class="chef-panel chef-form-panel">
         <div class="chef-panel-heading"><div><span class="chef-kicker">Datos del servicio</span><h2>{{ $service->exists ? $service->nombre : 'Nueva propuesta' }}</h2></div></div>
-        <form method="POST" action="{{ $service->exists ? route('kitchen.services.update', $service) : (($captainFlow ?? false) ? route('captain.services.store') : route('kitchen.services.store')) }}" class="chef-form">
+        <form method="POST" action="{{ $service->exists ? route('kitchen.services.update', $service) : route('kitchen.services.store') }}" class="chef-form">
             @csrf @if($service->exists) @method('PUT') @endif
             <label class="chef-field chef-field-wide"><span>Nombre del servicio</span><input name="nombre" value="{{ old('nombre', $service->nombre) }}" required maxlength="100" placeholder="Ej. Comida ejecutiva"></label>
             <label class="chef-field"><span>Fecha</span><input type="date" name="fecha" value="{{ old('fecha', $service->fecha?->format('Y-m-d')) }}" required></label>

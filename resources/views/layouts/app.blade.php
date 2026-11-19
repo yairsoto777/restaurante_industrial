@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="{{ auth()->user()->isManager() ? 'manager-workspace' : '' }} {{ auth()->user()->hasRole('Recepcion de insumos') ? 'reception-workspace' : '' }} {{ auth()->user()->hasRole('Jefe de almacen') ? 'warehouse-workspace' : '' }} {{ auth()->user()->hasRole('Jefe de cocina') ? 'chef-workspace' : '' }}">
 
 <head>
     <meta charset="UTF-8">
@@ -25,10 +25,24 @@
         'resources/js/app.js'
     ])
 
+    @if(auth()->user()->isSuperAdministrator())
+    <link rel="stylesheet" href="{{ asset('css/superadmin-workspace.css') }}?v={{ filemtime(public_path('css/superadmin-workspace.css')) }}">
+    <script src="{{ asset('js/superadmin-workspace.js') }}?v={{ filemtime(public_path('js/superadmin-workspace.js')) }}" defer></script>
+    @endif
     {{-- ESTILOS PARTICULARES DE CADA VISTA --}}
     @stack('styles')
+    @if(auth()->user()->hasRole('Jefe de cocina'))
+        <link rel="stylesheet" href="{{ asset('css/chef-workspace.css') }}?v={{ filemtime(public_path('css/chef-workspace.css')) }}">
+        <script src="{{ asset('js/chef-workspace.js') }}?v={{ filemtime(public_path('js/chef-workspace.js')) }}" defer></script>
+    @endif
     <link rel="stylesheet" href="{{ asset('css/role-workspace.css') }}?v=20261114">
-    <link rel="stylesheet" href="{{ asset('css/site-brand.css') }}?v=20261114">
+    @if(auth()->user()->hasRole('Jefe de almacen'))
+        <link rel="stylesheet" href="{{ asset('css/warehouse-workspace.css') }}?v=20261115-status-colors">
+        <script src="{{ asset('js/warehouse-workspace.js') }}?v=20261114" defer></script>
+    @endif
+    @if(auth()->user()->hasRole('Recepcion de insumos'))
+        <link rel="stylesheet" href="{{ asset('css/reception-workspace.css') }}?v=20261114">
+    @endif
     @if(auth()->user()->isManager())
         <link rel="stylesheet" href="{{ asset('css/manager.css') }}?v=20261113">
         @if(request()->routeIs('manager.employees.*'))
@@ -36,6 +50,7 @@
         @endif
         <link rel="stylesheet" href="{{ asset('css/manager-finish.css') }}?v=20261114">
         <link rel="stylesheet" href="{{ asset('css/manager-polish.css') }}?v=20261114">
+        <link rel="stylesheet" href="{{ asset('css/manager-corporate.css') }}?v=20261114-dashboard-roles">
     @endif
 
     @if(auth()->user()->hasRole('Capitan de meseros') || auth()->user()->hasRole('Mesero') || auth()->user()->hasRole('Cajero'))
@@ -45,17 +60,25 @@
     @if(auth()->user()->hasRole('Capitan de meseros'))
         <link rel="stylesheet" href="{{ asset('css/captain-visual.css') }}?v=20261113">
         <script src="{{ asset('js/captain-visual.js') }}?v=20261113" defer></script>
+        <link rel="stylesheet" href="{{ asset('css/captain-workspace.css') }}?v=20261116-incidents">
+        <script src="{{ asset('js/captain-workspace.js') }}?v={{ filemtime(public_path('js/captain-workspace.js')) }}" defer></script>
     @endif
     @if(auth()->user()->hasRole('Mesero') && !auth()->user()->hasRole('Capitan de meseros') && !auth()->user()->hasRole('Cajero'))
         <link rel="stylesheet" href="{{ asset('css/waiter-visual.css') }}?v=20261113">
+        <link rel="stylesheet" href="{{ asset('css/waiter-workspace.css') }}?v={{ filemtime(public_path('css/waiter-workspace.css')) }}">
+        <script src="{{ asset('js/waiter-workspace.js') }}?v={{ filemtime(public_path('js/waiter-workspace.js')) }}" defer></script>
     @endif
 
     @if(auth()->user()->hasRole('Cajero') && !auth()->user()->hasRole('Capitan de meseros'))
         <link rel="stylesheet" href="{{ asset('css/cashier-visual.css') }}?v=20261113">
+        <link rel="stylesheet" href="{{ asset('css/cashier-workspace.css') }}?v={{ filemtime(public_path('css/cashier-workspace.css')) }}">
+        <script src="{{ asset('js/cashier-workspace.js') }}?v={{ filemtime(public_path('js/cashier-workspace.js')) }}" defer></script>
     @endif
+    <link rel="stylesheet" href="{{ asset('css/site-brand.css') }}?v={{ filemtime(public_path('css/site-brand.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/dashboard-banners.css') }}?v={{ filemtime(public_path('css/dashboard-banners.css')) }}">
 </head>
 
-<body class="app-body {{ auth()->user()->hasRole('Cajero') && !auth()->user()->hasRole('Capitan de meseros') ? 'ops-cashier' : '' }} {{ auth()->user()->hasRole('Capitan de meseros') || auth()->user()->hasRole('Mesero') || auth()->user()->hasRole('Cajero') ? 'ops-ui' : '' }} {{ auth()->user()->hasRole('Capitan de meseros') ? 'ops-captain' : '' }} {{ auth()->user()->hasRole('Mesero') && !auth()->user()->hasRole('Capitan de meseros') && !auth()->user()->hasRole('Cajero') ? 'ops-waiter' : '' }}">
+<body class="app-body {{ auth()->user()->isSuperAdministrator() ? 'superadmin-workspace' : '' }} {{ auth()->user()->hasRole('Cajero') && !auth()->user()->hasRole('Capitan de meseros') ? 'ops-cashier' : '' }} {{ auth()->user()->hasRole('Capitan de meseros') || auth()->user()->hasRole('Mesero') || auth()->user()->hasRole('Cajero') ? 'ops-ui' : '' }} {{ auth()->user()->hasRole('Capitan de meseros') ? 'ops-captain' : '' }} {{ auth()->user()->hasRole('Mesero') && !auth()->user()->hasRole('Capitan de meseros') && !auth()->user()->hasRole('Cajero') ? 'ops-waiter' : '' }}">
 
 @php
     /*
@@ -69,6 +92,10 @@
     $isCommonUser = $authenticatedUser->isCommonUser();
 
     $isManager = $authenticatedUser->isManager();
+    $isReception = $authenticatedUser->hasRole('Recepcion de insumos');
+    $isWarehouseChief = $authenticatedUser->hasRole('Jefe de almacen');
+    $isKitchenChief = $authenticatedUser->hasRole('Jefe de cocina');
+    $isKitchenStaff = $authenticatedUser->hasRole('Personal de cocina');
 
     $isSuperAdministrator =
         $authenticatedUser->isSuperAdministrator();
@@ -112,29 +139,20 @@
 
         {{-- IDENTIDAD DEL SISTEMA --}}
 
-        <div class="sidebar-brand {{ $isManager ? 'sidebar-brand-manager' : '' }}">
+        <div class="sidebar-brand {{ $isKitchenStaff ? 'kp-brand' : '' }}">
 
             @php
-                $sidebarSiteBrand = !$isSuperAdministrator && ($isManager || $isKitchen || $isWarehouse || $isService || $isCashier)
-                    && filled($currentSite?->logo_url);
+                $sidebarSite = $isSuperAdministrator ? null : $currentSite;
+                $sidebarName = $sidebarSite?->nombre ?? 'NUTRILIADO';
+                $sidebarLogo = \App\Support\ChefWorkspace::image($sidebarSite?->logo_url, 'images/logo.png');
             @endphp
-            @if($sidebarSiteBrand)
-                <div class="site-brand-custom">
-                    <div class="site-brand-logo"><img src="{{ asset(ltrim(\Illuminate\Support\Facades\Storage::url($currentSite->logo_url), '/')) }}" alt="" onerror="this.closest('.site-brand-custom').hidden=true; this.closest('.sidebar-brand').classList.add('logo-failed');"></div>
-                    @if($isManager)
-                        <strong>{{ $currentSite->nombre }}</strong>
-                        <small>Operación alimentaria</small>
-                    @else
-                        <small>Gestionado con NUTRILIADO</small>
-                    @endif
+            <div class="site-brand-custom">
+                <div class="site-brand-logo">
+                    <img src="{{ $sidebarLogo }}" alt="" data-fallback="{{ asset('images/logo.png') }}"
+                        onerror="this.onerror=null; this.src=this.dataset.fallback;">
                 </div>
-            @else
-                <span>N</span>
-            @endif
-
-            <div class="site-brand-name">
-                <strong>NUTRILIADO</strong>
-                <small>Operación alimentaria</small>
+                <strong>{{ $sidebarName }}</strong>
+                <small>{{ $isSuperAdministrator ? 'Administración general' : 'Operación alimentaria' }}</small>
             </div>
 
         </div>
@@ -148,9 +166,49 @@
             class="sidebar-nav"
             aria-label="Navegación principal"
         >
-            @if($isManager)
-                <div class="mgr-sidebar-context"><x-icon name="building"/><div><strong>Gerente de Sede</strong><small>Sede: {{ $currentSite?->nombre ?? 'Sin sede' }}</small></div></div>
-            @endif
+            @php
+                [$sidebarRole, $sidebarIcon] = match (true) {
+                    $isSuperAdministrator => ['Superadministrador', 'layers'],
+                    $isKitchenChief => ['Jefe de cocina', 'utensils'],
+                    $isKitchenStaff => ['Personal de cocina', 'utensils'],
+                    $isWarehouseChief => ['Jefe de almacén', 'warehouse'],
+                    $isReception => ['Recepción de insumos', 'box'],
+                    $isCaptain => ['Capitán de meseros', 'users'],
+                    $authenticatedUser->hasRole('Mesero') => ['Mesero', 'users'],
+                    $isCashier => ['Cajero', 'cash'],
+                    $isManager => ['Gerente de Sede', 'building'],
+                    default => [$authenticatedUser->roleLabel(), 'users'],
+                };
+            @endphp
+            <div class="sidebar-role">
+                <x-icon :name="$sidebarIcon"/>
+                <div>
+                    <strong>{{ $sidebarRole }}</strong>
+                    @if($isSuperAdministrator)
+                        <small>Control corporativo</small>
+                    @else
+                        <small>Sede: {{ $sidebarSite?->nombre ?? 'Sin sede' }}</small>
+                    @endif
+                </div>
+            </div>
+
+            @if($isSuperAdministrator)
+                @include('superadmin.navigation')
+            @elseif($isKitchenChief)
+                @include('chef.workspace.navigation')
+            @elseif($isKitchenStaff)
+                @include('kitchen.production.navigation')
+            @elseif($isWarehouseChief)
+                @include('almacen.workspace.navigation')
+            @elseif($isReception)
+                @include('receptions.workspace.navigation')
+            @elseif($isCaptain)
+                @include('capitan.partials.navigation')
+            @elseif($authenticatedUser->hasRole('Mesero'))
+                @include('mesero.workspace.navigation')
+            @elseif($isCashier)
+                @include('cash.workspace.navigation')
+            @else
 
             {{-- ==============================================
                  INICIO
@@ -451,126 +509,7 @@
                 !$isSuperAdministrator
             )
 
-                <div class="nav-section">
-
-                    <span>Operación de piso</span>
-
-                    {{-- PANEL DEL CAPITÁN --}}
-
-                    <a
-                        class="nav-link {{ request()->routeIs('capitan.index') && request('modulo', 'panel') === 'panel' ? 'active' : '' }}"
-                        href="{{ route('capitan.index') }}"
-                    >
-                        <x-icon name="home"/>
-                        <b>Panel del capitán</b>
-                    </a>
-
-
-                    {{-- SERVICIO EN VIVO --}}
-
-                    <a
-                        class="nav-link {{ request()->routeIs('capitan.index') && request('modulo') === 'servicios' ? 'active' : '' }}"
-                        href="{{ route('capitan.index', ['modulo' => 'servicios']) }}"
-                    >
-                        <x-icon name="activity"/>
-                        <b>Servicio en vivo</b>
-                    </a>
-
-
-                    
-{{-- MESAS Y ZONAS --}}
-
-<a
-    class="nav-link {{ request()->routeIs('capitan.mesas.*') ? 'active' : '' }}"
-    href="{{ route('capitan.mesas.index') }}"
->
-    <x-icon name="map"/>
-    <b>Mesas y zonas</b>
-</a>
-
-
-{{-- ASIGNACIONES --}}
-
-<a
-    class="nav-link {{ request()->routeIs('capitan.index') && request('modulo') === 'asignaciones' ? 'active' : '' }}"
-    href="{{ route('capitan.index', ['modulo' => 'asignaciones']) }}"
->
-    <x-icon name="users"/>
-    <b>Asignación de meseros</b>
-</a>
-
-</div>
-
-
-
-                {{-- SUPERVISIÓN DEL CAPITÁN --}}
-
-                <div class="nav-section">
-
-                    <span>Supervisión</span>
-
-                    {{-- ATENCIONES --}}
-
-                    <a
-                        class="nav-link {{ request()->routeIs('capitan.index') && request('modulo') === 'atenciones' ? 'active' : '' }}"
-                        href="{{ route('capitan.index', ['modulo' => 'atenciones']) }}"
-                    >
-                        <x-icon name="layers"/>
-                        <b>Atenciones</b>
-                    </a>
-
-
-                    {{-- COMIDAS --}}
-
-                    <a
-                        class="nav-link {{ request()->routeIs('capitan.index') && request('modulo') === 'comandas' ? 'active' : '' }}"
-                        href="{{ route('capitan.index', ['modulo' => 'comandas']) }}"
-                    >
-                        <x-icon name="utensils"/>
-                        <b>Comidas</b>
-                    </a>
-
-
-                    {{-- GRUPOS --}}
-
-                    <a
-                        class="nav-link {{ request()->routeIs('capitan.index') && request('modulo') === 'grupos' ? 'active' : '' }}"
-                        href="{{ route('capitan.index', ['modulo' => 'grupos']) }}"
-                    >
-                        <x-icon name="group"/>
-                        <b>Grupos y entregas</b>
-                    </a>
-
-
-                    {{-- INCIDENCIAS --}}
-
-                    <a
-                        class="nav-link {{ request()->routeIs('capitan.index') && request('modulo') === 'incidencias' ? 'active' : '' }}"
-                        href="{{ route('capitan.index', ['modulo' => 'incidencias']) }}"
-                    >
-                        <x-icon name="alert"/>
-                        <b>Incidencias</b>
-                    </a>
-
-                </div>
-
-
-                {{-- REPORTES DEL CAPITÁN --}}
-
-                <div class="nav-section">
-
-                    <span>Reportes</span>
-
-                    <a
-                        class="nav-link {{ request()->routeIs('capitan.index') && request('modulo') === 'reportes' ? 'active' : '' }}"
-                        href="{{ route('capitan.index', ['modulo' => 'reportes']) }}"
-                    >
-                        <x-icon name="chart"/>
-                        <b>Reportes de servicio</b>
-                    </a>
-
-                </div>
-
+                @include('capitan.partials.navigation')
             @endif
 
 
@@ -896,6 +835,7 @@
 
             @endif
 
+            @endif
         </nav>
 
 
@@ -1052,8 +992,22 @@
 
                 {{-- NOTIFICACIONES --}}
 
-                @if(auth()->user()->isManager())
+                @if($isSuperAdministrator)
+                    @include('manager.notifications', ['notificationFeed' => 'superadmin.notifications.index', 'notificationRead' => 'superadmin.notifications.read'])
+                @elseif(auth()->user()->isManager())
                     @include('manager.notifications')
+                @elseif($isReception)
+                    @include('manager.notifications', ['notificationFeed' => 'receptions.notifications.index', 'notificationRead' => 'receptions.notifications.read'])
+                @elseif($isWarehouseChief)
+                    @include('manager.notifications', ['notificationFeed' => 'warehouse.notifications.index', 'notificationRead' => 'warehouse.notifications.read'])
+                @elseif($isKitchenChief)
+                    @include('manager.notifications', ['notificationFeed' => 'chef.notifications.index', 'notificationRead' => 'chef.notifications.read'])
+                @elseif($isKitchenStaff)
+                    @include('manager.notifications', ['notificationFeed' => 'kitchen.notifications.index', 'explicitReview' => true])
+                @elseif($isCaptain)
+                    @include('manager.notifications', ['notificationFeed' => 'capitan.notifications.index', 'notificationRead' => 'capitan.notifications.read'])
+                @elseif($authenticatedUser->hasRole('Mesero'))
+                    @include('manager.notifications', ['notificationFeed' => 'waiter.notifications.index', 'notificationRead' => 'waiter.notifications.read'])
                 @else
                 <button
                     class="notification-button"
@@ -1144,7 +1098,7 @@
 
             {{-- MENSAJES DEL SISTEMA --}}
 
-            @if(session('status'))
+            @if(session('status') && !$isSuperAdministrator && !($isCashier && request()->routeIs('cash.*')))
 
                 <div class="alert success">
                     {{ session('status') }}
@@ -1155,7 +1109,7 @@
 
             {{-- ERRORES DE VALIDACIÓN --}}
 
-            @if($errors->any())
+            @if($errors->any() && !$isSuperAdministrator && !($isCashier && request()->routeIs('cash.*')))
 
                 <div class="alert error">
 

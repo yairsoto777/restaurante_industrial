@@ -1,0 +1,1 @@
+@if($company?->logo_url)<img class="sa-company-logo" src="{{ \App\Support\ChefWorkspace::image($company->logo_url) }}" alt="Logotipo de {{ $company->nombre }}">@else<span class="sa-avatar sa-blue"><x-icon name="building"/></span>@endif

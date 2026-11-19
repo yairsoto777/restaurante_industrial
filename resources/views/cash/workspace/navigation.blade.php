@@ -1,0 +1,3 @@
+@foreach(['INICIO'=>['panel'=>['home','Panel principal']],'OPERACIÓN DE CAJA'=>['turno'=>['cash','Turno de caja'],'pendientes'=>['clock','Cuentas pendientes'],'historial'=>['activity','Historial de cobros'],'tickets'=>['receipt','Tickets']],'CONTROL FINANCIERO'=>['cierre'=>['check','Cierre de caja']]] as $heading=>$items)
+<div class="nav-section"><span>{{ $heading }}</span>@foreach($items as $key=>$item)<a class="nav-link {{ (request()->routeIs('cash.ticket')?'tickets':(request()->routeIs('cash.history')?'historial':request('modulo','panel')))===$key?'active':'' }}" href="{{ route('cash.index',['modulo'=>$key]) }}"><x-cashier.icon :name="$item[0]"/><b>{{ $item[1] }}</b></a>@endforeach</div>
+@endforeach

@@ -12,7 +12,7 @@ final class ManagerRouteAccess
         foreach (['manager.site-page.', 'manager.employees.', 'manager.applications.', 'manager.notifications.'] as $prefix) {
             if (str_starts_with($name, $prefix)) return true;
         }
-        if (in_array($name, ['manager.services.approve', 'manager.services.reject'], true)) return $method === 'PATCH';
+        if (in_array($name, ['manager.services.approve', 'manager.services.reject', 'manager.schedules.review'], true)) return $method === 'PATCH';
         return in_array($method, ['GET', 'HEAD'], true) && in_array($name, [
             'dashboard', 'manager.services.index', 'inventory.index', 'receptions.index',
             'receptions.orders.show', 'receptions.receipts.show', 'receptions.review.show',

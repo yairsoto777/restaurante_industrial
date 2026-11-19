@@ -1,0 +1,12 @@
+(() => {
+ 'use strict';const root=document.querySelector('[data-tk-workspace]');if(!root)return;
+ const preview=root.querySelector('[data-tk-preview]'),actions=[...root.querySelectorAll('[data-tk-action]')],paper=root.querySelector('[data-tk-paper]'),feedback=root.querySelector('[data-tk-feedback]');
+ let selected=null;
+ function select(id){const template=[...root.querySelectorAll('[data-tk-template]')].find(t=>t.dataset.tkTemplate===id);if(!template)return;selected=id;preview.replaceChildren(template.content.cloneNode(true));root.querySelectorAll('[data-tk-pick]').forEach(row=>{const chosen=row.dataset.tkPick===id;row.classList.toggle('is-selected',chosen);if(row.tagName==='BUTTON')row.setAttribute('aria-pressed',String(chosen));else row.setAttribute('aria-current',String(chosen));});actions.forEach(b=>b.disabled=false);feedback.textContent='Ticket #'+id+' · Folio e importes originales. Consulta e impresión sin nuevos cobros.';}
+ const clearPrint=()=>{document.body.classList.remove('cr-print-ticketdesk');document.querySelector('.tk-print-host')?.remove();};
+ root.addEventListener('click',event=>{const pick=event.target.closest('[data-tk-pick]');if(pick){select(pick.dataset.tkPick);return;}const action=event.target.closest('[data-tk-action]');if(!action||!selected)return;const receipt=preview.querySelector('.tk-receipt-paper');if(!receipt)return;clearPrint();const host=document.createElement('div');host.className='tk-print-host cr-workspace';host.dataset.crModule='tickets';host.dataset.paper=paper.value==='58'?'58':'80';const pageStyle=document.createElement('style');pageStyle.textContent='@media print { @page { margin: 0; size: auto; } }';host.append(pageStyle,receipt.cloneNode(true));document.body.append(host);document.body.classList.add('cr-print-ticketdesk');feedback.textContent=action.dataset.tkAction==='pdf'?'Selecciona “Guardar como PDF” en el diálogo de impresión.':'Impresión del ticket #'+selected+' sin modificar el cobro original.';window.print();});
+ root.addEventListener('keydown',event=>{const row=event.target.closest('tr[data-tk-pick]');if(row&&(event.key==='Enter'||event.key===' ')){event.preventDefault();select(row.dataset.tkPick);}});
+ root.querySelector('[data-tk-order]')?.addEventListener('change',event=>{const field=root.querySelector('[data-tk-order-field]');field.value=event.target.value;field.form.requestSubmit();});
+ window.addEventListener('afterprint',clearPrint);
+ const first=root.querySelector('tr[data-tk-pick]');if(first)select(first.dataset.tkPick);
+})();

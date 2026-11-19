@@ -1,6 +1,5 @@
 /* Waiter only. No layout or colors are applied to Captain or Cashier. */
 .ops-waiter { --waiter-navy:#102c4e; --waiter-blue:#1479eb; --waiter-muted:#62768e; background:#f1f6fc; }
-.ops-waiter .app-sidebar { background:#0a203e; }
 .ops-waiter :is(.dashboard-heading,.chef-hero) { position:relative; isolation:isolate; display:flex; align-items:center; justify-content:space-between; gap:20px; min-height:164px; padding:26px 30px; border:1px solid #1d416a; border-radius:17px; color:#fff; background:#102c4e; background-image:linear-gradient(90deg,#071e3bf5,#0a2949d9 55%,#0b28444a),url('../img/ui/captain-dining.webp'); background-repeat:no-repeat; background-size:cover; background-position:center 44%; box-shadow:0 8px 24px #163c5c0c; }
 .ops-waiter :is(.dashboard-heading h1,.chef-hero h1) { color:#fff; font-size:clamp(25px,2.4vw,34px); line-height:1.2; font-weight:800; margin:5px 0 9px; }
 .ops-waiter :is(.dashboard-heading p,.chef-hero p) { color:#d8e5f3; max-width:65ch; font-size:13px; line-height:1.65; }

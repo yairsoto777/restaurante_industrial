@@ -1,0 +1,125 @@
+/* Active manager workspace only. Public pages and editor iframes have their own document. */
+.manager-workspace {
+    /* Reserved for the sidebar and primary actions; keep the general palette intact. */
+    --mgr-action: #1F3A5F;
+    --mgr-action-hover: #27486F;
+    --mgr-action-border: #18314F;
+    --mgr-oxford: #14283F;
+    --mgr-steel: #233E59;
+    --mgr-secondary: #426783;
+    --mgr-surface: #E8EDF3;
+    --mgr-background: #F7F8FA;
+    --mgr-white: #FFFFFF;
+    --mgr-approved: #52836D;
+    --mgr-pending: #C6A05A;
+    --mgr-incident: #B96060;
+    --mgr-ink: var(--mgr-oxford);
+    --mgr-purple: var(--mgr-secondary);
+    --mgr-muted: #5D6C7D;
+    --mgr-border: #DCE2E9;
+    --mgr-radius: 8px;
+    --mgr-shadow: 0 2px 8px #14283F06;
+    --border: var(--mgr-border);
+}
+.manager-workspace .app-body { background: var(--mgr-background); color: var(--mgr-ink); font-family: Inter,'Segoe UI',Arial,sans-serif; -webkit-font-smoothing: antialiased; }
+.manager-workspace :is(button,input,select,textarea,.sidebar-brand strong,.mgr-card-heading h2) { font-family: inherit; }
+.manager-workspace body .app-sidebar { background: var(--mgr-action); border-color: var(--mgr-action-border); box-shadow: none; }
+.manager-workspace .app-sidebar::after { display: none; }
+.manager-workspace .sidebar-brand { background: transparent; }
+.manager-workspace .sidebar-brand :is(.site-brand-logo,.site-brand-custom .site-brand-logo) { background: transparent; border: 0; border-radius: 0; padding: 0; box-shadow: none; }
+.manager-workspace .sidebar-nav .nav-link { color: #CBD5E1; border-radius: 6px; font-weight: 500; }
+.manager-workspace .sidebar-nav .nav-link:hover { background: var(--mgr-action-hover); color: var(--mgr-white); transform: none; }
+.manager-workspace body .sidebar-nav .nav-link.active,
+.manager-workspace body .sidebar-nav .nav-link.active:hover { background: var(--mgr-action-hover); color: var(--mgr-white); box-shadow: inset 3px 0 var(--mgr-action-border); }
+.manager-workspace .sidebar-nav .nav-section>span,
+.manager-workspace :is(.sidebar-brand small,.mgr-sidebar-context small) { color: #B4C2D0; }
+.manager-workspace body .mgr-sidebar-context { background: var(--mgr-action-border); border-radius: var(--mgr-radius); }
+.manager-workspace body .mgr-sidebar-context>.ui-icon { color: var(--mgr-surface); }
+.manager-workspace .topbar { background: var(--mgr-white); border-color: var(--mgr-border); box-shadow: none; }
+.manager-workspace .topbar .avatar { background: var(--mgr-steel); color: var(--mgr-white); }
+.manager-workspace :is(.topbar .role-switch,.site-selector) { background: var(--mgr-surface); color: var(--mgr-steel); border-color: var(--mgr-border); border-radius: 6px; }
+.manager-workspace :is(.page-heading h1,.mgr-heading h1,.inventory-hero h1,.chef-hero h1) { color: var(--mgr-oxford); font-weight: 650; letter-spacing: -.025em; }
+.manager-workspace :is(.page-heading p,.mgr-heading p,.manager-note,.mgr-caption,.inventory-hero-description,.nu-editor-note) { color: var(--mgr-muted); }
+.manager-workspace :is(.section-kicker,.inventory-eyebrow,.inventory-panel-kicker,.current-date>.ui-icon) { color: var(--mgr-secondary); }
+.manager-workspace :is(.mgr-card,.panel,.dashboard-card,.kpi-card,.inventory-count-panel,.inventory-panel,.inventory-summary-card,.chef-panel,.nu-editor-panel,.nu-editor-center) { background: var(--mgr-white); border: 1px solid var(--mgr-border); border-radius: var(--mgr-radius); box-shadow: var(--mgr-shadow); }
+.manager-workspace :is(.mgr-kpi,.mgr-users .mgr-kpi,.kpi-card) { background: var(--mgr-white); border: 1px solid var(--mgr-border); min-height: 112px; }
+.manager-workspace :is(.mgr-kpi strong,.kpi-copy>strong,.inventory-summary-card strong) { color: var(--mgr-oxford); font-weight: 650; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
+.manager-workspace :is(.mgr-kpi>div>span,.kpi-copy>span,.manager-service-body dt,.manager-responsible small) { color: var(--mgr-muted); }
+.manager-workspace :is(.mgr-kpi-icon,.mgr-users .mgr-kpi-icon,.inventory-summary-icon) { background: var(--mgr-surface); color: var(--mgr-secondary); border-radius: 8px; }
+.manager-workspace .mgr-kpi.green .mgr-kpi-icon { background: color-mix(in srgb,var(--mgr-approved) 12%,white); color: var(--mgr-approved); }
+.manager-workspace .mgr-kpi.orange .mgr-kpi-icon { background: color-mix(in srgb,var(--mgr-pending) 14%,white); color: var(--mgr-pending); }
+.manager-workspace :is(.mgr-card-heading h2,.chef-panel-heading h2,.site-builder-dashboard h2,.manager-followup h2) { color: var(--mgr-oxford); font-weight: 650; letter-spacing: -.02em; }
+.manager-workspace :is(.mgr-card-heading h2 .ui-icon,.mgr-card-heading>a,.mgr-table a,.manager-service-details summary,.manager-followup>a) { color: var(--mgr-secondary); }
+.manager-workspace :is(.button,.mgr-button,.inventory-button,.chef-button,.mgr-edit,.manager-reject) { border-radius: 6px; box-shadow: none; font-weight: 600; }
+.manager-workspace :is(.button.primary,.mgr-button:not(.secondary):not(.success):not(.danger),.inventory-button-primary,.chef-button-primary) { background: var(--mgr-action); border-color: var(--mgr-action-border); color: var(--mgr-white); }
+.manager-workspace :is(.button.primary,.mgr-button:not(.secondary):not(.success):not(.danger),.inventory-button-primary,.chef-button-primary):is(:hover,:active) { background: var(--mgr-action-hover); border-color: var(--mgr-action-border); transform: none; filter: none; box-shadow: none; }
+.manager-workspace :is(.mgr-button.secondary,.mgr-users .mgr-button.secondary) { background: var(--mgr-white); border-color: var(--mgr-border); color: var(--mgr-steel) !important; }
+.manager-workspace :is(.button.success,.mgr-approve) { background: var(--mgr-approved); border-color: var(--mgr-approved); color: var(--mgr-white); }
+.manager-workspace :is(.mgr-quick>a,.mgr-quick .violet,.mgr-quick .green,.mgr-quick .orange) { background: var(--mgr-background); border: 1px solid var(--mgr-border); color: var(--mgr-steel); border-radius: 6px; }
+.manager-workspace .mgr-quick>a:hover { background: var(--mgr-surface); transform: none; filter: none; }
+.manager-workspace .mgr-bars { background: repeating-linear-gradient(to top,transparent 0,transparent 39px,var(--mgr-surface) 39px,var(--mgr-surface) 40px); }
+.manager-workspace :is(.mgr-bar-track i,.manager-chart-bars i) { background: var(--mgr-secondary); }
+.manager-workspace .manager-chart-bars>div>div { background: var(--mgr-surface); }
+.manager-workspace :is(.manager-chart-bars strong,.manager-service-body dd) { color: var(--mgr-steel); }
+.manager-workspace :is(.mgr-banner,.site-builder-dashboard,.page-content .chef-hero,.inventory-hero) { border-radius: var(--mgr-radius); box-shadow: none; }
+.manager-workspace .mgr-banner { background: linear-gradient(90deg,#14283FF2,#14283FC9),url('../img/ui/captain-dining.webp') center/cover; }
+.manager-workspace .mgr-banner>div { border-left: 3px solid var(--mgr-pending); }
+.manager-workspace .mgr-banner h2 { font-size: clamp(26px,2.4vw,34px); font-weight: 650; }
+.manager-workspace .mgr-banner-brand .ui-icon { color: var(--mgr-surface); }
+.manager-workspace .site-builder-dashboard { border-color: var(--mgr-border); border-left: 3px solid var(--mgr-steel); background: linear-gradient(90deg,#F7F8FAF5,#F7F8FAEC),url('../img/ui/captain-dining.webp') center/cover; }
+.manager-workspace .page-content .chef-hero { border-color: var(--mgr-border); border-left: 3px solid var(--mgr-steel); background: linear-gradient(90deg,#F7F8FAF5,#F7F8FAEC),url('../img/ui/captain-kitchen.webp') center/cover; }
+.manager-workspace :is(.site-builder-dashboard p,.chef-hero-copy p,.manager-followup,.manager-followup p,.manager-service-details) { color: var(--mgr-muted); }
+.manager-workspace :is(.manager-filters,.mgr-editor-heading,.inventory-hero,.manager-followup) { background: var(--mgr-background); border-color: var(--mgr-border); border-radius: var(--mgr-radius); }
+.manager-workspace :is(.manager-service-card,.manager-service-body dl>div,.mgr-info,.mgr-account-details,fieldset,.empty-panel,.site-choice) { border-color: var(--mgr-border); border-radius: var(--mgr-radius); box-shadow: none; }
+.manager-workspace .manager-service-cover { border-bottom: 0; }
+.manager-workspace .manager-service-body { background: var(--mgr-white); }
+.manager-workspace :is(.manager-service-body dt svg,.manager-responsible>svg) { color: var(--mgr-secondary); }
+.manager-workspace :is(.manager-responsible>svg,.mgr-info,.mgr-role,.mgr-role[class*='tone-'],.mgr-avatar,.chef-count,.site-choice-icon,.empty-icon) { background: var(--mgr-surface); color: var(--mgr-steel); }
+.manager-workspace :is(.manager-filters>label,.mgr-fields label,.page-content .panel label) { color: var(--mgr-steel); }
+.manager-workspace :is(.page-content input,.page-content select,.page-content textarea,.inventory-dialog input,.inventory-dialog select,.inventory-dialog textarea) { border-color: var(--mgr-border); border-radius: 6px; background: var(--mgr-white); color: var(--mgr-ink); accent-color: var(--mgr-steel); }
+.manager-workspace :is(input,select,textarea):focus { border-color: var(--mgr-secondary); outline: 2px solid color-mix(in srgb,var(--mgr-secondary) 24%,transparent); outline-offset: 2px; box-shadow: none; }
+.manager-workspace :is(button,a,summary):focus-visible { outline: 2px solid var(--mgr-secondary); outline-offset: 3px; }
+.manager-workspace .mgr-role-option:has(input:checked) { background: var(--mgr-surface); }
+.manager-workspace :is(.mgr-role-options legend .ui-icon,.mgr-role-option .ui-icon) { color: var(--mgr-secondary); }
+.manager-workspace :is(.page-content .panel th,.mgr-table th,.mgr-users .mgr-table th,.inventory-panel table th,.chef-table th) { background: var(--mgr-surface); color: var(--mgr-steel); font-size: 12px; font-weight: 600; text-transform: none; letter-spacing: 0; }
+.manager-workspace :is(.page-content .panel td,.mgr-table td,.inventory-panel table td,.chef-table td) { border-color: var(--mgr-border); color: var(--mgr-ink); }
+.manager-workspace :is(.mgr-table tbody tr:hover,.manager-receptions .mgr-table tbody tr:hover,.chef-table tbody tr:nth-child(even)) { background: var(--mgr-background); }
+.manager-workspace :is(.mgr-table td.selected,.mgr-table tr.selected,.site-choice.is-current) { background: var(--mgr-surface); border-color: var(--mgr-secondary); box-shadow: none; }
+.manager-workspace :is(.mgr-status,.manager-status,.status,.badge,.mgr-role,.chef-count) { border-radius: 6px; font-weight: 600; }
+.manager-workspace :is(.manager-status.ok,.mgr-status,.status.on,.alert.success,.mn-item.ok .mn-icon) { background: color-mix(in srgb,var(--mgr-approved) 12%,white); color: #365A49; border-color: color-mix(in srgb,var(--mgr-approved) 35%,white); }
+.manager-workspace :is(.manager-status.waiting,.alert.warning,.mn-item.waiting .mn-icon) { background: color-mix(in srgb,var(--mgr-pending) 15%,white); color: #795F2E; border-color: color-mix(in srgb,var(--mgr-pending) 40%,white); }
+.manager-workspace :is(.manager-status.danger,.status.off,.alert.error,.mn-item.danger .mn-icon) { background: color-mix(in srgb,var(--mgr-incident) 12%,white); color: #904444; border-color: color-mix(in srgb,var(--mgr-incident) 35%,white); }
+.manager-workspace :is(.manager-status.neutral,.mn-icon) { background: var(--mgr-surface); color: var(--mgr-steel); }
+.manager-workspace :is(.alert,.inventory-dialog-notice,.inventory-unavailable-note) { border-radius: var(--mgr-radius); line-height: 1.6; }
+.manager-workspace :is(.mn-panel,.inventory-dialog,dialog,.modal-content) { background: var(--mgr-white); color: var(--mgr-ink); border: 1px solid var(--mgr-border); border-radius: var(--mgr-radius); box-shadow: 0 8px 28px #14283F18; }
+.manager-workspace :is(.mn-panel header,.inventory-dialog-heading,.modal-header) { background: var(--mgr-background); border-color: var(--mgr-border); }
+.manager-workspace .mn-count { background: var(--mgr-incident); }
+.manager-workspace .mn-item { background: var(--mgr-background); border-color: var(--mgr-border); }
+.manager-workspace .mn-item.is-read { background: var(--mgr-white); }
+.manager-workspace .mn-panel button { color: var(--mgr-secondary); }
+.manager-workspace dialog::backdrop { background: #14283F66; }
+.manager-workspace .nu-editor-panel nav button.active { background: var(--mgr-steel) !important; }
+.manager-workspace .nu-devices button.active { background: var(--mgr-steel); color: var(--mgr-white); }
+.manager-workspace :is(.nu-frame-outer,.nu-editor-panel nav button:hover) { background: var(--mgr-surface); }
+.manager-workspace :is(.nu-editor-panel,.nu-editor-center) { border-color: var(--mgr-border) !important; }
+.manager-workspace :is(.inventory-summary-card-purple,.inventory-summary-card-blue,.inventory-summary-card-green,.inventory-summary-card-orange) { background: var(--mgr-white); }
+/* Employee management only: deeper navigation and the selector's existing role colors. */
+.manager-workspace body:has(:is(.mgr-users,.mgr-standalone)) {
+    --mgr-action: #17375E;
+    --mgr-action-hover: #23456D;
+    --mgr-action-border: #0F2741;
+    --mgr-users-sidebar-depth: #122C4A;
+}
+.manager-workspace body:has(:is(.mgr-users,.mgr-standalone)) :is(.mgr-sidebar-context,.sidebar-footer) {
+    background: var(--mgr-users-sidebar-depth);
+}
+.manager-workspace .mgr-users .mgr-users-table .mgr-role[class*="role-color-"],
+.manager-workspace .mgr-dashboard-roles .mgr-role[class*="role-color-"] {
+    background: var(--role-bg);
+    color: var(--role-fg);
+    border-color: color-mix(in srgb,var(--role-fg) 13%,transparent);
+    opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+    .manager-workspace :is(.mgr-quick>a,.button,.mgr-button) { transition: none; }
+}

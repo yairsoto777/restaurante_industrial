@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -17,8 +18,13 @@ use Illuminate\View\View;
 
 class AuthController extends Controller
 {
-    public function create(): View
+    public function create(Request $request): View|JsonResponse
     {
+        // A cached form/another tab may predate logout and its new session token.
+        // This same-origin GET only refreshes the form token; POST still validates CSRF.
+        if ($request->expectsJson()) {
+            return response()->json(['csrf_token' => $request->session()->token()]);
+        }
         return view('auth.login');
     }
 
@@ -43,6 +49,7 @@ class AuthController extends Controller
         }
 
         $request->session()->regenerate();
+        \App\Support\PasswordSession::bind($request, Auth::user());
         $request->session()->forget(['active_role_id', 'current_site_id']);
 
         if (Auth::user()?->mustChangePassword()) {
@@ -71,17 +78,37 @@ class AuthController extends Controller
     public function changePassword(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'password' => ['required', 'string', 'min:12', 'confirmed'],
+            'password' => ['required', 'string', 'min:12', 'max:72', 'confirmed',
+                function($attribute,$value,$fail){if(is_string($value)&&strlen($value)>72)$fail('La contraseña no debe superar 72 bytes.');}],
         ], [
+            'password.required' => 'Ingresa tu nueva contraseña.',
+            'password.string' => 'La contraseña debe ser texto.',
+            'password.max' => 'La contraseña no debe superar 72 caracteres.',
             'password.min' => 'La contraseña debe tener al menos 12 caracteres.',
             'password.confirmed' => 'Las contraseñas no coinciden.',
         ]);
 
         $user = $request->user();
-        $user->password = Hash::make($data['password']);
-        $user->temporary_password_used_at = now();
-        $user->temporary_password_expires_at = null;
-        $user->save();
+        if ($user->mustChangePassword() && $user->temporary_password_expires_at->isPast()) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            return redirect()->route('login')->withErrors(['correo'=>'La contraseña temporal expiró. Solicita una nueva activación.']);
+        }
+        if (Hash::check($data['password'], $user->password)) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['password'=>'La contraseña definitiva debe ser diferente de la contraseña actual o temporal.']);
+        }
+        DB::transaction(function () use ($user, $data): void {
+            $user->password = Hash::make($data['password']);
+            $user->temporary_password_used_at = now();
+            $user->temporary_password_expires_at = null;
+            $user->remember_token = \Illuminate\Support\Str::random(60);
+            $user->save();
+            Password::broker()->deleteToken($user);
+        });
+        $request->session()->regenerate(true);
+        $request->session()->regenerateToken();
+        \App\Support\PasswordSession::bind($request, $user);
 
         return redirect()->route('dashboard')->with('status', 'Tu contraseña fue actualizada correctamente.');
     }
@@ -116,6 +143,7 @@ class AuthController extends Controller
                 $user->password = Hash::make($password);
                 $user->temporary_password_used_at = now();
                 $user->temporary_password_expires_at = null;
+                $user->remember_token = \Illuminate\Support\Str::random(60);
                 $user->save();
             },
         );
@@ -206,7 +234,7 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('login');
+        return redirect()->route('login', [], 303);
     }
 
     private function generateTemporaryPassword(): string

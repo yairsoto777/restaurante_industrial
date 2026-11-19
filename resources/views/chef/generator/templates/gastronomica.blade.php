@@ -1,0 +1,2 @@
+<header class="gm-natural-masthead"><div>@include('chef.generator.brand')<span class="gm-kicker">DE NUESTRA COCINA A TU MESA</span>@include('chef.generator.title')<span class="gm-natural-leaf" aria-hidden="true">❧</span></div>@if($document['hero'])<figure class="gm-natural-hero gm-hero gm-food-photo"><img src="{{ $document['hero'] }}" alt="Platillo registrado en este menú"></figure>@endif</header>
+@include('chef.generator.body',['layout'=>'natural'])

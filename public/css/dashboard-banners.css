@@ -1,0 +1,28 @@
+/* Theme only the dashboard banners. Each role retains its existing layout. */
+.app-shell .page-content .dashboard-banner {
+    --dashboard-banner-overlay: linear-gradient(100deg, #14283f 5%, #17375ef0 48%, #17375ea8 100%);
+    background: var(--dashboard-banner-overlay), var(--dashboard-banner-image) var(--dashboard-banner-position, 65% center) / cover no-repeat #17375e;
+    color: #fff;
+}
+
+.dashboard-banner--manager { --dashboard-banner-image: url('../img/ui/dashboard-manager.webp'); }
+.dashboard-banner--warehouse { --dashboard-banner-image: url('../img/ui/warehouse-logistics.jpg'); --dashboard-banner-position: center 58%; }
+.dashboard-banner--reception { --dashboard-banner-image: url('../img/ui/receiving-goods.svg'); --dashboard-banner-position: center 60%; }
+.dashboard-banner--chef { --dashboard-banner-image: url('../img/ui/dashboard-chef.webp'); }
+.dashboard-banner--kitchen { --dashboard-banner-image: url('../img/ui/captain-kitchen.webp'); --dashboard-banner-position: center 48%; }
+.dashboard-banner--captain { --dashboard-banner-image: url('../img/ui/captain-dining.webp'); --dashboard-banner-position: center 52%; }
+.dashboard-banner--waiter { --dashboard-banner-image: url('../img/ui/dashboard-waiter.webp'); }
+.dashboard-banner--cashier { --dashboard-banner-image: url('../img/ui/dashboard-cashier.webp'); }
+.dashboard-banner--user { --dashboard-banner-image: url('../img/ui/service-lunch.jpg'); --dashboard-banner-position: center 55%; }
+.dashboard-banner--superadmin { --dashboard-banner-image: url('../img/ui/dashboard-superadmin.webp'); }
+
+.kp-hero.dashboard-banner::after { content: none; }
+
+.kitchen-dashboard-hero.dashboard-banner h1 { color: #fff; }
+.kitchen-dashboard-hero.dashboard-banner :is(p, .kitchen-dashboard-eyebrow) { color: #e3edf8; }
+
+@media (max-width: 820px) {
+    .app-shell .page-content .dashboard-banner {
+        --dashboard-banner-overlay: linear-gradient(100deg, #14283ffa, #17375edb);
+    }
+}

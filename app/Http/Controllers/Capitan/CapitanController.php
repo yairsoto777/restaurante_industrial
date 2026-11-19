@@ -13,16 +13,39 @@ use Illuminate\View\View;
 
 class CapitanController extends Controller
 {
+    public function notifications(Request $request)
+    {
+        $site=\App\Support\CaptainWorkspace::site($request); $id=(int)$site->id_sede;
+        $events=collect();
+        $url=fn($module,$extra=[])=>route('capitan.index',['modulo'=>$module]+$extra);
+        $services=DB::table('servicios')->where('id_sede',$id)->where('estado_aprobacion','Aprobado')->whereDate('fecha',now()->toDateString())->whereIn('estado',['Programado','En curso'])->get();
+        foreach ($services as $s) {
+            if($s->estado==='Programado') $events->push(['id'=>'upcoming-'.$s->id_servicio,'title'=>'Servicio próximo a iniciar','description'=>$s->nombre.' · '.$s->inicio_hora,'url'=>$url('servicios',['fecha'=>$s->fecha,'id_servicio'=>$s->id_servicio]),'tone'=>'info','date'=>$s->fecha.' '.$s->inicio_hora]);
+            $staff=\App\Support\CaptainWorkspace::assignments($id,$s->id_servicio);
+            foreach(DB::table('zonas')->where('id_sede',$id)->whereNotIn('id_zona',$staff->pluck('id_zona'))->get() as $z) $events->push(['id'=>'uncovered-'.$s->id_servicio.'-'.$z->id_zona,'title'=>'Zona sin mesero asignado','description'=>$z->nombre.' · '.$s->nombre,'url'=>$url('asignaciones',['fecha'=>$s->fecha,'id_servicio'=>$s->id_servicio]),'tone'=>'waiting','date'=>$s->fecha]);
+        }
+        foreach(DB::table('incidencias')->where('id_sede',$id)->whereNull('fecha_cierre')->whereNotIn('estado',['Resuelta','Cerrada'])->orderByDesc('id_incidencia')->limit(30)->get() as $i) $events->push(['id'=>'incident-'.$i->id_incidencia.'-'.$i->estado,'title'=>'Incidencia #'.$i->id_incidencia,'description'=>$i->descripcion,'url'=>$url('incidencias'),'tone'=>'danger','date'=>$i->fecha]);
+        foreach(DB::table('mesas as m')->join('zonas as z','z.id_zona','=','m.id_zona')->where('z.id_sede',$id)->where('m.estado_fisico','Fuera de servicio')->get(['m.*','z.nombre as zona']) as $m) $events->push(['id'=>'table-'.$m->id_mesa.'-out','title'=>'Mesa fuera de servicio','description'=>$m->zona.' · Mesa '.$m->numero,'url'=>$url('mesas'),'tone'=>'danger','date'=>'Sin fecha de cambio registrada']);
+        if(\App\Support\ServiceRecurrence::ready()) foreach(DB::table('service_schedule_revisions as r')->join('service_schedules as s','s.id','=','r.schedule_id')->where('s.id_sede',$id)->where('r.estado','Aprobado')->orderByDesc('r.id')->limit(20)->get(['r.*']) as $r) $events->push(['id'=>'schedule-'.$r->id.'-approved','title'=>'Programación aprobada','description'=>\App\Support\ServiceRecurrence::settings($r)['nombre'],'url'=>$url('servicios'),'tone'=>'ok','date'=>$r->reviewed_at]);
+        $events=$events->unique('id');
+        $key='captain_notices.'.$id.'.'.$request->user()->id_usuario;
+        $read=$request->session()->get($key,[]);
+        if($request->isMethod('post')) {
+            $event=$request->validate(['id'=>'required|string|max:150'])['id'];
+            $read=array_values(array_unique(array_merge($read,$event==='all'?$events->pluck('id')->all():$events->where('id',$event)->pluck('id')->all())));
+            $request->session()->put($key,array_slice($read,-300));
+        }
+        $items=$events->sortByDesc('date')->map(fn($event)=>$event+['read'=>in_array($event['id'],$read,true)])->values();
+        return response()->json(['items'=>$items,'unread'=>$items->where('read',false)->count()])->header('Cache-Control','no-store');
+    }
     private const MODULOS = [
         'panel',
         'servicios',
         'mesas',
         'asignaciones',
-        'atenciones',
-        'comandas',
-        'grupos',
         'incidencias',
-        'reportes',
+        'zonas',
+        'comedor',
     ];
 
     /*
@@ -33,35 +56,7 @@ class CapitanController extends Controller
 
     private function sede(Request $request, SiteContext $context)
     {
-        $usuario = $request->user();
-
-        abort_unless(
-            $usuario && $usuario->hasRole('Capitan de meseros'),
-            403,
-            'No tienes permisos de Capitán de meseros.'
-        );
-
-        $sede = $context->currentFor($request, $usuario);
-
-        abort_unless(
-            $sede,
-            403,
-            'No tienes una sede asignada.'
-        );
-
-        $autorizado = DB::table('usuario_sede')
-            ->where('id_usuario', $usuario->id_usuario)
-            ->where('id_sede', $sede->id_sede)
-            ->where('id_rol', 7)
-            ->exists();
-
-        abort_unless(
-            $autorizado,
-            403,
-            'No tienes permisos para esta sede.'
-        );
-
-        return $sede;
+        return \App\Support\CaptainWorkspace::site($request);
     }
 
     /*
@@ -106,6 +101,7 @@ class CapitanController extends Controller
             ->where('z.id_sede', $id)
             ->select(
                 'm.id_mesa',
+                'm.id_zona',
                 'm.numero',
                 'm.capacidad',
                 'm.estado_fisico',
@@ -128,6 +124,7 @@ class CapitanController extends Controller
             )
             ->where('us.id_sede', $id)
             ->where('us.id_rol', 6)
+            ->when(\Illuminate\Support\Facades\Schema::hasColumn('usuarios','activo'), fn ($q) => $q->where('u.activo',1))
             ->select(
                 'u.id_usuario',
                 'u.nombre',
@@ -138,42 +135,8 @@ class CapitanController extends Controller
             ->orderBy('u.nombre')
             ->get();
 
-        $serviciosAsignables = DB::table('servicios')->where('id_sede', $id)->where('estado_aprobacion', 'Aprobado')->whereIn('estado', ['Programado', 'En curso'])->orderBy('fecha')->orderBy('inicio_hora')->get();
-
         /*
         | ASIGNACIONES ACTIVAS
-        */
-
-        $asignaciones = DB::table('zona_meseros as zm')
-            ->join(
-                'zonas as z',
-                'z.id_zona',
-                '=',
-                'zm.id_zona'
-            )
-            ->join(
-                'usuarios as u',
-                'u.id_usuario',
-                '=',
-                'zm.id_usuario_mesero'
-            )
-            ->where('z.id_sede', $id)
-            ->where('zm.activo', 1)
-            ->whereNotNull('zm.id_servicio')
-            ->whereIn('zm.id_servicio', $serviciosAsignables->pluck('id_servicio'))
-            ->select(
-                'zm.id_zona_mesero',
-                'z.nombre as zona',
-                'u.nombre',
-                'u.apellido_p',
-                'u.apellido_m',
-                'zm.fecha_inicio'
-            )
-            ->orderBy('z.nombre')
-            ->get();
-
-        /*
-        | FECHA Y SERVICIOS DE LA FECHA SELECCIONADA
         */
 
         $request->validate([
@@ -185,6 +148,7 @@ class CapitanController extends Controller
         $servicios = DB::table('servicios')
             ->where('id_sede', $id)
             ->whereDate('fecha', $fechaOperacion)
+            ->where('estado_aprobacion','Aprobado')
             ->orderBy('inicio_hora')
             ->get();
 
@@ -194,7 +158,10 @@ class CapitanController extends Controller
         | No se sustituye por un servicio programado o finalizado.
         */
 
-        $servicioEnVivo = $servicios->firstWhere('estado', 'En curso');
+        $request->validate(['id_servicio'=>['nullable','integer']]);
+        $servicioEnVivo = $request->filled('id_servicio') ? $servicios->firstWhere('id_servicio',(int)$request->id_servicio) : $servicios->firstWhere('estado','En curso');
+        abort_if($request->filled('id_servicio') && !$servicioEnVivo,422,'Selecciona una jornada autorizada de esta fecha.');
+        $jornada = $servicioEnVivo ?? $servicios->first();
 
         /*
         | INVENTARIO Y ESTADO DE MESAS
@@ -218,9 +185,7 @@ class CapitanController extends Controller
             ->where('s.id_sede', $id)
             ->whereDate('s.fecha', $fechaOperacion)
             ->whereNotIn('a.estado', ['Cerrada', 'Cancelada'])
-            ->when($servicioEnVivo, function ($query) use ($servicioEnVivo) {
-                $query->where('a.id_servicio', $servicioEnVivo->id_servicio);
-            })
+            ->where('a.id_servicio',$jornada->id_servicio ?? 0)
             ->groupBy('a.id_mesa');
 
         $ultimaComanda = DB::table('comandas')
@@ -246,6 +211,7 @@ class CapitanController extends Controller
             ->where('z.id_sede', $id)
             ->select(
                 'm.id_mesa',
+                'm.id_zona',
                 'm.numero',
                 'm.capacidad',
                 'm.estado_fisico',
@@ -254,6 +220,8 @@ class CapitanController extends Controller
                 'a.id_usuario_mesero',
                 'a.estado as atencion_estado',
                 'a.comensales',
+                'm.observaciones',
+                'a.inicio_hora as ocupacion_inicio',
                 'c.id_comanda',
                 'c.estado as comanda_estado',
                 DB::raw("TRIM(CONCAT(COALESCE(u.nombre, ''), ' ', COALESCE(u.apellido_p, ''))) as mesero")
@@ -307,50 +275,6 @@ class CapitanController extends Controller
             ->values();
 
         // Se muestran las asignaciones activas aunque aún no haya servicio iniciado.
-        $meserosAsignados = DB::table('zona_meseros as zm')
-            ->join('zonas as z', 'z.id_zona', '=', 'zm.id_zona')
-            ->join('usuarios as u', 'u.id_usuario', '=', 'zm.id_usuario_mesero')
-            ->where('z.id_sede', $id)
-            ->where('zm.activo', 1)
-            ->whereNotNull('zm.id_servicio')
-            ->whereIn('zm.id_servicio', $serviciosAsignables->pluck('id_servicio'))
-            ->select(
-                'u.id_usuario',
-                'u.nombre',
-                'u.apellido_p',
-                'u.apellido_m',
-                'z.nombre as zona'
-            )
-            ->distinct()
-            ->orderBy('u.nombre')
-            ->get();
-
-        $meserosServicio = $meserosAsignados
-            ->groupBy('id_usuario')
-            ->map(function ($registros, $idUsuario) use ($mesasServicio) {
-                $mesero = $registros->first();
-
-                $mesasDelMesero = $mesasServicio->filter(function ($mesa) use ($idUsuario) {
-                    return (int) $mesa->id_usuario_mesero === (int) $idUsuario
-                        && $mesa->id_atencion !== null;
-                });
-
-                return (object) [
-                    'id_usuario' => (int) $idUsuario,
-                    'nombre' => $mesero->nombre,
-                    'apellido_p' => $mesero->apellido_p,
-                    'apellido_m' => $mesero->apellido_m,
-                    'zona' => $registros->pluck('zona')->unique()->implode(', '),
-                    'atenciones' => $mesasDelMesero->count(),
-                    'mesas' => $mesasDelMesero->pluck('numero')->values(),
-                ];
-            })
-            ->values();
-
-        /*
-        | ATENCIONES
-        */
-
         $atenciones = DB::table('atenciones as a')
             ->join(
                 'servicios as s',
@@ -384,62 +308,25 @@ class CapitanController extends Controller
         | La interfaz muestra el nombre "Comidas".
         */
 
-        $comandas = DB::table('comandas as c')
-            ->join(
-                'atenciones as a',
-                'a.id_atencion',
-                '=',
-                'c.id_atencion'
-            )
-            ->join(
-                'servicios as s',
-                's.id_servicio',
-                '=',
-                'a.id_servicio'
-            )
-            ->where('s.id_sede', $id)
-            ->select(
-                'c.id_comanda',
-                'c.id_atencion',
-                'c.estado',
-                'c.fecha_apertura',
-                'c.fecha_cierre'
-            )
-            ->orderByDesc('c.id_comanda')
-            ->limit(100)
-            ->get();
-
-        /*
-        | GRUPOS
-        */
-
-        $grupos = DB::table('grupos as g')
-            ->join(
-                'servicios as s',
-                's.id_servicio',
-                '=',
-                'g.id_servicio'
-            )
-            ->where('s.id_sede', $id)
-            ->select(
-                'g.id_grupo',
-                'g.nombre',
-                'g.inicio_hora',
-                'g.fin_hora',
-                'g.comensales_pre',
-                's.nombre as servicio'
-            )
-            ->get();
-
-        /*
-        | INCIDENCIAS
-        */
-
         $incidencias = DB::table('incidencias')
             ->where('id_sede', $id)
             ->orderByDesc('id_incidencia')
             ->limit(100)
             ->get();
+
+        $incidenciasMapa=$incidencias->filter(fn($incident)=>empty($incident->id_servicio) || (int)$incident->id_servicio===(int)($jornada->id_servicio ?? 0));
+        $incidentCounts=DB::table('incidencias')->where('id_sede',$id)->select('estado')->selectRaw('COUNT(*) as total')->groupBy('estado')->get();
+        foreach ($incidencias as $incident) {
+            $reporter = DB::table('usuarios')->where('id_usuario',$incident->id_usuario)->first();
+            $incident->responsable_nombre = $reporter ? trim($reporter->nombre.' '.$reporter->apellido_p) : null;
+            if ($incident->id_servicio ?? null) {
+                $service = DB::table('servicios')->where('id_servicio',$incident->id_servicio)->where('id_sede',$id)->first();
+                $incident->servicio_nombre=$service->nombre ?? null;
+                $incident->jornada_fecha=$service->fecha ?? null;
+            }
+            $incident->zona_nombre=$zonas->firstWhere('id_zona',$incident->id_zona ?? null)?->nombre;
+            $incident->mesa_numero=$mesasServicio->firstWhere('id_mesa',$incident->id_mesa ?? null)?->numero;
+        }
 
         /*
         | MÉTRICAS ORIGINALES
@@ -461,9 +348,7 @@ class CapitanController extends Controller
                 })
                 ->count(),
 
-            'incidencias' => $incidencias
-                ->whereNull('fecha_cierre')
-                ->count(),
+            'incidencias' => DB::table('incidencias')->where('id_sede',$id)->whereNull('fecha_cierre')->whereNotIn('estado',['Resuelta','Cerrada'])->count(),
         ];
 
         /*
@@ -501,7 +386,18 @@ class CapitanController extends Controller
         | VISTA
         */
 
-        return view('capitan.index', compact(
+        $asignaciones = \App\Support\CaptainWorkspace::assignments($id,$jornada->id_servicio ?? null);
+        \App\Support\CaptainWorkspace::enrich($id,$zonas,$mesasServicio,$meseros,$asignaciones);
+        $jornadaSupported = \App\Support\CaptainWorkspace::scoped();
+        $zoneMedia = \Illuminate\Support\Facades\Schema::hasColumn('zonas','imagen_url');
+        $incidentMedia = \Illuminate\Support\Facades\Schema::hasColumn('incidencias','evidencia_url');
+        $serviceCoverage = [];
+        foreach ($servicios as $service) {
+            $staff = \App\Support\CaptainWorkspace::assignments($id,$service->id_servicio);
+            $covered = $mesasServicio->whereIn('id_zona',$staff->pluck('id_zona'))->count();
+            $serviceCoverage[$service->id_servicio] = ['staff'=>$staff,'covered'=>$covered,'percent'=>$mesasServicio->count()?round($covered*100/$mesasServicio->count()):0];
+        }
+        return view('capitan.workspace', compact('incidenciasMapa','incidentCounts','jornada','jornadaSupported','zoneMedia','incidentMedia','serviceCoverage',
             'sede',
             'modulo',
             'zonas',
@@ -509,17 +405,13 @@ class CapitanController extends Controller
             'meseros',
             'asignaciones',
             'servicios',
-            'serviciosAsignables',
             'atenciones',
-            'comandas',
-            'grupos',
             'incidencias',
             'metricas',
             'comensalesPorHora',
             'fechaOperacion',
             'servicioEnVivo',
             'mesasServicio',
-            'meserosServicio',
             'mesasDisponiblesServicio',
             'mesasOcupadasServicio',
             'mesasAtendidasServicio',
@@ -556,27 +448,23 @@ class CapitanController extends Controller
                     ->where('id_sede', $idSede)
                     ->where('id_rol', 6),
             ],
-            'id_servicio' => ['required', 'integer', Rule::exists('servicios', 'id_servicio')->where('id_sede', $idSede)->where('estado_aprobacion', 'Aprobado')->whereIn('estado', ['Programado', 'En curso'])],
         ]);
 
-        DB::transaction(function () use ($datos) {
-            AsignacionMesero::query()->updateOrCreate(
-                [
-                    'id_zona' => $datos['id_zona'],
-                    'id_usuario_mesero' => $datos['id_usuario_mesero'],
-                    'id_servicio' => $datos['id_servicio'],
-                ],
-                [
-                    'activo' => 1,
-                    'fecha_inicio' => now(),
-                    'fecha_fin' => null,
-                ]
-            );
+        abort_unless(\App\Support\CaptainWorkspace::scoped(),409,'La asignación por jornada requiere la migración pendiente de autorización.');
+        $request->validate(['id_servicio'=>['required','integer']]);
+        $service=DB::table('servicios')->where('id_servicio',$request->id_servicio)->where('id_sede',$idSede)->where('estado_aprobacion','Aprobado')->whereIn('estado',['Programado','En curso'])->first();
+        abort_unless($service,422,'Selecciona una jornada autorizada vigente.');
+        DB::transaction(function () use ($datos,$service) {
+            $user=DB::table('usuarios')->where('id_usuario',$datos['id_usuario_mesero'])->lockForUpdate()->first();
+            abort_unless($user && (!isset($user->activo) || $user->activo),422,'El empleado no está activo.');
+            $duplicate=DB::table('zona_meseros as zm')->join('servicios as s','s.id_servicio','=','zm.id_servicio')->where('zm.id_usuario_mesero',$datos['id_usuario_mesero'])->where('zm.activo',1)->whereDate('s.fecha',$service->fecha)->where('s.inicio_hora','<',$service->fin_hora)->where('s.fin_hora','>',$service->inicio_hora)->exists();
+            abort_if($duplicate,422,'El mesero ya tiene una asignación en esta jornada u horario incompatible. Retírala antes de cambiarla.');
+            DB::table('zona_meseros')->insert($datos+['id_servicio'=>$service->id_servicio,'activo'=>1,'fecha_inicio'=>now(),'fecha_fin'=>null]);
         });
 
         return redirect()
             ->route('capitan.index', [
-                'modulo' => 'asignaciones',
+                'modulo' => 'asignaciones', 'fecha'=>$request->input('fecha',now()->toDateString()), 'id_servicio'=>$request->input('id_servicio'),
             ])
             ->with(
                 'status',
@@ -608,6 +496,9 @@ class CapitanController extends Controller
             })
             ->firstOrFail();
 
+        if (\App\Support\CaptainWorkspace::scoped() && $registro->id_servicio) {
+            abort_unless(DB::table('servicios')->where('id_servicio',$registro->id_servicio)->where('id_sede',$sede->id_sede)->whereIn('estado',['Programado','En curso'])->exists(),422,'No se modifican asignaciones de jornadas finalizadas.');
+        }
         $registro->update([
             'activo' => 0,
             'fecha_fin' => now(),
@@ -615,7 +506,7 @@ class CapitanController extends Controller
 
         return redirect()
             ->route('capitan.index', [
-                'modulo' => 'asignaciones',
+                'modulo' => 'asignaciones', 'fecha'=>$request->input('fecha',now()->toDateString()), 'id_servicio'=>$request->input('id_servicio'),
             ])
             ->with(
                 'status',
@@ -636,27 +527,62 @@ class CapitanController extends Controller
     ) {
         $sede = $this->sede($request, $context);
 
-        $datos = $request->validate([
-            'descripcion' => [
-                'required',
-                'string',
-                'min:10',
-                'max:2000',
-            ],
+        $has = fn($column)=>\Illuminate\Support\Facades\Schema::hasColumn('incidencias',$column);
+        $validator=\Illuminate\Support\Facades\Validator::make($request->all(),[
+            'descripcion'=>['required','string','min:10','max:2000'],
+            'fecha_jornada'=>['nullable','date_format:Y-m-d'],
+            'id_servicio'=>$has('id_servicio') ? ['nullable','integer',Rule::exists('servicios','id_servicio')->where('id_sede',$sede->id_sede)->where('estado_aprobacion','Aprobado')] : ['prohibited'],
+            'id_zona'=>$has('id_zona') ? ['nullable','integer',Rule::exists('zonas','id_zona')->where('id_sede',$sede->id_sede)] : ['prohibited'],
+            'id_mesa'=>$has('id_mesa') ? ['nullable','integer'] : ['prohibited'],
+            'evidencia'=>\App\Support\ChefWorkspace::mediaRules($has('evidencia_url')),
+        ],[
+            'id_servicio.exists'=>'Selecciona un servicio autorizado de la sede activa.',
+            'id_zona.exists'=>'La zona seleccionada no pertenece a la sede activa.',
+            'id_mesa.integer'=>'Selecciona una mesa válida.',
+            'fecha_jornada.date_format'=>'La fecha de jornada no es válida.',
         ]);
-
-        DB::table('incidencias')->insert([
+        $mesa=null;
+        $validator->after(function($validator)use($request,$sede,&$mesa){
+            if($request->filled('id_mesa') && !$validator->errors()->has('id_mesa')){
+                $mesa=DB::table('mesas as m')->join('zonas as z','z.id_zona','=','m.id_zona')->where('m.id_mesa',$request->input('id_mesa'))->where('z.id_sede',$sede->id_sede)->select('m.id_mesa','m.id_zona')->first();
+                if(!$mesa || (!$validator->errors()->has('id_zona') && $request->filled('id_zona') && (int)$mesa->id_zona!==(int)$request->input('id_zona'))){
+                    $validator->errors()->add('id_mesa','La mesa seleccionada no pertenece a la zona y sede indicadas. Selecciona nuevamente la mesa.');
+                }
+            }
+            if($request->filled('id_servicio') && $request->filled('fecha_jornada') && !$validator->errors()->has('id_servicio') && !$validator->errors()->has('fecha_jornada')){
+                if(!DB::table('servicios')->where('id_servicio',$request->input('id_servicio'))->where('id_sede',$sede->id_sede)->whereDate('fecha',$request->input('fecha_jornada'))->exists()){
+                    $validator->errors()->add('id_servicio','El servicio seleccionado no corresponde a la fecha de jornada consultada.');
+                }
+            }
+        });
+        if($validator->fails()){
+            // JSON callers keep the open dialog and file; ordinary forms return with old input.
+            $parameters=['modulo'=>'incidencias'];
+            if(!$validator->errors()->has('fecha_jornada') && $request->filled('fecha_jornada'))$parameters['fecha']=$request->input('fecha_jornada');
+            throw (new \Illuminate\Validation\ValidationException($validator))->errorBag('incident')->redirectTo(route('capitan.index',$parameters));
+        }
+        $datos=$validator->validated();
+        $extra=collect($datos)->only(['id_servicio','id_zona','id_mesa'])->filter(fn($value)=>$value!==null && $value!=='')->map(fn($value)=>(int)$value)->all();
+        if($mesa && $has('id_zona'))$extra['id_zona']=(int)$mesa->id_zona;
+        \App\Support\ChefWorkspace::withMedia($request,['evidencia'=>'evidencia_url'],function ($media) use ($sede,$request,$datos,$extra) {
+        DB::table('incidencias')->insert($extra+$media+[
             'id_sede' => $sede->id_sede,
             'id_usuario' => $request->user()->id_usuario,
             'fecha' => now(),
             'descripcion' => $datos['descripcion'],
-            'estado' => 'abierta',
+            'estado' => 'Pendiente',
         ]);
+        });
 
+        $parameters=['modulo'=>'incidencias'];
+        if(!empty($datos['fecha_jornada']))$parameters['fecha']=$datos['fecha_jornada'];
+        if(!empty($extra['id_servicio']))$parameters['id_servicio']=$extra['id_servicio'];
+        if($request->expectsJson()){
+            $request->session()->flash('status','Incidencia registrada correctamente.');
+            return response()->json(['message'=>'Incidencia registrada correctamente.','redirect'=>route('capitan.index',$parameters)],201);
+        }
         return redirect()
-            ->route('capitan.index', [
-                'modulo' => 'incidencias',
-            ])
+            ->route('capitan.index', $parameters)
             ->with(
                 'status',
                 'Incidencia registrada correctamente.'

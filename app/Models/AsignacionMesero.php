@@ -15,7 +15,6 @@ class AsignacionMesero extends Model
     protected $fillable = [
         'id_zona',
         'id_usuario_mesero',
-        'id_servicio',
         'fecha_inicio',
         'fecha_fin',
         'activo',

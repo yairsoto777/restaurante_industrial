@@ -1,0 +1,1 @@
+<div class="gm-brand"><img class="gm-logo" @if($document['logo']) src="{{ $document['logo'] }}" @else hidden @endif alt="Logotipo de {{ $document['siteName'] }}" data-gm-logo><span data-gm-comedor>{{ $document['siteName'] }}</span></div>

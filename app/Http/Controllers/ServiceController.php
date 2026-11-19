@@ -24,7 +24,7 @@ class ServiceController extends Controller
             'estado' => ['nullable', Rule::in(self::STATES)],
             'aprobacion' => ['nullable', Rule::in(['Pendiente', 'Aprobado', 'Rechazado'])],
         ]);
-        $base = Service::query()->where('id_sede', $site->id_sede);
+        $base = Service::query()->where('id_sede', $site->id_sede)->when(\App\Support\ServiceRecurrence::ready(),fn($q)=>$q->whereNull('schedule_id'));
         $summary = ['total' => (clone $base)->count(), 'pending' => (clone $base)->where('estado_aprobacion', 'Pendiente')->count(),
             'approved' => (clone $base)->where('estado_aprobacion', 'Aprobado')->count(), 'rejected' => (clone $base)->where('estado_aprobacion', 'Rechazado')->count()];
         $services = (clone $base)->with('creator')
@@ -35,6 +35,11 @@ class ServiceController extends Controller
             ->orderByRaw('CASE WHEN fecha IS NULL THEN 1 ELSE 0 END')
             ->orderBy('fecha')->orderBy('inicio_hora')->paginate(15)->withQueryString();
 
+        if(\App\Support\ServiceRecurrence::ready()) {
+            $latest=DB::table('service_schedule_revisions')->selectRaw('MAX(id)')->groupBy('schedule_id');
+            $states=DB::table('service_schedule_revisions as r')->join('service_schedules as s','s.id','=','r.schedule_id')->where('s.id_sede',$site->id_sede)->whereIn('r.id',$latest)->pluck('r.estado');
+            $summary['total']+=$states->count();$summary['pending']+=$states->filter(fn($s)=>$s==='Pendiente')->count();$summary['approved']+=$states->filter(fn($s)=>$s==='Aprobado')->count();$summary['rejected']+=$states->filter(fn($s)=>$s==='Rechazado')->count();
+        }
         return view('manager.services.index', compact('site', 'services', 'filters', 'summary'));
     }
 
@@ -46,19 +51,6 @@ class ServiceController extends Controller
             'site' => $site,
             'service' => new Service(['estado' => 'Programado', 'estado_aprobacion' => 'Pendiente']),
         ]);
-    }
-
-    public function captainCreate(Request $request, SiteContext $siteContext): View
-    {
-        $site = $this->captainSite($request, $siteContext);
-        return view('manager.services.form', ['site' => $site, 'service' => new Service(['estado' => 'Programado', 'estado_aprobacion' => 'Aprobado']), 'captainFlow' => true]);
-    }
-
-    public function captainStore(Request $request, SiteContext $siteContext): RedirectResponse
-    {
-        $site = $this->captainSite($request, $siteContext);
-        $service = Service::create([...$this->validated($request), 'id_sede' => $site->id_sede, 'estado' => 'Programado', 'estado_aprobacion' => 'Aprobado', 'id_usuario_registro' => $request->user()->getKey(), 'id_usuario_revision' => $request->user()->getKey(), 'revisado_en' => now()]);
-        return redirect()->route('services.index')->with('status', "El servicio {$service->nombre} quedó abierto para la operación.");
     }
 
     public function store(Request $request, SiteContext $siteContext): RedirectResponse
@@ -81,6 +73,7 @@ class ServiceController extends Controller
 
     public function update(Request $request, Service $service, SiteContext $siteContext): RedirectResponse
     {
+        abort_if($service->schedule_id,422,'Utiliza la programación y sus excepciones para modificar esta jornada.');
         $this->authorizeKitchenService($request, $service, $siteContext);
         abort_if($this->hasOperations($service), 422, 'El servicio ya tiene operaciones registradas y no puede modificarse.');
 
@@ -166,10 +159,6 @@ class ServiceController extends Controller
             }
 
             $lockedService->update(['estado' => $validated['estado']]);
-            if (in_array($validated['estado'], ['Finalizado', 'Cancelado'], true) && Schema::hasColumn('zona_meseros', 'id_servicio')) {
-                DB::table('zona_meseros')->where('id_servicio', $lockedService->id_servicio)->where('activo', 1)
-                    ->update(['activo' => 0, 'fecha_fin' => now()]);
-            }
         }, 3);
 
         return redirect()->route('services.index')->with('status', 'El estado del servicio fue actualizado.');
@@ -193,7 +182,7 @@ class ServiceController extends Controller
 
         $tables = collect();
         $zones = DB::table('zonas')->where('id_sede', $site->id_sede)->orderBy('nombre')->get(['id_zona', 'nombre']);
-        $waiters = DB::table('zona_meseros as zm')->join('usuarios as u', 'u.id_usuario', '=', 'zm.id_usuario_mesero')->join('zonas as z', 'z.id_zona', '=', 'zm.id_zona')->where('z.id_sede', $site->id_sede)->where('zm.activo', 1)->select('u.id_usuario', 'u.nombre', 'u.apellido_p')->distinct()->orderBy('u.nombre')->get();
+        $waiters = DB::table('zona_meseros as zm')->join('usuarios as u', 'u.id_usuario', '=', 'zm.id_usuario_mesero')->join('zonas as z', 'z.id_zona', '=', 'zm.id_zona')->where('z.id_sede', $site->id_sede)->where('zm.activo', 1)->when(\App\Support\CaptainWorkspace::scoped(),fn($q)=>$q->where('zm.id_servicio',$active?->id_servicio ?? 0))->select('u.id_usuario', 'u.nombre', 'u.apellido_p')->distinct()->orderBy('u.nombre')->get();
         $waiters = $waiters->map(function ($waiter) { $waiter->atenciones = 0; $waiter->mesas = collect(); return $waiter; });
         $openOrders = 0;
         $pendingPayments = 0;
@@ -216,6 +205,7 @@ class ServiceController extends Controller
 
     public function approve(Request $request, Service $service, SiteContext $siteContext): RedirectResponse
     {
+        abort_if($service->schedule_id,422,'La aprobación corresponde a la programación, no a cada jornada.');
         $site = $this->managerSite($request, $siteContext);
         abort_unless((int) $service->id_sede === (int) $site->id_sede, 403);
         abort_unless($service->estado_aprobacion === 'Pendiente', 422, 'El servicio ya fue revisado.');
@@ -226,6 +216,7 @@ class ServiceController extends Controller
 
     public function reject(Request $request, Service $service, SiteContext $siteContext): RedirectResponse
     {
+        abort_if($service->schedule_id,422,'La revisión corresponde a la programación, no a cada jornada.');
         $site = $this->managerSite($request, $siteContext);
         abort_unless((int) $service->id_sede === (int) $site->id_sede, 403);
         abort_unless($service->estado_aprobacion === 'Pendiente', 422, 'El servicio ya fue revisado.');
@@ -294,14 +285,6 @@ class ServiceController extends Controller
     private function kitchenChiefSite(Request $request, SiteContext $siteContext)
     {
         abort_unless($request->user()->hasRole('Jefe de cocina'), 403);
-        $site = $siteContext->currentFor($request, $request->user());
-        abort_unless($site && $request->user()->sites()->whereKey($site->id_sede)->exists(), 403);
-        return $site;
-    }
-
-    private function captainSite(Request $request, SiteContext $siteContext)
-    {
-        abort_unless($request->user()->hasRole('Capitan de meseros'), 403);
         $site = $siteContext->currentFor($request, $request->user());
         abort_unless($site && $request->user()->sites()->whereKey($site->id_sede)->exists(), 403);
         return $site;

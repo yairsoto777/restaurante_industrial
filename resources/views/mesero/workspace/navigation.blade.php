@@ -1,0 +1,3 @@
+@foreach(['INICIO'=>['panel'=>['home','Panel principal']],'ATENCIÓN AL COMENSAL'=>['servicios'=>['utensils','Mis servicios'],'mesas'=>['layers','Mis mesas'],'atenciones'=>['activity','Atenciones activas'],'menu'=>['dish','Menú del servicio'],'historial'=>['calendar','Historial de atenciones']],'SOPORTE OPERATIVO'=>['incidencias'=>['alert','Reportar incidencias']]] as $heading=>$items)
+<div class="nav-section"><span>{{ $heading }}</span>@foreach($items as $key=>$item)<a class="nav-link {{ request('modulo','panel')===$key?'active':'' }}" href="{{ route('waiter.index',['modulo'=>$key]) }}"><x-icon :name="$item[0]"/><b>{{ $item[1] }}</b></a>@endforeach</div>
+@endforeach
