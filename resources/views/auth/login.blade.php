@@ -115,6 +115,7 @@
                     method="POST"
                     action="{{ route('login.store') }}"
                     class="auth-form"
+                    data-login-session
                 >
                     @csrf
 
@@ -291,5 +292,6 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
+<script src="{{ asset('js/auth-session.js') }}?v=20261116" defer></script>
 </body>
 </html>

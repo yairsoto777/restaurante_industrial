@@ -32,7 +32,24 @@
                     @php($state = strtolower((string) $order->detalle_estado))
                     @php($nextState = ['pendiente' => 'preparando', 'preparando' => 'listo', 'listo' => 'entregado'][$state] ?? null)
                     <tr>
-                        <td><strong>{{ $order->platillo_nombre }}</strong>@if($order->detalle_observaciones)<small class="chef-cell-note">{{ $order->detalle_observaciones }}</small>@endif</td>
+                        <td>
+                            <strong>{{ $order->platillo_nombre }}</strong>
+                            <small class="chef-cell-note">Comanda #{{ $order->id_comanda }}</small>
+                            @if($order->detalle_observaciones)<small class="chef-cell-note">{{ $order->detalle_observaciones }}</small>@endif
+                            @if(($order->atencion_observaciones ?? null) || $order->comanda_observaciones)
+                                <div class="chef-notice" style="background:#fff3ee;color:#802d22;white-space:normal;overflow-wrap:anywhere">
+                                    <x-icon name="alert"/>
+                                    <div>
+                                        @if($order->atencion_observaciones ?? null)
+                                            <strong>Observaciones de la atención</strong><div>{{ $order->atencion_observaciones }}</div>
+                                        @endif
+                                        @if($order->comanda_observaciones)
+                                            <strong>Notas para cocina</strong><div>{{ $order->comanda_observaciones }}</div>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endif
+                        </td>
                         <td>{{ $order->servicio_nombre }}<small class="chef-cell-note">{{ $order->servicio_fecha ? \Carbon\Carbon::parse($order->servicio_fecha)->format('d/m/Y') : '' }}</small></td>
                         <td>{{ $order->zona_nombre ? $order->zona_nombre.' · ' : '' }}Mesa {{ $order->mesa_numero }}</td>
                         <td>{{ $order->fecha_apertura ? \Carbon\Carbon::parse($order->fecha_apertura)->format('d/m/Y H:i') : '—' }}</td>

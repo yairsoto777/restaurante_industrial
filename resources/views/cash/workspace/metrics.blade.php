@@ -1,0 +1,1 @@
+<section class="cr-metrics" style="--cr-columns:{{ count($metrics)>4?3:count($metrics) }}" aria-label="Indicadores de caja">@foreach($metrics as $m)<article class="cr-metric cr-{{ $m[0] }}"><span><x-cashier.icon :name="$m[1]"/></span><div><small>{{ $m[3] }}</small><strong>{{ $m[2] }}</strong><p>{{ $m[4]??'Sede activa' }}</p></div></article>@endforeach</section>

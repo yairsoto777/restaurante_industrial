@@ -1,0 +1,6 @@
+@extends('layouts.app')
+@section('title','Contraseña temporal asignada')
+@section('content')
+<div class="sa-workspace"><header class="sa-page-heading"><span class="sa-heading-icon"><x-icon name="check"/></span><div><span class="sa-eyebrow">ACTIVACIÓN DE CUENTA</span><h1>Acceso temporal listo</h1><p>Entrega esta contraseña de forma privada a {{ $target->name }}.</p></div></header>
+<section class="sa-card sa-once-card"><div class="sa-identity"><span class="sa-avatar sa-purple">{{ mb_substr($target->name,0,1) }}</span><div><h3>{{ $target->name }}</h3><p>{{ $target->correo }}</p></div></div><div class="sa-alert sa-warning"><x-icon name="alert"/><p>Este es el único momento en que se muestra la contraseña. No se podrá consultar de nuevo. Caduca en 30 minutos y deberá cambiarse al iniciar sesión.</p></div><label class="sa-secret-label">Contraseña temporal<input class="sa-one-time-secret" type="text" value="{{ $temporary }}" readonly autocomplete="off" spellcheck="false" data-sa-once-secret aria-label="Contraseña temporal para entrega privada"></label><p class="sa-footnote">La cuenta, sus roles y sus sedes se conservaron. Los enlaces anteriores quedaron invalidados.</p><a class="sa-btn sa-btn-primary" href="{{ route('superadmin.index',['modulo'=>'usuarios','q'=>$target->correo]) }}">Terminé de entregar el acceso</a></section></div>
+@endsection

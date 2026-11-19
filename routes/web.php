@@ -137,6 +137,42 @@ Route::middleware('auth')->group(function () {
 */
 
 Route::middleware(['auth', 'active'])->group(function () {
+    Route::patch('gerente/programaciones/{revision}/revision',[\App\Http\Controllers\ServiceScheduleController::class,'review'])->whereNumber('revision')->middleware('role:manager')->name('manager.schedules.review');
+    Route::middleware('role:Jefe de cocina')->prefix('jefe-cocina')->name('chef.')->group(function () {
+        Route::get('programaciones/nueva',[\App\Http\Controllers\ServiceScheduleController::class,'form'])->name('schedules.create');
+        Route::get('programaciones/{schedule}/editar',[\App\Http\Controllers\ServiceScheduleController::class,'form'])->whereNumber('schedule')->name('schedules.edit');
+        Route::get('programaciones/{schedule}',[\App\Http\Controllers\ServiceScheduleController::class,'show'])->whereNumber('schedule')->name('schedules.show');
+        Route::post('programaciones',[\App\Http\Controllers\ServiceScheduleController::class,'save'])->name('schedules.store');
+        Route::put('programaciones/{schedule}',[\App\Http\Controllers\ServiceScheduleController::class,'save'])->whereNumber('schedule')->name('schedules.update');
+        Route::post('menus/{service}/copiar',[\App\Http\Controllers\ServiceScheduleController::class,'copyMenu'])->whereNumber('service')->name('menus.copy');
+        $controller = \App\Http\Controllers\ChefWorkspaceController::class;
+        Route::get('servicios',[$controller,'servicesIndex'])->name('services');
+        Route::get('servicios/nuevo',[$controller,'serviceForm'])->name('services.create');
+        Route::get('servicios/{service}/editar',[$controller,'serviceForm'])->whereNumber('service')->name('services.edit');
+        Route::post('servicios',[$controller,'saveService'])->name('services.store');
+        Route::put('servicios/{service}',[$controller,'saveService'])->whereNumber('service')->name('services.update');
+        Route::get('platillos',[$controller,'dishesIndex'])->name('dishes');
+        Route::get('platillos/nuevo',[$controller,'dishForm'])->name('dishes.create');
+        Route::get('platillos/{dish}/editar',[$controller,'dishForm'])->whereNumber('dish')->name('dishes.edit');
+        Route::get('platillos/{dish}',[$controller,'dishShow'])->whereNumber('dish')->name('dishes.show');
+        Route::post('platillos',[$controller,'saveDish'])->name('dishes.store');
+        Route::put('platillos/{dish}',[$controller,'saveDish'])->whereNumber('dish')->name('dishes.update');
+        Route::post('categorias',[$controller,'categoryStore'])->name('categories.store');
+        Route::get('menus',[$controller,'menus'])->name('menus');
+        Route::post('menus/{service}',[$controller,'saveMenu'])->whereNumber('service')->name('menus.store');
+        Route::get('generador',[$controller,'generator'])->name('generator');
+        Route::post('generador/diseno',[$controller,'saveDesign'])->name('generator.save');
+        Route::post('generador/vista-previa',[$controller,'generatorPreview'])->name('generator.preview');
+        Route::post('generador/imprimir',[$controller,'generatorPrint'])->name('generator.print');
+        Route::post('generador/pdf',[$controller,'generatorPdf'])->name('generator.pdf');
+        Route::get('comandas',[$controller,'commandsIndex'])->name('commands');
+        Route::get('insumos',[$controller,'stockIndex'])->name('stock');
+        Route::get('incidencias',[$controller,'incidentsIndex'])->name('incidents');
+        Route::post('incidencias',[$controller,'incidentStore'])->name('incidents.store');
+        Route::put('incidencias/{incident}/evidencia',[$controller,'incidentEvidence'])->whereNumber('incident')->name('incidents.evidence');
+        Route::get('notificaciones',[$controller,'notifications'])->name('notifications.index');
+        Route::post('notificaciones/leer',[$controller,'notifications'])->name('notifications.read');
+    });
     Route::get('/roles/seleccionar', [\App\Http\Controllers\ActiveRoleController::class, 'index'])->name('roles.select');
     Route::post('/roles/seleccionar', [\App\Http\Controllers\ActiveRoleController::class, 'update'])->name('roles.update');
 
@@ -148,6 +184,17 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     Route::get('/dashboard', DashboardController::class)
         ->name('dashboard');
+
+    Route::middleware('role:Jefe de almacen')->group(function () {
+        Route::get('/almacen/ubicaciones', [\App\Http\Controllers\Almacen\WarehouseLocationController::class, 'index'])->name('warehouse.locations.index');
+        Route::post('/almacen/ubicaciones', [\App\Http\Controllers\Almacen\WarehouseLocationController::class, 'store'])->name('warehouse.locations.store');
+        Route::get('/almacen/movimientos', [\App\Http\Controllers\Almacen\WarehouseWorkspaceController::class, 'movements'])->name('warehouse.movements');
+        Route::get('/almacen/alertas', [\App\Http\Controllers\Almacen\WarehouseWorkspaceController::class, 'alerts'])->name('warehouse.alerts');
+        Route::get('/almacen/notificaciones', [\App\Http\Controllers\Almacen\WarehouseWorkspaceController::class, 'notifications'])->name('warehouse.notifications.index');
+        Route::post('/almacen/notificaciones/leer', [\App\Http\Controllers\Almacen\WarehouseWorkspaceController::class, 'notifications'])->name('warehouse.notifications.read');
+        Route::post('/recepciones/revision/{receipt}/confirmar', [\App\Http\Controllers\ReceptionOrderController::class, 'confirm'])->whereNumber('receipt')->name('receptions.review.confirm');
+        Route::post('/recepciones/revision/{receipt}/devolver', [\App\Http\Controllers\ReceptionOrderController::class, 'returnForCorrection'])->whereNumber('receipt')->name('receptions.review.return');
+    });
 
     /*
     |--------------------------------------------------------------------------
@@ -216,6 +263,14 @@ Route::middleware(['auth', 'active'])->group(function () {
             [\App\Http\Controllers\ReceptionOrderController::class, 'index']
         )->name('receptions.index');
 
+        Route::middleware('role:Recepcion de insumos')->group(function () {
+            Route::get('/recepciones/registrar', [\App\Http\Controllers\ReceptionWorkspaceController::class, 'deliveries'])->name('receptions.register');
+            Route::get('/recepciones/historial', [\App\Http\Controllers\ReceptionWorkspaceController::class, 'history'])->name('receptions.history');
+            Route::get('/recepciones/notificaciones', [\App\Http\Controllers\ReceptionWorkspaceController::class, 'notifications'])->name('receptions.notifications.index');
+            Route::post('/recepciones/notificaciones/leer', [\App\Http\Controllers\ReceptionWorkspaceController::class, 'notifications'])->name('receptions.notifications.read');
+            Route::get('/recepciones/registradas/{receipt}/corregir', [\App\Http\Controllers\ReceptionCaptureController::class, 'correct'])->whereNumber('receipt')->name('receptions.corrections.create');
+        });
+
         Route::get('/recepciones/revision/{receipt}', [\App\Http\Controllers\ReceptionOrderController::class, 'supervise'])
             ->whereNumber('receipt')->name('receptions.review.show');
 
@@ -242,8 +297,15 @@ Route::middleware(['auth', 'active'])->group(function () {
     )->group(function () {
 
         Route::get('/mesero', [App\Http\Controllers\MeseroController::class, 'index'])->middleware('role:Mesero')->name('waiter.index');
+        Route::post('/mesero/incidencias', [App\Http\Controllers\MeseroController::class, 'storeIncident'])->middleware('role:Mesero')->name('waiter.incidents.store');
+        Route::get('/mesero/perfil/fotografia', [App\Http\Controllers\MeseroController::class, 'photo'])->middleware('role:Mesero')->name('waiter.photo');
+        Route::get('/mesero/notificaciones', [App\Http\Controllers\MeseroController::class, 'notifications'])->middleware('role:Mesero')->name('waiter.notifications.index');
+        Route::post('/mesero/notificaciones/leidas', [App\Http\Controllers\MeseroController::class, 'readNotifications'])->middleware('role:Mesero')->name('waiter.notifications.read');
         Route::post('/mesero/atenciones', [App\Http\Controllers\MeseroController::class, 'storeAttention'])->middleware('role:Mesero')->name('waiter.attention.store');
         Route::post('/mesero/mesas', [App\Http\Controllers\MeseroController::class, 'storeTable'])->middleware('role:Mesero')->name('waiter.table.store');
+        Route::post('/mesero/atenciones/{attention}/comanda', [App\Http\Controllers\MeseroController::class, 'saveCommand'])->middleware('role:Mesero')->name('waiter.command.save');
+        Route::post('/mesero/comandas/{command}/observaciones', [App\Http\Controllers\MeseroController::class, 'addCommandObservation'])
+            ->middleware('role:Mesero')->whereNumber('command')->name('waiter.command.observations.store');
         Route::post('/mesero/atenciones/{attention}/servicio-ofrecido', [App\Http\Controllers\MeseroController::class, 'storeOfferedService'])->middleware('role:Mesero')->name('waiter.offered-service.store');
         Route::put('/mesero/atenciones/{attention}/servicio-ofrecido', [App\Http\Controllers\MeseroController::class, 'updateOfferedService'])->middleware('role:Mesero')->name('waiter.offered-service.update');
         Route::patch('/mesero/atenciones/{attention}/servicio-ofrecido/finalizar', [App\Http\Controllers\MeseroController::class, 'finalizeOfferedService'])->middleware('role:Mesero')->name('waiter.offered-service.finalize');
@@ -329,6 +391,8 @@ Route::middleware(['auth', 'active'])->group(function () {
     });
 
     // Operaciones de inventario: Jefe de cocina y Jefe de almacén.
+    Route::get('/almacen/catalogo-insumos',[\App\Http\Controllers\Almacen\WarehouseIngredientController::class,'index'])
+        ->middleware('role:Jefe de almacen')->name('warehouse.ingredients.index');
     // Los controladores siguen validando el rol y la sede activa.
     Route::middleware('role:Jefe de cocina,Jefe de almacen')
         ->group(function () {
@@ -563,7 +627,7 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/caja/historial', [App\Http\Controllers\CashierController::class, 'history'])->name('cash.history');
         Route::post('/caja/abrir', [App\Http\Controllers\CashierController::class, 'open'])->name('cash.open');
         Route::post('/caja/cerrar', [App\Http\Controllers\CashierController::class, 'close'])->name('cash.close');
-        Route::post('/caja/atenciones/{attention}/cobrar', [App\Http\Controllers\CashierController::class, 'charge'])->whereNumber('attention')->name('cash.charge');
+        Route::post('/caja/atenciones/{attention}/cobrar', [App\Http\Controllers\CashierController::class, 'charge'])->middleware('role:Cajero')->whereNumber('attention')->name('cash.charge');
         Route::get('/caja/pagos/{payment}/ticket', [App\Http\Controllers\CashierController::class, 'ticket'])->whereNumber('payment')->name('cash.ticket');
     });
 
@@ -586,6 +650,9 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     Route::middleware('role:Personal de cocina')
         ->group(function () {
+            Route::get('/cocina/notificaciones', [KitchenWorkflowController::class, 'observationNotifications'])->name('kitchen.notifications.index');
+            Route::patch('/cocina/comandas/{command}/observaciones/{observation}/revision', [KitchenWorkflowController::class, 'acknowledgeObservation'])
+                ->whereNumber(['command', 'observation'])->name('kitchen.observations.acknowledge');
 
             Route::patch(
                 '/cocina/comandas/{detail}/estado',
@@ -601,6 +668,19 @@ Route::middleware(['auth', 'active'])->group(function () {
     | ADMINISTRACIÓN - USUARIOS Y SEDES
     |--------------------------------------------------------------------------
     */
+
+    Route::prefix('administracion/general')->name('superadmin.')->middleware('role:super-administrator')->group(function(){
+        Route::get('/',[\App\Http\Controllers\Admin\SuperadminWorkspaceController::class,'index'])->name('index');
+        Route::post('/clientes',[\App\Http\Controllers\Admin\SuperadminWorkspaceController::class,'saveClient'])->name('clients.store');
+        Route::put('/clientes/{client}',[\App\Http\Controllers\Admin\SuperadminWorkspaceController::class,'saveClient'])->whereNumber('client')->name('clients.update');
+        Route::post('/sedes',[\App\Http\Controllers\Admin\SuperadminWorkspaceController::class,'saveSite'])->name('sites.store');
+        Route::put('/sedes/{site}',[\App\Http\Controllers\Admin\SuperadminWorkspaceController::class,'saveSite'])->whereNumber('site')->name('sites.update');
+        Route::post('/usuarios',[\App\Http\Controllers\Admin\SuperadminWorkspaceController::class,'saveUser'])->name('users.store');
+        Route::put('/usuarios/{user}',[\App\Http\Controllers\Admin\SuperadminWorkspaceController::class,'saveUser'])->whereNumber('user')->name('users.update');
+        Route::post('/usuarios/{user}/activacion',[\App\Http\Controllers\Admin\SuperadminWorkspaceController::class,'activation'])->whereNumber('user')->middleware('throttle:5,1')->name('users.activation');
+        Route::get('/notificaciones',[\App\Http\Controllers\Admin\SuperadminWorkspaceController::class,'notifications'])->name('notifications.index');
+        Route::post('/notificaciones/leidas',[\App\Http\Controllers\Admin\SuperadminWorkspaceController::class,'readNotifications'])->name('notifications.read');
+    });
 
     Route::prefix('administracion')
         ->name('admin.')
@@ -898,7 +978,17 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::prefix('capitan')
         ->name('capitan.')
         ->group(function () {
+            Route::get('/notificaciones',[CapitanController::class,'notifications'])->name('notifications.index');
+            Route::post('/notificaciones/leer',[CapitanController::class,'notifications'])->name('notifications.read');
 
+            Route::get('/empleados/{employee}/foto', function (\Illuminate\Http\Request $request, int $employee) {
+                $site=\App\Support\CaptainWorkspace::site($request);
+                $record=\App\Models\Employee::whereKey($employee)->where('id_sede',$site->id_sede)->firstOrFail();
+                abort_unless(\Illuminate\Support\Facades\DB::table('usuario_sede')->where('id_usuario',$record->id_usuario)->where('id_sede',$site->id_sede)->where('id_rol',6)->exists(),404);
+                $photo=app(\App\Support\EmployeePresentation::class)->photoLocation($record);
+                abort_unless($photo,404);
+                return \Illuminate\Support\Facades\Storage::disk($photo['disk'])->response($photo['path'],null,['Cache-Control'=>'private, max-age=300']);
+            })->whereNumber('employee')->name('employee-photo');
             // PANEL PRINCIPAL
             Route::get('/', [
                 CapitanController::class,

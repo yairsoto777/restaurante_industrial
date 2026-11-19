@@ -22,6 +22,9 @@ class InventoryController extends Controller
 
     public function index(Request $request, SiteContext $siteContext): View
     {
+        if ($request->user()->hasRole('Jefe de almacen')) {
+            return app(\App\Http\Controllers\Almacen\WarehouseWorkspaceController::class)->inventory($request, $siteContext);
+        }
         $site = $this->activeSite($request, $siteContext);
         $employeeName = $request->user()->name;
         $inventoryDate = now(self::LOCAL_TIMEZONE);
@@ -365,6 +368,7 @@ class InventoryController extends Controller
 
     public function storeIngredient(Request $request, SiteContext $siteContext): RedirectResponse
     {
+        if ($request->user()->hasRole('Jefe de almacen')) return app(\App\Http\Controllers\Almacen\WarehouseIngredientController::class)->store($request,$siteContext);
         $site = $this->activeSite($request, $siteContext);
         abort_unless($this->canRegisterIngredients($request, $site), 403);
         abort_unless($this->hasCoreInventorySchema() && $this->hasMovementSchema(), 503, 'El catálogo, las ubicaciones o el historial de inventario no están disponibles.');
@@ -620,6 +624,7 @@ class InventoryController extends Controller
 
     public function assignIngredient(Request $request, SiteContext $siteContext): RedirectResponse
     {
+        if ($request->user()->hasRole('Jefe de almacen')) return app(\App\Http\Controllers\Almacen\WarehouseIngredientController::class)->assign($request,$siteContext);
         $site = $this->activeSite($request, $siteContext);
         abort_unless($this->canRegisterIngredients($request, $site), 403);
         abort_unless($this->hasCoreInventorySchema() && $this->hasMovementSchema(), 503, 'El catálogo, las ubicaciones o el historial de inventario no están disponibles.');

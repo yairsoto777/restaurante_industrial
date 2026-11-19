@@ -1,0 +1,3 @@
+@php($max = max(1, $week->max(fn ($d) => max($d['in'],$d['out']))))
+<div class="wh-chart-key"><span class="ok">● Entradas</span><span class="danger">● Salidas</span><small>Número de movimientos · últimos 7 días</small></div>
+<div class="wh-week" role="img" aria-label="{{ $week->map(fn ($d) => $d['label'].': '.$d['in'].' entradas, '.$d['out'].' salidas')->join('; ') }}">@foreach($week as $day)<div><div class="wh-day-bars"><span class="wh-in" style="height:{{ $day['in']/$max*150 }}px" title="{{ $day['in'] }} entradas"><small>{{ $day['in'] }}</small></span><span class="wh-out" style="height:{{ $day['out']/$max*150 }}px" title="{{ $day['out'] }} salidas"><small>{{ $day['out'] }}</small></span></div><span>{{ $day['label'] }}</span></div>@endforeach</div>

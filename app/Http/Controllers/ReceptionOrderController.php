@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Support\EmploymentRoles;
 use App\Support\SiteContext;
+use App\Support\WarehouseWorkspace;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -57,6 +58,12 @@ class ReceptionOrderController extends Controller
     /** Vista existente: resources/views/receptions/orders.blade.php */
     public function index(Request $request, SiteContext $context): View
     {
+        if ($request->user()->hasRole('Jefe de almacen')) {
+            return app(\App\Http\Controllers\Almacen\WarehouseWorkspaceController::class)->receptions($request, $context);
+        }
+        if ($request->user()->hasRole('Recepcion de insumos')) {
+            return app(ReceptionWorkspaceController::class)->deliveries($request, $context);
+        }
         $site = $this->site($request, $context);
         $isWarehouseManager = $this->isWarehouseManager($request, (int) $site->id_sede);
 
@@ -152,6 +159,9 @@ class ReceptionOrderController extends Controller
     /** Vista existente: resources/views/receptions/order.blade.php */
     public function show(Request $request, int $order, SiteContext $context): View
     {
+        if ($request->user()->hasRole('Jefe de almacen')) {
+            return app(\App\Http\Controllers\Almacen\WarehouseOrderController::class)->show($request, $order, $context);
+        }
         $site = $this->site($request, $context);
         $isWarehouseManager = $this->isWarehouseManager($request, (int) $site->id_sede);
 
@@ -170,6 +180,7 @@ class ReceptionOrderController extends Controller
         $receipts = $receiptsAvailable
             ? DB::table('recepciones')
                 ->where('id_pedido', $order->id_pedido)
+                ->when($request->user()->hasRole('Recepcion de insumos'), fn ($query) => $query->where('id_usuario', $request->user()->id_usuario))
                 ->orderByDesc('id_recepcion')
                 ->get()
             : collect();
@@ -187,6 +198,9 @@ class ReceptionOrderController extends Controller
      */
     public function supervise(Request $request, int $receipt, SiteContext $context): View
     {
+        if ($request->user()->hasRole('Jefe de almacen')) {
+            return app(\App\Http\Controllers\Almacen\WarehouseWorkspaceController::class)->receptions($request, $context, $receipt);
+        }
         $site = $this->site($request, $context);
         abort_unless($this->isWarehouseManager($request, (int) $site->id_sede), 403);
         abort_unless($this->receiptsAvailable(), 404);
@@ -247,6 +261,8 @@ class ReceptionOrderController extends Controller
      */
     public function confirm(Request $request, int $receipt, SiteContext $context): RedirectResponse
     {
+        \App\Support\WarehouseWorkspace::site($request, $context);
+        abort_unless(\App\Support\WarehouseWorkspace::confirmationAvailable(), 503, 'El esquema de confirmación de recepciones está incompleto.');
         $site = $this->site($request, $context);
         abort_unless($this->isWarehouseManager($request, (int) $site->id_sede), 403);
         $validated = $request->validate([
@@ -274,13 +290,12 @@ class ReceptionOrderController extends Controller
                 throw ValidationException::withMessages(['recepcion' => 'Solo se puede confirmar una recepción pendiente. Actualiza la página.']);
             }
 
-            $location = DB::table('ubicacion_inventarios')
+            $location = WarehouseWorkspace::receivingLocations($site->id_sede)
                 ->where('id_ubicacion_inv', $validated['id_ubicacion'])
-                ->where('id_sede', $site->id_sede)
                 ->lockForUpdate()
                 ->first();
             if (! $location) {
-                throw ValidationException::withMessages(['id_ubicacion' => 'La ubicación no pertenece a tu sede.']);
+                throw ValidationException::withMessages(['id_ubicacion' => 'Selecciona una ubicación activa de tu sede.']);
             }
 
             $lines = DB::table('recepcion_detalles as rd')
@@ -293,6 +308,9 @@ class ReceptionOrderController extends Controller
                 ->get();
             if ($lines->isEmpty()) {
                 throw ValidationException::withMessages(['recepcion' => 'La recepción no tiene partidas válidas.']);
+            }
+            if ($lines->count() !== DB::table('recepcion_detalles')->where('id_recepcion',$row->id_recepcion)->count()) {
+                throw ValidationException::withMessages(['recepcion' => 'Hay partidas que no pertenecen al pedido. Revisa la captura antes de confirmar.']);
             }
             $existingCount = DB::table('inventarios_finales')
                 ->whereIn('id_recepcion_detalle', $lines->pluck('id_recepcion_detalle'))
@@ -320,6 +338,10 @@ class ReceptionOrderController extends Controller
                 if (! $lot) {
                     throw ValidationException::withMessages(['recepcion' => 'El lote no corresponde al insumo.']);
                 }
+                if (! $lot->fecha_caducidad || $lot->fecha_caducidad < now('America/Mexico_City')->toDateString()
+                    || $line->caducidad !== $lot->fecha_caducidad || (int) $lot->id_proveedor !== (int) $row->id_proveedor) {
+                    throw ValidationException::withMessages(['recepcion' => 'El lote aceptado requiere caducidad vigente y debe coincidir con el proveedor y la fecha de la captura.']);
+                }
                 $stockRows = DB::table('insumo_sedes')
                     ->where('id_sede', $site->id_sede)
                     ->where('id_insumo', $line->id_insumo)
@@ -341,7 +363,7 @@ class ReceptionOrderController extends Controller
                     'fecha' => now(),
                     'tipo' => 'entrada',
                     'cantidad_firmada' => $this->decimalQuantity($acceptedUnits),
-                    'costo_unitario' => $line->precio_unitario,
+                    'costo_unitario' => $line->precio_unitario ?? null,
                     'id_recepcion_detalle' => $line->id_recepcion_detalle,
                     'referencia' => 'Recepcion #'.$row->id_recepcion,
                     'observaciones' => 'Confirmada por jefe de almacen. '.$validated['observacion_revision'],
@@ -364,12 +386,14 @@ class ReceptionOrderController extends Controller
      */
     public function returnForCorrection(Request $request, int $receipt, SiteContext $context): RedirectResponse
     {
+        \App\Support\WarehouseWorkspace::site($request, $context);
+        abort_unless(\App\Support\WarehouseWorkspace::confirmationAvailable(), 503);
         $site = $this->site($request, $context);
         abort_unless($this->isWarehouseManager($request, (int) $site->id_sede), 403);
         $data = $request->validate(['motivo' => ['required', 'string', 'min:10', 'max:1000']]);
         $released = (array) config('receptions.released_states', []);
         // Exige un estado conocido que el flujo de captura ya libere del pendiente.
-        $returnedState = collect($released)->first(fn ($s) => in_array($s, ['Devuelta para corrección', 'Cancelada', 'Rechazada'], true));
+        $returnedState = collect($released)->first(fn ($s) => in_array($s, ['Devuelta para corrección', 'Cancelada', 'Rechazada', 'Rechazada por almacén'], true));
         abort_unless($returnedState, 503, 'Falta definir un estado de devolución/cancelación en receptions.released_states.');
         DB::transaction(function () use ($receipt, $site, $request, $data, $returnedState): void {
             $row = DB::table('recepciones as r')

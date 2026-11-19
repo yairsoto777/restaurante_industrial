@@ -1,0 +1,3 @@
+<!doctype html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:; base-uri 'none'; form-action 'none'"><title>{{ $document['settings']['titulo'] }}</title><style>html,body{margin:0;padding:0;background:#fff}*{box-sizing:border-box}{!! file_get_contents(public_path('css/chef-menu-document.css')) !!}
+@page{size:{{ $document['settings']['papel']==='Carta' ? 'letter' : 'A4' }} {{ $document['settings']['orientacion']==='horizontal' ? 'landscape' : 'portrait' }};margin:12mm}
+</style></head><body class="gm-export">{!! \App\Support\ChefMenuDocument::render($document) !!}</body></html>

@@ -6,9 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
-use Illuminate\View\View;
 use Illuminate\Support\Facades\Schema;
 
 class MesasZonasController extends Controller
@@ -19,28 +17,7 @@ class MesasZonasController extends Controller
      */
     private function sede(Request $request): int
     {
-        $usuarioId = $request->user()?->id_usuario ?? $request->user()?->getAuthIdentifier();
-        abort_unless($usuarioId, 403, 'Debes iniciar sesión.');
-
-        $sedes = DB::table('usuario_sede')
-            ->where('id_usuario', $usuarioId)
-            ->where('id_rol', 7)
-            ->whereNotNull('id_sede')
-            ->pluck('id_sede')
-            ->map(fn ($id) => (int) $id)
-            ->all();
-
-        abort_if(empty($sedes), 403, 'Solo el Capitán de Meseros puede administrar mesas y zonas.');
-
-        $seleccionada = (int) $request->session()->get('current_site_id', 0);
-        if ($seleccionada > 0) {
-            abort_unless(in_array($seleccionada, $sedes, true), 403, 'No tienes acceso a esa sede.');
-            return $seleccionada;
-        }
-
-        // Never silently pick an arbitrary site for a multi-site captain.
-        abort_unless(count($sedes) === 1, 403, 'Selecciona primero una sede.');
-        return $sedes[0];
+        return (int) \App\Support\CaptainWorkspace::site($request)->id_sede;
     }
 
     private function zonaPropia(int $id, int $sede): object
@@ -62,50 +39,16 @@ class MesasZonasController extends Controller
         return $mesa;
     }
 
-    public function index(Request $request): View
+    public function index(Request $request): RedirectResponse
     {
         $sedeId = $this->sede($request);
-        $sede = DB::table('sedes')->where('id_sede', $sedeId)->first();
-        abort_unless($sede, 404);
-
-        $zonas = DB::table('zonas')
-            ->where('id_sede', $sedeId)
-            ->orderBy('nombre')
-            ->get();
-
-        $mesas = DB::table('mesas as m')
-            ->join('zonas as z', 'z.id_zona', '=', 'm.id_zona')
-            ->where('z.id_sede', $sedeId)
-            ->orderBy('z.nombre')
-            ->orderBy('m.numero')
-            ->select('m.*', 'z.nombre as zona_nombre')
-            ->get();
-
-        $distribucion = $zonas->map(function ($zona) use ($mesas) {
-            $mesasZona = $mesas->where('id_zona', $zona->id_zona);
-            $zona->mesas_count = $mesasZona->count();
-            $zona->capacidad_total = $mesasZona->sum('capacidad');
-            return $zona;
-        });
-        $totalMesas = $mesas->count();
-        $mesasDisponibles = $mesas->filter(fn ($mesa) => mb_strtolower((string) $mesa->estado_fisico) === 'disponible')->count();
-        $mesasNoDisponibles = $totalMesas - $mesasDisponibles;
-
-        $mesasProgramadas = Schema::hasColumn('sedes', 'mesas_programadas') ? $sede->mesas_programadas : null;
-        return view('capitan.mesas.index', compact('sede', 'zonas', 'mesas', 'distribucion', 'totalMesas', 'mesasDisponibles', 'mesasNoDisponibles', 'mesasProgramadas'));
+        return redirect()->route('capitan.index',['modulo'=>$request->query('vista') === 'zonas' ? 'zonas' : 'mesas']);
     }
 
     public function programarTotal(Request $request): RedirectResponse
     {
-        $sedeId = $this->sede($request);
-        abort_unless(Schema::hasColumn('sedes', 'mesas_programadas'), 503, 'Ejecuta las migraciones pendientes.');
-        $totalActual = DB::table('mesas')->join('zonas', 'zonas.id_zona', '=', 'mesas.id_zona')->where('zonas.id_sede', $sedeId)->count();
-        $datos = $request->validate(['mesas_programadas' => ['required', 'integer', 'min:1', 'max:100000']]);
-        if ((int) $datos['mesas_programadas'] < $totalActual) {
-            return back()->withErrors(['mesas_programadas' => "El total no puede ser menor que las {$totalActual} mesas ya asignadas a zonas."])->withInput();
-        }
-        DB::table('sedes')->where('id_sede', $sedeId)->update(['mesas_programadas' => $datos['mesas_programadas']]);
-        return back()->with('success', 'Total de mesas programado correctamente.');
+        $this->sede($request);
+        abort(403, 'La configuración general de capacidad de la sede no corresponde al Capitán.');
     }
 
     public function guardarZona(Request $request): RedirectResponse
@@ -125,8 +68,9 @@ class MesasZonasController extends Controller
             return back()->withErrors(['nombre' => 'Ya existe una zona con ese nombre en tu sede.'])->withInput();
         }
 
-        DB::table('zonas')->insert(['id_sede' => $sedeId, 'nombre' => $nombre]);
-        return redirect()->route('capitan.mesas.index')->with('success', 'Zona creada correctamente.');
+        $extra = $this->zoneDetails($request);
+        \App\Support\ChefWorkspace::withMedia($request, ['imagen'=>'imagen_url'], fn ($media) => DB::table('zonas')->insert($extra + $media + ['id_sede'=>$sedeId,'nombre'=>$nombre]));
+        return redirect()->route('capitan.index',['modulo'=>'zonas'])->with('success', 'Zona creada correctamente.');
     }
 
     public function actualizarZona(Request $request, int $zona): RedirectResponse
@@ -149,8 +93,19 @@ class MesasZonasController extends Controller
             return back()->withErrors(['nombre' => 'Ya existe otra zona con ese nombre.'])->withInput();
         }
 
-        DB::table('zonas')->where('id_zona', $zona)->update(['nombre' => $nombre]);
-        return redirect()->route('capitan.mesas.index')->with('success', 'Zona actualizada.');
+        $extra = $this->zoneDetails($request);
+        \App\Support\ChefWorkspace::withMedia($request, ['imagen'=>'imagen_url'], fn ($media) => DB::table('zonas')->where('id_zona',$zona)->update($extra + $media + ['nombre'=>$nombre]));
+        return redirect()->route('capitan.index',['modulo'=>'zonas'])->with('success', 'Zona actualizada.');
+    }
+
+    private function zoneDetails(Request $request): array
+    {
+        $supported = Schema::hasColumn('zonas','imagen_url');
+        return collect($request->validate([
+            'descripcion'=>Schema::hasColumn('zonas','descripcion') ? ['nullable','string','max:2000'] : ['prohibited'],
+            'color'=>Schema::hasColumn('zonas','color') ? ['nullable','regex:/^#[0-9a-fA-F]{6}$/'] : ['prohibited'],
+            'imagen'=>\App\Support\ChefWorkspace::mediaRules($supported),
+        ]))->except('imagen')->all();
     }
 
     public function guardarMesa(Request $request): RedirectResponse
@@ -180,6 +135,10 @@ class MesasZonasController extends Controller
             unset($datos['cantidad']);
             $numero = (int) ($datos['numero'] ?? (DB::table('mesas')->where('id_zona', $datos['id_zona'])->max('numero') ?? 0) + 1);
             $datos['estado_fisico'] = $datos['estado_fisico'] ?? 'Disponible';
+            if (DB::table('mesas')->where('id_zona',$datos['id_zona'])->whereBetween('numero',[$numero,$numero+$cantidad-1])->exists()) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['numero'=>'El intervalo contiene mesas ya registradas. Elige otro número inicial.']);
+            }
+            if ($numero+$cantidad-1 > 9999) throw \Illuminate\Validation\ValidationException::withMessages(['cantidad'=>'El intervalo supera el número máximo 9999.']);
             for ($indice = 0; $indice < $cantidad; $indice++) {
                 while (DB::table('mesas')->where('id_zona', $datos['id_zona'])->where('numero', $numero)->exists()) {
                     $numero++;
@@ -194,7 +153,7 @@ class MesasZonasController extends Controller
             return back()->withErrors(['numero' => 'Ya hay una mesa con ese número dentro de la zona.'])->withInput();
         }
 
-        return redirect()->route('capitan.mesas.index')->with('success', $creada === 1 ? 'Mesa registrada correctamente.' : "Se registraron {$creada} mesas en la zona.");
+        return redirect()->route($request->input('return_module')==='mesas' ? 'capitan.index' : 'capitan.mesas.index',['modulo'=>'mesas'])->with('success', $creada === 1 ? 'Mesa registrada correctamente.' : "Se registraron {$creada} mesas en la zona.");
     }
 
     public function actualizarMesa(Request $request, int $mesa): RedirectResponse
@@ -230,6 +189,6 @@ class MesasZonasController extends Controller
         }
 
         DB::table('mesas')->where('id_mesa', $mesa)->update($datos);
-        return redirect()->route('capitan.mesas.index')->with('success', 'Mesa actualizada correctamente.');
+        return redirect()->route($request->input('return_module')==='mesas' ? 'capitan.index' : 'capitan.mesas.index',$request->input('return_module')==='mesas' ? ['modulo'=>'mesas'] : [])->with('success', 'Mesa actualizada correctamente.');
     }
 }

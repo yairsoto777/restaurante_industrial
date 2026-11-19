@@ -2,7 +2,7 @@
 @section('title', 'Panel de cocina')
 @section('content')
 <div class="kitchen-dashboard">
-    <header class="kitchen-dashboard-hero">
+    <header class="kitchen-dashboard-hero dashboard-banner dashboard-banner--kitchen">
         <div class="kitchen-dashboard-hero-copy">
             <span class="kitchen-dashboard-eyebrow">{{ $site->nombre }} · Cocina</span>
             <h1>Panel de cocina</h1>

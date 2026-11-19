@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Site;
 use App\Support\EmploymentRoles;
+use App\Support\CommandObservations;
 use App\Support\SiteContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,6 +15,7 @@ use Illuminate\View\View;
 
 class KitchenWorkflowController extends Controller
 {
+    use \App\Http\Controllers\Concerns\KitchenProduction;
     public function groups(Request $request, SiteContext $siteContext): View
     {
         $site = $this->activeSite($request, $siteContext);
@@ -239,6 +241,9 @@ class KitchenWorkflowController extends Controller
     public function kitchen(Request $request, SiteContext $siteContext): View
     {
         $site = $this->activeSite($request, $siteContext);
+        if ($request->user()->hasRole('Personal de cocina')) {
+            return $this->production($request, $site);
+        }
         $available = $this->hasTables(['comanda_detalles', 'comandas', 'atenciones', 'servicios', 'menus', 'platillos', 'mesas', 'zonas']);
         $search = trim((string) $request->query('q', ''));
         $filterState = strtolower(trim((string) $request->query('estado', '')));
@@ -273,6 +278,54 @@ class KitchenWorkflowController extends Controller
         return view('modules.kitchen', compact('site', 'orders', 'stateOptions', 'available', 'search', 'filterState', 'totalCount', 'pendingCount', 'totalQuantity'));
     }
 
+    public function observationNotifications(Request $request, SiteContext $context)
+    {
+        $site = $this->activeSite($request, $context);
+        $items = collect();
+        $count = 0;
+        if (CommandObservations::available()) {
+            $pending = CommandObservations::scopedCommands($site->id_sede)
+                ->join('comanda_observaciones as n', 'n.id_comanda', '=', 'c.id_comanda')->whereNull('n.revisada_en');
+            $count = $pending->count();
+            $items = $pending->orderByDesc('n.id_observacion')->limit(20)
+                ->get(['n.id_observacion', 'n.prioridad', 'n.creada_en', 'c.id_comanda', 'm.numero'])
+                ->map(fn ($note) => [
+                    'id' => (string) $note->id_observacion,
+                    'title' => CommandObservations::PRIORITIES[$note->prioridad].' · Comanda #'.$note->id_comanda,
+                    'description' => 'Mesa '.$note->numero.' · Revisa el aviso en el detalle.',
+                    'date' => $note->creada_en, 'read' => false,
+                    'tone' => $note->prioridad === 'normal' ? 'waiting' : 'danger',
+                    'url' => route('kitchen.index', ['modulo' => 'panel', 'comanda' => $note->id_comanda]),
+                ]);
+        }
+        return response()->json(['items' => $items, 'unread' => $count])->header('Cache-Control', 'private, no-store');
+    }
+
+    public function acknowledgeObservation(Request $request, SiteContext $context, int $command, int $observation): RedirectResponse
+    {
+        $site = $this->activeSite($request, $context);
+        abort_unless(CommandObservations::available(), 503);
+
+        DB::transaction(function () use ($request, $site, $command, $observation): void {
+            abort_unless(CommandObservations::scopedCommands($site->id_sede)->where('c.id_comanda', $command)
+                ->lockForUpdate()->first(['c.id_comanda']), 404);
+            $query = CommandObservations::query()->where('id_comanda', $command)->where('id_observacion', $observation);
+            $note = (clone $query)->lockForUpdate()->first();
+            abort_unless($note, 404);
+            if ($note->revisada_en !== null) {
+                return;
+            }
+            if ($note->prioridad === 'alergenos') {
+                $request->validate(['confirmada' => ['accepted']], [
+                    'confirmada.accepted' => 'Confirma explícitamente que revisaste la alerta de alérgenos.',
+                ]);
+            }
+            $query->update(['id_revisor' => $request->user()->getKey(), 'revisada_en' => now()]);
+        }, 3);
+
+        return back()->with('status', 'Revisión de la observación registrada.');
+    }
+
     public function updateOrderStatus(Request $request, SiteContext $siteContext, int $detail): RedirectResponse
     {
         abort_unless($request->user()->hasRole('Personal de cocina'), 403);
@@ -284,6 +337,8 @@ class KitchenWorkflowController extends Controller
         DB::transaction(function () use ($site, $detail, $data, $request): void {
             $order = $this->kitchenOrdersQuery((int) $site->id_sede)
                 ->where('detalle.id_comanda_detalle', $detail)
+                ->where('zona.id_sede', $site->id_sede)
+                ->where('atencion.estado', 'En atención')
                 ->lockForUpdate()
                 ->first();
 
@@ -296,10 +351,18 @@ class KitchenWorkflowController extends Controller
                 'preparando' => 'listo',
                 'listo' => 'entregado',
             ];
-            $currentState = strtolower(trim((string) $order->detalle_estado));
+            $currentState = $this->productionState($order->detalle_estado);
             if (($transitions[$currentState] ?? null) !== $data['estado']) {
                 throw ValidationException::withMessages([
                     'estado' => 'La comanda debe avanzar en orden: pendiente, preparando, listo y entregado.',
+                ]);
+            }
+
+            if (CommandObservations::available() && CommandObservations::query()
+                ->where('id_comanda', $order->id_comanda)->where('prioridad', 'alergenos')->whereNull('revisada_en')
+                ->lockForUpdate()->first(['id_observacion'])) {
+                throw ValidationException::withMessages([
+                    'estado' => 'Revisa y confirma las alertas de alérgenos de esta comanda antes de cambiar el estado.',
                 ]);
             }
 
@@ -314,13 +377,21 @@ class KitchenWorkflowController extends Controller
                 ]);
             }
 
-            DB::table('comanda_detalles')->where('id_comanda_detalle', $detail)->update(['estado' => $data['estado']]);
+            $changes = ['estado' => $data['estado']];
+            if ($data['estado'] !== 'entregado' && $this->hasPreparationHistory()) {
+                [$time, $actor] = $data['estado'] === 'preparando'
+                    ? ['preparacion_iniciada_en', 'preparacion_iniciada_por']
+                    : ['lista_en', 'lista_por'];
+                $changes += [$time => now(), $actor => $request->user()->getKey()];
+            }
+            DB::table('comanda_detalles')->where('id_comanda_detalle', $detail)->update($changes);
         }, 3);
 
-        return redirect()->route('kitchen.index')->with('status', 'El estado del platillo quedó actualizado.');
+        return ($request->input('volver') === 'produccion' ? back() : redirect()->route('kitchen.index'))
+            ->with('status', 'El estado del platillo quedó actualizado.');
     }
 
-    private function kitchenOrdersQuery(int $siteId)
+    private function kitchenOrdersQuery(int $siteId, bool $history = false)
     {
         return DB::table('comanda_detalles as detalle')
             ->join('comandas as comanda', 'comanda.id_comanda', '=', 'detalle.id_comanda')
@@ -331,14 +402,16 @@ class KitchenWorkflowController extends Controller
             ->join('mesas as mesa', 'mesa.id_mesa', '=', 'atencion.id_mesa')
             ->leftJoin('zonas as zona', 'zona.id_zona', '=', 'mesa.id_zona')
             ->where('servicio.id_sede', $siteId)
-            ->where('servicio.estado_aprobacion', 'Aprobado')
-            ->whereNotIn('servicio.estado', ['Cancelado', 'Finalizado'])
+            ->when(!$history, fn ($query) => $query->where('servicio.estado_aprobacion', 'Aprobado')
+                ->whereNotIn('servicio.estado', ['Cancelado', 'Finalizado']))
             ->select([
                 'detalle.id_comanda_detalle', 'detalle.id_menu', 'detalle.cantidad', 'detalle.estado as detalle_estado', 'detalle.observaciones as detalle_observaciones',
                 'comanda.id_comanda', 'comanda.fecha_apertura', 'comanda.estado as comanda_estado', 'comanda.observaciones as comanda_observaciones',
                 'atencion.id_atencion', 'atencion.comensales', 'servicio.nombre as servicio_nombre', 'servicio.fecha as servicio_fecha',
                 'platillo.nombre as platillo_nombre', 'mesa.numero as mesa_numero', 'zona.nombre as zona_nombre',
-            ]);
+            ])
+            ->when(Schema::hasColumn('atenciones', 'observaciones'), fn ($query) =>
+                $query->addSelect('atencion.observaciones as atencion_observaciones'));
     }
 
     private function activeSite(Request $request, SiteContext $siteContext, bool $chiefOnly = false): Site

@@ -11,8 +11,11 @@ use Illuminate\Validation\ValidationException;
 
 class CashierController extends Controller
 {
+    use \App\Http\Controllers\Concerns\CashierPresentation;
+
     public function index(Request $request, SiteContext $context)
     {
+        if($request->user()->hasRole('Cajero'))return $this->workspace($request,$context);
         $site = $this->site($request, $context);
         $shift = $this->activeShift($site->id_sede, $request->user()->id_usuario);
         $accounts = $this->accounts($site->id_sede)->get();
@@ -31,6 +34,7 @@ class CashierController extends Controller
 
     public function history(Request $request, SiteContext $context)
     {
+        if($request->user()->hasRole('Cajero'))return $this->workspace($request,$context,'historial');
         $site = $this->site($request, $context);
         $paymentTotals = DB::table('caja_pagos')
             ->select('id_turno_caja')
@@ -89,7 +93,10 @@ class CashierController extends Controller
                 DB::table('comandas')->where('id_atencion', $attention)->update(['estado' => 'Pagada']);
             }
         });
-        return back()->with('status', 'Cobro registrado correctamente.');
+        $response=back()->with('status', 'Cobro registrado correctamente.');
+        if($request->user()->hasRole('Cajero'))$response->with('cash_payment_id',
+            DB::table('caja_pagos')->where('id_atencion',$attention)->where('id_sede',$site->id_sede)->value('id_pago'));
+        return $this->cashierPresentationResponse($request,$response,'pendientes');
     }
 
     public function open(Request $request, SiteContext $context)
@@ -97,10 +104,11 @@ class CashierController extends Controller
         $site = $this->site($request, $context);
         $data = $request->validate(['fondo_inicial' => ['required', 'numeric', 'min:0']]);
         if (DB::table('caja_turnos')->where('id_sede', $site->id_sede)->where('estado', 'abierto')->exists()) {
+            if($request->user()->hasRole('Cajero')&&$request->expectsJson())throw ValidationException::withMessages(['fondo_inicial'=>'Ya existe un turno abierto en esta sede.']);
             return back()->withErrors(['fondo_inicial' => 'Ya existe un turno abierto en esta sede.'])->withInput();
         }
         DB::table('caja_turnos')->insert(['id_sede' => $site->id_sede, 'id_usuario_apertura' => $request->user()->id_usuario, 'fondo_inicial' => $data['fondo_inicial'], 'estado' => 'abierto', 'abierta_at' => now(), 'created_at' => now(), 'updated_at' => now()]);
-        return back()->with('status', 'Caja abierta correctamente.');
+        return $this->cashierPresentationResponse($request,back()->with('status', 'Caja abierta correctamente.'),'turno');
     }
 
     public function close(Request $request, SiteContext $context)
@@ -148,10 +156,14 @@ class CashierController extends Controller
                 'error' => $exception->getMessage(),
             ]);
 
+            if($request->user()->hasRole('Cajero')&&$request->expectsJson())return response()->json([
+                'errors'=>['caja'=>['No fue posible cerrar la caja. No se modificaron los movimientos; revisa e inténtalo de nuevo.']],
+            ],500);
+
             return back()->withErrors(['caja' => 'No fue posible cerrar la caja. No se modificaron los movimientos; revisa e inténtalo de nuevo.'])->withInput();
         }
 
-        return back()->with('status', 'Cierre de caja registrado.');
+        return $this->cashierPresentationResponse($request,back()->with('status', 'Cierre de caja registrado.'),'cierre');
     }
 
     public function ticket(Request $request, SiteContext $context, int $payment)
@@ -172,8 +184,14 @@ class CashierController extends Controller
                 'ofrecido.precio_unitario as ofrecido_precio_unitario',
                 DB::raw($cashierName.' as cajero'))->first();
         abort_unless($receipt, 404);
-        $items = $receipt->ofrecido_descripcion ? collect() : DB::table('comandas as c')->join('comanda_detalles as d', 'd.id_comanda', '=', 'c.id_comanda')->join('menus as menu', 'menu.id_menu', '=', 'd.id_menu')->join('platillos as p', 'p.id_platillo', '=', 'menu.id_platillo')->where('c.id_atencion', $receipt->id_atencion)->select('p.nombre', 'd.cantidad', 'menu.precio_venta')->get();
-        return view('cash.ticket', compact('receipt', 'items', 'site'));
+        $items = $receipt->ofrecido_descripcion ? collect() : DB::table('comandas as c')
+            ->join('comanda_detalles as d', 'd.id_comanda', '=', 'c.id_comanda')
+            ->join('menus as menu', 'menu.id_menu', '=', 'd.id_menu')
+            ->join('platillos as p', 'p.id_platillo', '=', 'menu.id_platillo')
+            ->where('c.id_atencion', $receipt->id_atencion)
+            ->where(fn ($query) => $query->whereNotIn('d.estado', ['cancelado', 'Cancelado'])->orWhereNull('d.estado'))
+            ->select('p.nombre', 'd.cantidad', 'd.precio_unitario as precio_venta')->get();
+        return view($request->user()->hasRole('Cajero')?'cash.workspace.ticket-preview':'cash.ticket', compact('receipt', 'items', 'site'));
     }
 
     private function site(Request $request, SiteContext $context) { $site = $context->currentFor($request, $request->user()); abort_unless($site && $context->userCanAccess($request->user(), $site->id_sede), 403); return $site; }

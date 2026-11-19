@@ -1,0 +1,4 @@
+<div class="gm-dish {{ $dish['photo'] ? 'gm-with-photo' : 'gm-without-photo' }} {{ $dish['special'] ? 'gm-is-special' : '' }}" data-dish-id="{{ $dish['id'] }}">
+    @if($dish['photo'])<img class="gm-dish-photo gm-food-photo" src="{{ $dish['photo'] }}" alt="{{ $dish['name'] }}" decoding="async">@endif
+    <div class="gm-dish-copy"><span class="gm-dish-number" aria-hidden="true">{{ str_pad($number,2,'0',STR_PAD_LEFT) }}</span><div class="gm-dish-name-line"><h5>{{ $dish['name'] }}</h5>@if($dish['price']!==null)<span class="gm-price">${{ number_format($dish['price'],2) }} <small>MXN</small></span>@endif</div>@if($dish['description'])<p class="gm-description">{{ $dish['description'] }}</p>@endif @if($dish['special'])<span class="gm-special">★ Especial del chef</span>@endif @if($dish['draft'] && !$document['settings']['publico'])<small class="gm-draft-tag">Sin publicar o no disponible · vista interna</small>@endif</div>
+</div>

@@ -80,8 +80,8 @@ class ReceptionCaptureTest extends RoleAccessTest
         $this->actingAs($manager)->get('/recepciones')->assertOk()->assertSee($reviewUrl, false);
         $this->get('/recepciones/pedidos/1')->assertOk()->assertSee($reviewUrl, false);
         $this->get($reviewUrl)->assertOk()
-            ->assertViewIs('receptions.receipt')
-            ->assertViewHas('receipt', fn ($receipt) => (int) $receipt->id_recepcion === 1)
+            ->assertViewIs('almacen.workspace.receptions')
+            ->assertViewHas('selected', fn ($receipt) => (int) $receipt->id_recepcion === 1)
             ->assertSee('L-001');
         $this->get(route('receptions.review.show', 999))->assertNotFound();
 
